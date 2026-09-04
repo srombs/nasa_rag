@@ -2,14 +2,25 @@
 
 from collections.abc import Sequence
 import argparse
-import json
+from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
 
 
 EMBEDDING_MODEL = "text-embedding-3-small"
-CACHE_FILE = Path("embeddings.txt")
-TOP_RESULTS = 3
+TOP_RESULTS = 10
+
+
+@dataclass
+class DocumentChunk:
+    """A text chunk and the vector used to search it."""
+
+    source: str
+    chunk_index: int
+    text: str
+    embed: list[float]
+    similarity: float | None = None
+
 
 # documents = [
 #     "Perseverance landed in Jezero Crater on Mars in February 2021.",
@@ -33,24 +44,43 @@ documents = [
 ]
 
 
+def read_file(path: str | Path) -> str:
+    """Read a UTF-8 text file into memory."""
+    return Path(path).read_text(encoding="utf-8")
 
 
-def embed_texts(
-    texts: Sequence[str], cache_path: Path = CACHE_FILE
-) -> list[list[float]]:
+def chunk_text(text: str, chunk_size: int, overlap_size: int) -> list[str]:
+    """Split text into word-based chunks with overlapping words."""
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be greater than zero.")
+    if overlap_size < 0 or overlap_size >= chunk_size:
+        raise ValueError("overlap_size must be at least zero and less than chunk_size.")
+
+    words = text.split()
+    step_size = chunk_size - overlap_size
+    results = []
+    for start in range(0, len(words), step_size):
+        chunk = words[start : start + chunk_size]
+        if not chunk:
+            break
+        results.append(" ".join(chunk))
+        if start + chunk_size >= len(words):
+            break
+    print(f"Created {len(results)} chunks.")
+    return results
+
+
+
+
+def embed_texts(texts: Sequence[str]) -> list[list[float]]:
     """Return one embedding vector for each supplied text, in input order.
 
     The OpenAI SDK reads the API key from the ``OPENAI_API_KEY`` environment
-    variable. An existing cache is reused when it was created for the same
-    input texts and model.
+    variable. Each non-empty call sends the texts to the API.
     """
     input_texts = list(texts)
     if not input_texts:
         return []
-
-    cached_embeddings = _read_cache(cache_path, input_texts)
-    if cached_embeddings is not None:
-        return cached_embeddings
 
     from openai import OpenAI
 
@@ -61,12 +91,37 @@ def embed_texts(
     embeddings = [
         item.embedding for item in sorted(response.data, key=lambda item: item.index)
     ]
-    _write_cache(cache_path, input_texts, embeddings)
     return embeddings
 
 
+def embed_documents(texts: Sequence[str], source: str) -> list[DocumentChunk]:
+    """Embed text strings and store each returned vector with its chunk data."""
+    text_list = list(texts)
+    embeddings = embed_texts(text_list)
+    return [
+        DocumentChunk(
+            source=source,
+            chunk_index=index,
+            text=text,
+            embed=embedding,
+        )
+        for index, (text, embedding) in enumerate(
+            zip(text_list, embeddings, strict=True)
+        )
+    ]
+
+
+def load_and_embed_file(
+    path: str | Path, chunk_size: int, overlap_size: int
+) -> list[DocumentChunk]:
+    """Read a text file, chunk it, embed its chunks, and return the objects."""
+    file_path = Path(path)
+    chunks = chunk_text(read_file(file_path), chunk_size, overlap_size)
+    return embed_documents(chunks, source=file_path.name)
+
+
 def embed_query(query: str) -> list[float]:
-    """Embed one search query without reading or writing the document cache."""
+    """Embed one search query."""
     if not query:
         raise ValueError("Query text cannot be empty.")
 
@@ -92,6 +147,30 @@ def cosine_similarity(vector_a: Sequence[float], vector_b: Sequence[float]) -> f
     return dot_product / (magnitude_a * magnitude_b)
 
 
+def score_document_chunks(
+    query_embedding: Sequence[float], document_chunks: Sequence[DocumentChunk]
+) -> list[DocumentChunk]:
+    """Store each chunk's similarity to the query and return ranked chunks."""
+    for document_chunk in document_chunks:
+        document_chunk.similarity = cosine_similarity(
+            query_embedding, document_chunk.embed
+        )
+    return sorted(
+        document_chunks,
+        key=lambda chunk: chunk.similarity if chunk.similarity is not None else -1.0,
+        reverse=True,
+    )
+
+
+def print_ranked_chunks(document_chunks: Sequence[DocumentChunk]) -> None:
+    """Print the top ranked chunks without exposing their embedding vectors."""
+    for chunk in document_chunks[:TOP_RESULTS]:
+        print(
+            f"{chunk.similarity:.4f} | {chunk.source} | "
+            f"chunk {chunk.chunk_index} | {chunk.text}"
+        )
+
+
 def compare_query_to_documents(
     query_embedding: Sequence[float],
     document_embeddings: Sequence[Sequence[float]],
@@ -113,54 +192,24 @@ def compare_query_to_documents(
 
 def search(query: str) -> list[tuple[str, float]]:
     """Embed a query, score it against the documents, and print the results."""
-    return compare_query_to_documents(embed_query(query), embed_texts(documents))
+    document_chunks = embed_documents(documents, source="sample_documents")
+    ranked_chunks = score_document_chunks(embed_query(query), document_chunks)
+    print_ranked_chunks(ranked_chunks)
+    return [(chunk.text, chunk.similarity) for chunk in ranked_chunks]
 
 
 def main() -> None:
     """Run a semantic search from the command line."""
     parser = argparse.ArgumentParser(
-        description="Search the sample NASA documents semantically."
+        description="Search the Hubble text document semantically."
     )
     parser.add_argument("query", help="The question or search phrase to embed.")
     args = parser.parse_args()
-    search(args.query)
 
-
-def _read_cache(
-    cache_path: Path, input_texts: list[str]
-) -> list[list[float]] | None:
-    """Return compatible cached embeddings, if available."""
-    if not cache_path.is_file():
-        return None
-
-    try:
-        cached_data = json.loads(cache_path.read_text())
-    except json.JSONDecodeError as error:
-        raise ValueError(f"Embedding cache is not valid JSON: {cache_path}") from error
-
-    if (
-        cached_data.get("model") != EMBEDDING_MODEL
-        or cached_data.get("texts") != input_texts
-    ):
-        return None
-
-    embeddings = cached_data.get("embeddings")
-    if not isinstance(embeddings, list) or len(embeddings) != len(input_texts):
-        return None
-    return embeddings
-
-
-def _write_cache(
-    cache_path: Path, texts: list[str], embeddings: list[list[float]]
-) -> None:
-    """Save embeddings in a readable text file for later reuse."""
-    cache_path.write_text(
-        json.dumps(
-            {"model": EMBEDDING_MODEL, "texts": texts, "embeddings": embeddings},
-            indent=2,
-        )
-        + "\n"
-    )
+    hubble_path = Path(__file__).with_name("hubble.txt")
+    document_chunks = load_and_embed_file(hubble_path, chunk_size=100, overlap_size=20)
+    ranked_chunks = score_document_chunks(embed_query(args.query), document_chunks)
+    print_ranked_chunks(ranked_chunks)
 
 
 if __name__ == "__main__":
