@@ -1,0 +1,96 @@
+"""File discovery, ingestion, and JSON caching for text documents."""
+
+import json
+from pathlib import Path
+
+from chunkers import chunk_text
+from embedder import embed_documents
+from models import DocumentChunk
+
+
+CACHE_FILE_NAME = "document_cache.json"
+
+
+def read_file(path: str | Path) -> str:
+    """Read a UTF-8 text file into memory."""
+    return Path(path).read_text(encoding="utf-8")
+
+
+def load_and_embed_file(
+    path: str | Path, chunk_size: int, overlap_size: int
+) -> list[DocumentChunk]:
+    """Read a text file, chunk it, embed its chunks, and return the objects."""
+    file_path = Path(path)
+    chunks = chunk_text(read_file(file_path), chunk_size, overlap_size)
+    return embed_documents(chunks, source=file_path.name)
+
+
+def load_document_cache(path: str | Path) -> dict[str, list[DocumentChunk]]:
+    """Load document chunks from a JSON cache, keyed by source file name."""
+    cache_path = Path(path)
+    if not cache_path.exists():
+        return {}
+
+    try:
+        cache_data = json.loads(cache_path.read_text(encoding="utf-8"))
+        cached_documents = cache_data["documents"]
+    except (json.JSONDecodeError, KeyError) as error:
+        raise ValueError(f"Invalid document cache: {cache_path}") from error
+
+    if not isinstance(cached_documents, dict):
+        raise ValueError(f"Invalid document cache: {cache_path}")
+
+    document_cache: dict[str, list[DocumentChunk]] = {}
+    for source, records in cached_documents.items():
+        if not isinstance(source, str) or not isinstance(records, list):
+            raise ValueError(f"Invalid document cache: {cache_path}")
+        document_cache[source] = [
+            DocumentChunk.from_cache_record(record)
+            for record in records
+            if isinstance(record, dict)
+        ]
+        if len(document_cache[source]) != len(records):
+            raise ValueError(f"Invalid document cache: {cache_path}")
+    return document_cache
+
+
+def save_document_cache(
+    path: str | Path, document_cache: dict[str, list[DocumentChunk]]
+) -> None:
+    """Persist chunks and embeddings to a JSON cache, grouped by source name."""
+    cache_data = {
+        "documents": {
+            source: [chunk.to_cache_record() for chunk in chunks]
+            for source, chunks in document_cache.items()
+        }
+    }
+    Path(path).write_text(
+        json.dumps(cache_data, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def load_and_embed_directory(
+    directory: str | Path,
+    chunk_size: int,
+    overlap_size: int,
+    cache_path: str | Path | None = None,
+) -> list[DocumentChunk]:
+    """Load each text file, reusing cached chunks and embeddings by file name."""
+    directory_path = Path(directory)
+    if not directory_path.is_dir():
+        raise NotADirectoryError(f"Text data directory not found: {directory_path}")
+
+    resolved_cache_path = (
+        Path(cache_path) if cache_path is not None else directory_path / CACHE_FILE_NAME
+    )
+    document_cache = load_document_cache(resolved_cache_path)
+    document_chunks: list[DocumentChunk] = []
+    for file_path in sorted(directory_path.glob("*.txt")):
+        cached_chunks = document_cache.get(file_path.name)
+        if cached_chunks is None:
+            cached_chunks = load_and_embed_file(file_path, chunk_size, overlap_size)
+            document_cache[file_path.name] = cached_chunks
+        document_chunks.extend(cached_chunks)
+
+    save_document_cache(resolved_cache_path, document_cache)
+    return document_chunks

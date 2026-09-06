@@ -2,24 +2,15 @@
 
 from collections.abc import Sequence
 import argparse
-from dataclasses import dataclass
+import logging
 from math import sqrt
 from pathlib import Path
 
+from embedder import embed_documents, embed_query
+from file_loader import load_and_embed_directory
+from models import DocumentChunk
 
-EMBEDDING_MODEL = "text-embedding-3-small"
 TOP_RESULTS = 10
-
-
-@dataclass
-class DocumentChunk:
-    """A text chunk and the vector used to search it."""
-
-    source: str
-    chunk_index: int
-    text: str
-    embed: list[float]
-    similarity: float | None = None
 
 
 # documents = [
@@ -42,96 +33,6 @@ documents = [
     "Apollo astronauts landed on the Moon.",
     "NASA landed a spacecraft."
 ]
-
-
-def read_file(path: str | Path) -> str:
-    """Read a UTF-8 text file into memory."""
-    return Path(path).read_text(encoding="utf-8")
-
-
-def chunk_text(text: str, chunk_size: int, overlap_size: int) -> list[str]:
-    """Split text into word-based chunks with overlapping words."""
-    if chunk_size <= 0:
-        raise ValueError("chunk_size must be greater than zero.")
-    if overlap_size < 0 or overlap_size >= chunk_size:
-        raise ValueError("overlap_size must be at least zero and less than chunk_size.")
-
-    words = text.split()
-    step_size = chunk_size - overlap_size
-    results = []
-    for start in range(0, len(words), step_size):
-        chunk = words[start : start + chunk_size]
-        if not chunk:
-            break
-        results.append(" ".join(chunk))
-        if start + chunk_size >= len(words):
-            break
-    print(f"Created {len(results)} chunks.")
-    return results
-
-
-
-
-def embed_texts(texts: Sequence[str]) -> list[list[float]]:
-    """Return one embedding vector for each supplied text, in input order.
-
-    The OpenAI SDK reads the API key from the ``OPENAI_API_KEY`` environment
-    variable. Each non-empty call sends the texts to the API.
-    """
-    input_texts = list(texts)
-    if not input_texts:
-        return []
-
-    from openai import OpenAI
-
-    response = OpenAI().embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=input_texts,
-    )
-    embeddings = [
-        item.embedding for item in sorted(response.data, key=lambda item: item.index)
-    ]
-    return embeddings
-
-
-def embed_documents(texts: Sequence[str], source: str) -> list[DocumentChunk]:
-    """Embed text strings and store each returned vector with its chunk data."""
-    text_list = list(texts)
-    embeddings = embed_texts(text_list)
-    return [
-        DocumentChunk(
-            source=source,
-            chunk_index=index,
-            text=text,
-            embed=embedding,
-        )
-        for index, (text, embedding) in enumerate(
-            zip(text_list, embeddings, strict=True)
-        )
-    ]
-
-
-def load_and_embed_file(
-    path: str | Path, chunk_size: int, overlap_size: int
-) -> list[DocumentChunk]:
-    """Read a text file, chunk it, embed its chunks, and return the objects."""
-    file_path = Path(path)
-    chunks = chunk_text(read_file(file_path), chunk_size, overlap_size)
-    return embed_documents(chunks, source=file_path.name)
-
-
-def embed_query(query: str) -> list[float]:
-    """Embed one search query."""
-    if not query:
-        raise ValueError("Query text cannot be empty.")
-
-    from openai import OpenAI
-
-    response = OpenAI().embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=query,
-    )
-    return response.data[0].embedding
 
 
 def cosine_similarity(vector_a: Sequence[float], vector_b: Sequence[float]) -> float:
@@ -162,9 +63,14 @@ def score_document_chunks(
     )
 
 
-def print_ranked_chunks(document_chunks: Sequence[DocumentChunk]) -> None:
-    """Print the top ranked chunks without exposing their embedding vectors."""
-    for chunk in document_chunks[:TOP_RESULTS]:
+def print_ranked_chunks(
+    document_chunks: Sequence[DocumentChunk], top_k: int = TOP_RESULTS
+) -> None:
+    """Print the requested number of ranked chunks without their vectors."""
+    if top_k < 0:
+        raise ValueError("top_k must be at least zero.")
+
+    for chunk in document_chunks[:top_k]:
         print(
             f"{chunk.similarity:.4f} | {chunk.source} | "
             f"chunk {chunk.chunk_index} | {chunk.text}"
@@ -200,14 +106,20 @@ def search(query: str) -> list[tuple[str, float]]:
 
 def main() -> None:
     """Run a semantic search from the command line."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s | %(name)s | %(message)s",
+    )
     parser = argparse.ArgumentParser(
-        description="Search the Hubble text document semantically."
+        description="Search the NASA text documents semantically."
     )
     parser.add_argument("query", help="The question or search phrase to embed.")
     args = parser.parse_args()
 
-    hubble_path = Path(__file__).with_name("hubble.txt")
-    document_chunks = load_and_embed_file(hubble_path, chunk_size=100, overlap_size=20)
+    data_directory = Path(__file__).with_name("data")
+    document_chunks = load_and_embed_directory(
+        data_directory, chunk_size=100, overlap_size=20
+    )
     ranked_chunks = score_document_chunks(embed_query(args.query), document_chunks)
     print_ranked_chunks(ranked_chunks)
 

@@ -2,6 +2,16 @@
 
 A Python foundation for a retrieval-augmented generation project using NASA data.
 
+The search script reads every `.txt` file in `data/`, chunks and embeds each
+file separately, and retains its filename on every `DocumentChunk` result.
+
+The ingestion responsibilities are split into `file_loader.py`, `chunkers.py`,
+and `embedder.py`; the shared `DocumentChunk` object is defined in `models.py`.
+Embeddings are cached as `data/document_cache.json`, keyed by source filename,
+so a previously loaded file is not embedded again.
+Embedding requests are logged at `INFO` level with the source filename and
+number of chunks sent.
+
 ## Quick start
 
 ```bash
