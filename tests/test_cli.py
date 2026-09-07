@@ -1,7 +1,12 @@
 import json
+import sys
+import types
 
+import embedder
 import file_loader
+import numpy as np
 import semantic_search
+import vector_store
 from models import DocumentChunk
 
 from nasa_rag import __version__
@@ -90,3 +95,46 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
     assert capsys.readouterr().out == "0.9000 | a.txt | chunk 0 | first\n"
+
+
+def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
+    response = types.SimpleNamespace(
+        data=[
+            types.SimpleNamespace(index=1, embedding=[3.0, 4.0]),
+            types.SimpleNamespace(index=0, embedding=[1.0, 2.0]),
+        ]
+    )
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "embeddings",
+                types.SimpleNamespace(create=lambda **kwargs: response),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    embeddings = embedder.embed_texts(["first", "second"], source="nasa.txt")
+
+    assert embeddings.dtype == np.float32
+    assert embeddings.shape == (2, 2)
+    assert embeddings.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+
+
+def test_create_index_adds_every_embedding_vector() -> None:
+    matrix = np.array([[3.0, 4.0], [0.0, 2.0]], dtype=np.float32)
+
+    index = vector_store.create_index(matrix)
+
+    assert index.d == 2
+    assert index.ntotal == 2
+    indexed_vectors = index.reconstruct_n(0, 2)
+    assert np.allclose(np.linalg.norm(indexed_vectors, axis=1), [1.0, 1.0])
+    scores, indexes = index.search(
+        np.array([[0.6, 0.8]], dtype=np.float32), k=1
+    )
+    assert scores.tolist() == [[1.0]]
+    assert indexes.tolist() == [[0]]

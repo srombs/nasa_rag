@@ -6,9 +6,12 @@ import logging
 from math import sqrt
 from pathlib import Path
 
+import numpy as np
+
 from embedder import embed_documents, embed_query
 from file_loader import load_and_embed_directory
 from models import DocumentChunk
+from vector_store import create_index
 
 TOP_RESULTS = 10
 
@@ -119,6 +122,13 @@ def main() -> None:
     data_directory = Path(__file__).with_name("data")
     document_chunks = load_and_embed_directory(
         data_directory, chunk_size=100, overlap_size=20
+    )
+    matrix = np.array([chunk.embed for chunk in document_chunks], dtype=np.float32)
+    index = create_index(matrix)
+    logging.getLogger(__name__).info(
+        "Created FAISS index with %d vectors of dimension %d.",
+        index.ntotal,
+        index.d,
     )
     ranked_chunks = score_document_chunks(embed_query(args.query), document_chunks)
     print_ranked_chunks(ranked_chunks)

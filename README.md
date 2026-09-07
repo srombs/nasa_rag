@@ -11,6 +11,8 @@ Embeddings are cached as `data/document_cache.json`, keyed by source filename,
 so a previously loaded file is not embedded again.
 Embedding requests are logged at `INFO` level with the source filename and
 number of chunks sent.
+`embed_texts` returns embeddings as a NumPy `float32` matrix for FAISS use.
+The CLI creates an exact inner-product FAISS index from the document matrix.
 
 ## Quick start
 

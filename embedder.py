@@ -3,6 +3,8 @@
 from collections.abc import Sequence
 import logging
 
+import numpy as np
+
 from models import DocumentChunk
 
 
@@ -12,11 +14,11 @@ LOGGER = logging.getLogger(__name__)
 
 def embed_texts(
     texts: Sequence[str], source: str | None = None
-) -> list[list[float]]:
-    """Return one embedding vector for each supplied text, in input order."""
+) -> np.ndarray:
+    """Return a float32 embedding matrix with one row per supplied text."""
     input_texts = list(texts)
     if not input_texts:
-        return []
+        return np.empty((0, 0), dtype=np.float32)
 
     from openai import OpenAI
 
@@ -30,9 +32,10 @@ def embed_texts(
         model=EMBEDDING_MODEL,
         input=input_texts,
     )
-    return [
+    embeddings = [
         item.embedding for item in sorted(response.data, key=lambda item: item.index)
     ]
+    return np.array(embeddings, dtype=np.float32)
 
 
 def embed_documents(texts: Sequence[str], source: str) -> list[DocumentChunk]:
@@ -40,7 +43,7 @@ def embed_documents(texts: Sequence[str], source: str) -> list[DocumentChunk]:
     text_list = list(texts)
     embeddings = embed_texts(text_list, source=source)
     return [
-        DocumentChunk(source, index, text, embedding)
+        DocumentChunk(source, index, text, embedding.tolist())
         for index, (text, embedding) in enumerate(
             zip(text_list, embeddings, strict=True)
         )
