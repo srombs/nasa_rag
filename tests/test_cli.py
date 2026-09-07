@@ -149,6 +149,23 @@ def test_create_query_matrix_normalizes_the_query_embedding() -> None:
     assert np.allclose(np.linalg.norm(query_matrix, axis=1), [1.0])
 
 
+def test_search_faiss_returns_the_top_k_document_chunks() -> None:
+    chunks = [
+        DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
+        DocumentChunk("b.txt", 0, "second", [0.0, 1.0]),
+    ]
+    matrix = np.array([chunk.embed for chunk in chunks], dtype=np.float32)
+    index = vector_store.create_index(matrix)
+    query_matrix = vector_store.create_query_matrix([1.0, 0.0])
+
+    ranked_chunks = semantic_search.search_faiss(
+        index, query_matrix, chunks, top_k=1
+    )
+
+    assert ranked_chunks == [chunks[0]]
+    assert ranked_chunks[0].similarity == 1.0
+
+
 def test_load_or_create_index_reuses_a_compatible_cache(monkeypatch, tmp_path) -> None:
     matrix = np.array([[3.0, 4.0], [0.0, 2.0]], dtype=np.float32)
     cache_path = tmp_path / "document.index"

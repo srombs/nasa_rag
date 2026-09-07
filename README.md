@@ -16,6 +16,8 @@ The CLI creates an exact inner-product FAISS index from the document matrix.
 Query embeddings are also converted to one-row, L2-normalized matrices.
 The FAISS index is persisted in `data/document.index` and reused when it
 matches the current document matrix.
+The CLI searches the index with the normalized query matrix and returns the
+top three matching chunks.
 
 ## Quick start
 
