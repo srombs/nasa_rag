@@ -11,7 +11,7 @@ import numpy as np
 from embedder import embed_documents, embed_query
 from file_loader import load_and_embed_directory
 from models import DocumentChunk
-from vector_store import create_index
+from vector_store import create_index, create_query_matrix
 
 TOP_RESULTS = 10
 
@@ -130,7 +130,8 @@ def main() -> None:
         index.ntotal,
         index.d,
     )
-    ranked_chunks = score_document_chunks(embed_query(args.query), document_chunks)
+    query_matrix = create_query_matrix(embed_query(args.query))
+    ranked_chunks = score_document_chunks(query_matrix[0], document_chunks)
     print_ranked_chunks(ranked_chunks)
 
 

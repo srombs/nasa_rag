@@ -138,3 +138,12 @@ def test_create_index_adds_every_embedding_vector() -> None:
     )
     assert scores.tolist() == [[1.0]]
     assert indexes.tolist() == [[0]]
+
+
+def test_create_query_matrix_normalizes_the_query_embedding() -> None:
+    query_matrix = vector_store.create_query_matrix([3.0, 4.0])
+
+    assert query_matrix.dtype == np.float32
+    assert query_matrix.shape == (1, 2)
+    assert np.allclose(query_matrix, [[0.6, 0.8]])
+    assert np.allclose(np.linalg.norm(query_matrix, axis=1), [1.0])
