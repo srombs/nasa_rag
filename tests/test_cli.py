@@ -147,3 +147,20 @@ def test_create_query_matrix_normalizes_the_query_embedding() -> None:
     assert query_matrix.shape == (1, 2)
     assert np.allclose(query_matrix, [[0.6, 0.8]])
     assert np.allclose(np.linalg.norm(query_matrix, axis=1), [1.0])
+
+
+def test_load_or_create_index_reuses_a_compatible_cache(monkeypatch, tmp_path) -> None:
+    matrix = np.array([[3.0, 4.0], [0.0, 2.0]], dtype=np.float32)
+    cache_path = tmp_path / "document.index"
+
+    created_index = vector_store.load_or_create_index(matrix, cache_path)
+
+    def fail_if_called(_matrix):
+        raise AssertionError("A compatible FAISS cache should be reused.")
+
+    monkeypatch.setattr(vector_store, "create_index", fail_if_called)
+    cached_index = vector_store.load_or_create_index(matrix, cache_path)
+
+    assert cache_path.is_file()
+    assert created_index.ntotal == cached_index.ntotal == 2
+    assert created_index.d == cached_index.d == 2

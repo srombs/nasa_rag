@@ -14,6 +14,8 @@ number of chunks sent.
 `embed_texts` returns embeddings as a NumPy `float32` matrix for FAISS use.
 The CLI creates an exact inner-product FAISS index from the document matrix.
 Query embeddings are also converted to one-row, L2-normalized matrices.
+The FAISS index is persisted in `data/document.index` and reused when it
+matches the current document matrix.
 
 ## Quick start
 

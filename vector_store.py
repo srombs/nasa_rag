@@ -1,9 +1,14 @@
 """FAISS vector-index construction for document embeddings."""
 
 from collections.abc import Sequence
+import logging
+from pathlib import Path
 
 import faiss
 import numpy as np
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def create_index(matrix: np.ndarray) -> faiss.IndexFlatIP:
@@ -20,6 +25,31 @@ def create_index(matrix: np.ndarray) -> faiss.IndexFlatIP:
     index = faiss.IndexFlatIP(dimension)
     faiss.normalize_L2(matrix)
     index.add(matrix)
+    return index
+
+
+def load_or_create_index(
+    matrix: np.ndarray, cache_path: str | Path
+) -> faiss.IndexFlatIP:
+    """Load a compatible FAISS index cache or create and persist a new one."""
+    index_path = Path(cache_path)
+    if index_path.exists():
+        try:
+            cached_index = faiss.read_index(str(index_path))
+        except RuntimeError:
+            LOGGER.warning("Ignoring unreadable FAISS index cache: %s", index_path)
+        else:
+            if (
+                cached_index.ntotal == matrix.shape[0]
+                and cached_index.d == matrix.shape[1]
+            ):
+                LOGGER.info("Loaded FAISS index cache from %s.", index_path)
+                return cached_index
+            LOGGER.info("Rebuilding incompatible FAISS index cache: %s", index_path)
+
+    index = create_index(matrix)
+    faiss.write_index(index, str(index_path))
+    LOGGER.info("Wrote FAISS index cache to %s.", index_path)
     return index
 
 

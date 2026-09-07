@@ -11,7 +11,7 @@ import numpy as np
 from embedder import embed_documents, embed_query
 from file_loader import load_and_embed_directory
 from models import DocumentChunk
-from vector_store import create_index, create_query_matrix
+from vector_store import create_query_matrix, load_or_create_index
 
 TOP_RESULTS = 10
 
@@ -124,15 +124,15 @@ def main() -> None:
         data_directory, chunk_size=100, overlap_size=20
     )
     matrix = np.array([chunk.embed for chunk in document_chunks], dtype=np.float32)
-    index = create_index(matrix)
+    index = load_or_create_index(matrix, data_directory / "document.index")
     logging.getLogger(__name__).info(
-        "Created FAISS index with %d vectors of dimension %d.",
+        "FAISS index ready with %d vectors of dimension %d.",
         index.ntotal,
         index.d,
     )
     query_matrix = create_query_matrix(embed_query(args.query))
-    ranked_chunks = score_document_chunks(query_matrix[0], document_chunks)
-    print_ranked_chunks(ranked_chunks)
+    # ranked_chunks = score_document_chunks(query_matrix[0], document_chunks)
+    # print_ranked_chunks(ranked_chunks)
 
 
 if __name__ == "__main__":
