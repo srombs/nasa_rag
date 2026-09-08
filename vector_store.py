@@ -48,6 +48,7 @@ def load_or_create_index(
             LOGGER.info("Rebuilding incompatible FAISS index cache: %s", index_path)
 
     index = create_index(matrix)
+    index_path.parent.mkdir(parents=True, exist_ok=True)
     faiss.write_index(index, str(index_path))
     LOGGER.info("Wrote FAISS index cache to %s.", index_path)
     return index

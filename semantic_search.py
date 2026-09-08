@@ -6,12 +6,9 @@ import logging
 from math import sqrt
 from pathlib import Path
 
-import numpy as np
-
 from embedder import embed_documents, embed_query
-from file_loader import load_and_embed_directory
 from models import DocumentChunk
-from vector_store import create_query_matrix, load_or_create_index
+from retriever import FaissRetriever
 
 TOP_RESULTS = 10
 TOP_K = 3
@@ -81,27 +78,6 @@ def print_ranked_chunks(
         )
 
 
-def search_faiss(
-    index,
-    query_matrix: np.ndarray,
-    document_chunks: Sequence[DocumentChunk],
-    top_k: int,
-) -> list[DocumentChunk]:
-    """Search FAISS and map vector IDs back to their document chunks."""
-    if top_k <= 0:
-        raise ValueError("top_k must be greater than zero.")
-    if top_k > index.ntotal:
-        raise ValueError("top_k cannot exceed the number of indexed chunks.")
-
-    scores, chunk_indexes = index.search(query_matrix, top_k)
-    ranked_chunks = []
-    for score, chunk_index in zip(scores[0], chunk_indexes[0], strict=True):
-        chunk = document_chunks[int(chunk_index)]
-        chunk.similarity = float(score)
-        ranked_chunks.append(chunk)
-    return ranked_chunks
-
-
 def compare_query_to_documents(
     query_embedding: Sequence[float],
     document_embeddings: Sequence[Sequence[float]],
@@ -142,18 +118,9 @@ def main() -> None:
     args = parser.parse_args()
 
     data_directory = Path(__file__).with_name("data")
-    document_chunks = load_and_embed_directory(
-        data_directory, chunk_size=100, overlap_size=20
-    )
-    matrix = np.array([chunk.embed for chunk in document_chunks], dtype=np.float32)
-    index = load_or_create_index(matrix, data_directory / "document.index")
-    logging.getLogger(__name__).info(
-        "FAISS index ready with %d vectors of dimension %d.",
-        index.ntotal,
-        index.d,
-    )
-    query_matrix = create_query_matrix(embed_query(args.query))
-    ranked_chunks = search_faiss(index, query_matrix, document_chunks, top_k=TOP_K)
+    retriever = FaissRetriever(data_directory)
+    retriever.load()
+    ranked_chunks = retriever.search(args.query, top_k=TOP_K)
     print_ranked_chunks(ranked_chunks, top_k=TOP_K)
 
 

@@ -7,17 +7,19 @@ file separately, and retains its filename on every `DocumentChunk` result.
 
 The ingestion responsibilities are split into `file_loader.py`, `chunkers.py`,
 and `embedder.py`; the shared `DocumentChunk` object is defined in `models.py`.
-Embeddings are cached as `data/document_cache.json`, keyed by source filename,
+Embeddings are cached as `cache/document_cache.json`, keyed by source filename,
 so a previously loaded file is not embedded again.
 Embedding requests are logged at `INFO` level with the source filename and
 number of chunks sent.
 `embed_texts` returns embeddings as a NumPy `float32` matrix for FAISS use.
 The CLI creates an exact inner-product FAISS index from the document matrix.
 Query embeddings are also converted to one-row, L2-normalized matrices.
-The FAISS index is persisted in `data/document.index` and reused when it
+The FAISS index is persisted in `cache/document.index` and reused when it
 matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
 top three matching chunks.
+`Retriever` defines `load` and `search`; `FaissRetriever` is the current
+implementation and can be replaced without changing the CLI workflow.
 
 ## Quick start
 

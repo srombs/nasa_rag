@@ -12,3 +12,4 @@ venv/
 # Environment and local data
 .env
 data/
+cache/

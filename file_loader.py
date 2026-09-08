@@ -58,13 +58,15 @@ def save_document_cache(
     path: str | Path, document_cache: dict[str, list[DocumentChunk]]
 ) -> None:
     """Persist chunks and embeddings to a JSON cache, grouped by source name."""
+    cache_path = Path(path)
     cache_data = {
         "documents": {
             source: [chunk.to_cache_record() for chunk in chunks]
             for source, chunks in document_cache.items()
         }
     }
-    Path(path).write_text(
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(
         json.dumps(cache_data, indent=2) + "\n", encoding="utf-8"
     )
 
@@ -81,7 +83,9 @@ def load_and_embed_directory(
         raise NotADirectoryError(f"Text data directory not found: {directory_path}")
 
     resolved_cache_path = (
-        Path(cache_path) if cache_path is not None else directory_path / CACHE_FILE_NAME
+        Path(cache_path)
+        if cache_path is not None
+        else directory_path.parent / "cache" / CACHE_FILE_NAME
     )
     document_cache = load_document_cache(resolved_cache_path)
     document_chunks: list[DocumentChunk] = []

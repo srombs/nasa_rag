@@ -5,6 +5,7 @@ import types
 import embedder
 import file_loader
 import numpy as np
+import retriever
 import semantic_search
 import vector_store
 from models import DocumentChunk
@@ -33,8 +34,9 @@ def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -
 
     monkeypatch.setattr(file_loader, "embed_documents", fake_embed_documents)
 
+    cache_path = tmp_path / "cache" / file_loader.CACHE_FILE_NAME
     chunks = file_loader.load_and_embed_directory(
-        tmp_path, chunk_size=2, overlap_size=0
+        tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
     )
 
     assert embedded_inputs == [
@@ -47,7 +49,6 @@ def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -
         ("b.txt", 0, "four five"),
     ]
 
-    cache_path = tmp_path / file_loader.CACHE_FILE_NAME
     assert json.loads(cache_path.read_text(encoding="utf-8")) == {
         "documents": {
             "a.txt": [
@@ -76,7 +77,7 @@ def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -
     }
 
     cached_chunks = file_loader.load_and_embed_directory(
-        tmp_path, chunk_size=2, overlap_size=0
+        tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
     )
 
     assert embedded_inputs == [
@@ -149,18 +150,18 @@ def test_create_query_matrix_normalizes_the_query_embedding() -> None:
     assert np.allclose(np.linalg.norm(query_matrix, axis=1), [1.0])
 
 
-def test_search_faiss_returns_the_top_k_document_chunks() -> None:
+def test_faiss_retriever_returns_the_top_k_document_chunks(monkeypatch, tmp_path) -> None:
     chunks = [
         DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
         DocumentChunk("b.txt", 0, "second", [0.0, 1.0]),
     ]
     matrix = np.array([chunk.embed for chunk in chunks], dtype=np.float32)
-    index = vector_store.create_index(matrix)
-    query_matrix = vector_store.create_query_matrix([1.0, 0.0])
+    faiss_retriever = retriever.FaissRetriever(tmp_path)
+    faiss_retriever.document_chunks = chunks
+    faiss_retriever.index = vector_store.create_index(matrix)
+    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
 
-    ranked_chunks = semantic_search.search_faiss(
-        index, query_matrix, chunks, top_k=1
-    )
+    ranked_chunks = faiss_retriever.search("find first", top_k=1)
 
     assert ranked_chunks == [chunks[0]]
     assert ranked_chunks[0].similarity == 1.0
