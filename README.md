@@ -20,6 +20,12 @@ The CLI searches the index with the normalized query matrix and returns the
 top three matching chunks.
 `Retriever` defines `load` and `search`; `FaissRetriever` is the current
 implementation and can be replaced without changing the CLI workflow.
+`generator.build_context(results)` formats retrieved chunks for
+`generator.generate_answer(context, question)`, which produces a
+context-grounded answer using the OpenAI Responses API and `gpt-5.6-luna`.
+
+Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
+generate an answer from their combined context.
 
 Run the question evaluation loop with:
 

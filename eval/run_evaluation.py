@@ -55,7 +55,9 @@ def evaluate_questions(
     for question_record in questions:
         question = question_record["question"]
         expected_sources = question_record["expected_sources"]
-        ranked_chunks = semantic_search.run_search(question, retriever, top_k=top_k)
+        ranked_chunks = semantic_search.run_embedded_search(
+            question, retriever, top_k=top_k
+        )
         retrieved_sources = {chunk.source for chunk in ranked_chunks}
         hit = bool(retrieved_sources.intersection(expected_sources))
         hits += hit

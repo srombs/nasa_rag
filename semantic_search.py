@@ -7,6 +7,7 @@ from math import sqrt
 from pathlib import Path
 
 from embedder import embed_documents, embed_query
+from generator import build_context, generate_answer
 from models import DocumentChunk
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, FaissRetriever
 
@@ -118,11 +119,16 @@ def load_retriever(
     return retriever
 
 
-def run_search(
+def run_embedded_search(
     query: str, retriever: FaissRetriever, top_k: int = TOP_K
 ) -> list[DocumentChunk]:
     """Run one query through the configured document retriever."""
     return retriever.search(query, top_k=top_k)
+
+
+def generate_rag_answer(question: str, results: Sequence[DocumentChunk]) -> str:
+    """Build retrieved context and generate an answer to a question."""
+    return generate_answer(build_context(results), question)
 
 
 def main() -> None:
@@ -153,12 +159,19 @@ def main() -> None:
         default=TOP_K,
         help=f"Number of chunks to return (default: {TOP_K}).",
     )
+    parser.add_argument(
+        "--generate-answer",
+        action="store_true",
+        help="Generate a context-grounded answer after retrieval.",
+    )
     args = parser.parse_args()
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
-    ranked_chunks = run_search(args.query, retriever, top_k=args.top_k)
+    ranked_chunks = run_embedded_search(args.query, retriever, top_k=args.top_k)
     print(f"Question: {args.query}")
-    print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+    # print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+    if args.generate_answer:
+        print(f"\nAnswer: {generate_rag_answer(args.query, ranked_chunks)}")
 
 
 if __name__ == "__main__":

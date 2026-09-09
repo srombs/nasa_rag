@@ -4,6 +4,7 @@ import types
 
 import embedder
 import file_loader
+import generator
 import numpy as np
 import retriever
 import semantic_search
@@ -123,6 +124,53 @@ def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
     assert embeddings.dtype == np.float32
     assert embeddings.shape == (2, 2)
     assert embeddings.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+
+
+def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
+    response = types.SimpleNamespace(output_text="NASA was founded in 1958.")
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "responses",
+                types.SimpleNamespace(create=lambda **kwargs: response),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    answer = generator.generate_answer(
+        "NASA was established in 1958.", "When was NASA founded?"
+    )
+
+    assert answer == "NASA was founded in 1958."
+    assert "Context:\nNASA was established in 1958." in caplog.text
+    assert "Question:\nWhen was NASA founded?" in caplog.text
+
+
+def test_build_context_formats_retrieved_chunks() -> None:
+    results = [
+        DocumentChunk("hubble.txt", 0, "Hubble has five instruments.", [1.0]),
+        DocumentChunk("iss.txt", 2, "The ISS supports research.", [1.0]),
+    ]
+
+    context = generator.build_context(results)
+
+    assert context == (
+        "Source: hubble.txt\nChunk: 0\nHubble has five instruments.\n\n"
+        "---\n\nSource: iss.txt\nChunk: 2\nThe ISS supports research."
+    )
+
+
+def test_generate_rag_answer_builds_context_before_generating(monkeypatch) -> None:
+    results = [DocumentChunk("hubble.txt", 0, "Hubble has five instruments.", [1.0])]
+    monkeypatch.setattr(semantic_search, "generate_answer", lambda context, _: context)
+
+    answer = semantic_search.generate_rag_answer("How many instruments?", results)
+
+    assert answer == "Source: hubble.txt\nChunk: 0\nHubble has five instruments."
 
 
 def test_create_index_adds_every_embedding_vector() -> None:
