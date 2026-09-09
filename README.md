@@ -21,6 +21,29 @@ top three matching chunks.
 `Retriever` defines `load` and `search`; `FaissRetriever` is the current
 implementation and can be replaced without changing the CLI workflow.
 
+Run the question evaluation loop with:
+
+```bash
+python3 eval/run_evaluation.py
+```
+
+Both search commands accept `--chunk-size`, `--overlap-size`, and `--top-k`
+(defaults: `100`, `20`, and `3`). Non-default chunk settings use their own
+document and FAISS cache files under `cache/`.
+
+The evaluation reports source-level `Recall@3`: a question is a hit when any
+of its expected source files appears among its three retrieved chunks.
+
+Run all combinations of `Recall@1` through `Recall@5` for chunk/overlap
+settings `50/10`, `100/20`, and `200/50` with:
+
+```bash
+python3 eval/run_grid_evaluation.py
+```
+
+The grid run prints only failed questions with their expected source and
+retrieved chunks, followed by the recall summary table.
+
 ## Quick start
 
 ```bash

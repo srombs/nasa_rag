@@ -1,0 +1,62 @@
+[
+  {
+    "question": "What vehicle was used to help construct the International Space Station?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "How were American astronauts transported to the space station after the reusable spacecraft program ended?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Which spacecraft was used to service the Hubble Space Telescope?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What happened after the loss of Columbia in 2003?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Which program allowed American spacecraft to dock with a Russian space station?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "Why did NASA begin relying on Russian spacecraft to transport astronauts?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "What reusable spacecraft carried both people and cargo into orbit?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "How did NASA's approach to human spaceflight change after the Shuttle era?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Which spacecraft carried scientific laboratories and satellites into orbit?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What role did commercial companies eventually take over from NASA's earlier transportation system?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Which NASA program suffered two fatal vehicle losses during its operational lifetime?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What system was intended to make access to Earth orbit reusable and economical?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "How did NASA support the space station before commercial crew transportation became available?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "What spacecraft launched major observatories and interplanetary probes from its cargo bay?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What developments restored the United States' ability to launch astronauts domestically after nearly a decade?",
+    "expected_sources": ["nasa_overview.txt"]
+  }
+]

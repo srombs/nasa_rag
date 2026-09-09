@@ -1,0 +1,54 @@
+[
+  {
+    "question": "How many instruments does the Hubble telescope have?",
+    "expected_sources": ["hubble.txt"]
+  },
+  {
+    "question": "When did the construction of the Perkin-Elmer mirror begin?",
+    "expected_sources": ["hubble.txt"]
+  },
+  {
+    "question": "How many dollars were spent in inflation adjusted dollars?",
+    "expected_sources": ["hubble.txt"]
+  },
+  {
+    "question": "How was the orbiter protected?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What provides the thrust of the space shuttle?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "The mid deck contains what?",
+    "expected_sources": ["space_shuttle.txt"]
+  },
+  {
+    "question": "What aircraft is electric?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Who is the administrator of NASA?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "What program oversees the Earth science data?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "Where did rocket launch from a commercial spaceport?",
+    "expected_sources": ["nasa_overview.txt"]
+  },
+  {
+    "question": "What are the additional roles of the ISS?",
+    "expected_sources": ["iss.txt"]
+  },
+  {
+    "question": "What power does the russia segment of the station use?",
+    "expected_sources": ["iss.txt"]
+  },
+  {
+    "question": "What does the crew do in their free time?",
+    "expected_sources": ["iss.txt"]
+  }
+]

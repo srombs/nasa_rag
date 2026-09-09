@@ -12,6 +12,10 @@ from models import DocumentChunk
 from vector_store import create_query_matrix, load_or_create_index
 
 
+DEFAULT_CHUNK_SIZE = 100
+DEFAULT_OVERLAP_SIZE = 20
+
+
 class Retriever(ABC):
     """Interface for loading documents and retrieving relevant chunks."""
 
@@ -30,8 +34,8 @@ class FaissRetriever(Retriever):
     def __init__(
         self,
         data_directory: str | Path,
-        chunk_size: int = 100,
-        overlap_size: int = 20,
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        overlap_size: int = DEFAULT_OVERLAP_SIZE,
         cache_directory: str | Path | None = None,
     ) -> None:
         self.data_directory = Path(data_directory)
@@ -45,19 +49,31 @@ class FaissRetriever(Retriever):
         self.document_chunks: list[DocumentChunk] = []
         self.index: faiss.IndexFlatIP | None = None
 
+    def _cache_path(self, file_name: str) -> Path:
+        """Return a cache path unique to non-default chunking settings."""
+        if (
+            self.chunk_size == DEFAULT_CHUNK_SIZE
+            and self.overlap_size == DEFAULT_OVERLAP_SIZE
+        ):
+            return self.cache_directory / file_name
+
+        cache_file = Path(file_name)
+        suffix = f"_{self.chunk_size}_{self.overlap_size}"
+        return self.cache_directory / f"{cache_file.stem}{suffix}{cache_file.suffix}"
+
     def load(self) -> None:
         """Load cached documents and create or load their FAISS index."""
         self.document_chunks = load_and_embed_directory(
             self.data_directory,
             chunk_size=self.chunk_size,
             overlap_size=self.overlap_size,
-            cache_path=self.cache_directory / CACHE_FILE_NAME,
+            cache_path=self._cache_path(CACHE_FILE_NAME),
         )
         matrix = np.array(
             [chunk.embed for chunk in self.document_chunks], dtype=np.float32
         )
         self.index = load_or_create_index(
-            matrix, self.cache_directory / "document.index"
+            matrix, self._cache_path("document.index")
         )
 
     def search(self, query: str, top_k: int) -> list[DocumentChunk]:

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from embedder import embed_documents, embed_query
 from models import DocumentChunk
-from retriever import FaissRetriever
+from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, FaissRetriever
 
 TOP_RESULTS = 10
 TOP_K = 3
@@ -105,6 +105,26 @@ def search(query: str) -> list[tuple[str, float]]:
     return [(chunk.text, chunk.similarity) for chunk in ranked_chunks]
 
 
+def load_retriever(
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap_size: int = DEFAULT_OVERLAP_SIZE,
+) -> FaissRetriever:
+    """Load the FAISS retriever used by command-line and evaluation searches."""
+    data_directory = Path(__file__).with_name("data")
+    retriever = FaissRetriever(
+        data_directory, chunk_size=chunk_size, overlap_size=overlap_size
+    )
+    retriever.load()
+    return retriever
+
+
+def run_search(
+    query: str, retriever: FaissRetriever, top_k: int = TOP_K
+) -> list[DocumentChunk]:
+    """Run one query through the configured document retriever."""
+    return retriever.search(query, top_k=top_k)
+
+
 def main() -> None:
     """Run a semantic search from the command line."""
     logging.basicConfig(
@@ -115,13 +135,30 @@ def main() -> None:
         description="Search the NASA text documents semantically."
     )
     parser.add_argument("query", help="The question or search phrase to embed.")
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=DEFAULT_CHUNK_SIZE,
+        help=f"Words per chunk (default: {DEFAULT_CHUNK_SIZE}).",
+    )
+    parser.add_argument(
+        "--overlap-size",
+        type=int,
+        default=DEFAULT_OVERLAP_SIZE,
+        help=f"Overlapping words per chunk (default: {DEFAULT_OVERLAP_SIZE}).",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=TOP_K,
+        help=f"Number of chunks to return (default: {TOP_K}).",
+    )
     args = parser.parse_args()
 
-    data_directory = Path(__file__).with_name("data")
-    retriever = FaissRetriever(data_directory)
-    retriever.load()
-    ranked_chunks = retriever.search(args.query, top_k=TOP_K)
-    print_ranked_chunks(ranked_chunks, top_k=TOP_K)
+    retriever = load_retriever(args.chunk_size, args.overlap_size)
+    ranked_chunks = run_search(args.query, retriever, top_k=args.top_k)
+    print(f"Question: {args.query}")
+    print_ranked_chunks(ranked_chunks, top_k=args.top_k)
 
 
 if __name__ == "__main__":
