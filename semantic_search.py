@@ -7,7 +7,13 @@ from math import sqrt
 from pathlib import Path
 
 from embedder import embed_documents, embed_query
-from generator import build_context, generate_answer
+from generator import (
+    build_chunk_references,
+    build_context,
+    format_chunk_reference,
+    generate_answer,
+    validate_answer_citations,
+)
 from models import DocumentChunk
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, FaissRetriever
 
@@ -74,8 +80,7 @@ def print_ranked_chunks(
 
     for chunk in document_chunks[:top_k]:
         print(
-            f"{chunk.similarity:.4f} | {chunk.source} | "
-            f"chunk {chunk.chunk_index} | {chunk.text}"
+            f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)} | {chunk.text}"
         )
 
 
@@ -128,7 +133,8 @@ def run_embedded_search(
 
 def generate_rag_answer(question: str, results: Sequence[DocumentChunk]) -> str:
     """Build retrieved context and generate an answer to a question."""
-    return generate_answer(build_context(results), question)
+    answer = generate_answer(build_context(results), question)
+    return validate_answer_citations(answer, build_chunk_references(results))
 
 
 def main() -> None:

@@ -23,6 +23,10 @@ implementation and can be replaced without changing the CLI workflow.
 `generator.build_context(results)` formats retrieved chunks for
 `generator.generate_answer(context, question)`, which produces a
 context-grounded answer using the OpenAI Responses API and `gpt-5.6-luna`.
+Chunk references use `[source.txt, chunk N]`; `generator.build_chunk_references`
+returns those printable keys as a list for validation against the model answer.
+Answers with unrecognized citations receive a validation warning before they
+are printed.
 
 Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
 generate an answer from their combined context.

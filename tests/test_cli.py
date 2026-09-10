@@ -96,7 +96,7 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
 
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
-    assert capsys.readouterr().out == "0.9000 | a.txt | chunk 0 | first\n"
+    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0] | first\n"
 
 
 def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
@@ -166,18 +166,60 @@ def test_build_context_formats_retrieved_chunks() -> None:
     context = generator.build_context(results)
 
     assert context == (
-        "Source: hubble.txt\nChunk: 0\nHubble has five instruments.\n\n"
-        "---\n\nSource: iss.txt\nChunk: 2\nThe ISS supports research."
+        "[hubble.txt, chunk 0]\nHubble has five instruments.\n\n"
+        "---\n\n[iss.txt, chunk 2]\nThe ISS supports research."
     )
+
+    assert generator.build_chunk_references(results) == [
+        "[hubble.txt, chunk 0]",
+        "[iss.txt, chunk 2]",
+    ]
+
+
+def test_validate_answer_citations_appends_warning_for_invalid_citation() -> None:
+    answer = generator.validate_answer_citations(
+        "Hubble has five instruments. [hubble.txt, chunk 99]",
+        ["[hubble.txt, chunk 0]"],
+    )
+
+    assert answer.endswith(
+        "[Validation warning: citations not in retrieved chunks: "
+        "[hubble.txt, chunk 99]]"
+    )
+
+
+def test_validate_answer_citations_keeps_valid_citation() -> None:
+    answer = "Hubble has five instruments. [hubble.txt, chunk 0]"
+
+    assert generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"]) == answer
+
+
+def test_validate_answer_citations_keeps_answer_without_citations() -> None:
+    answer = "Hubble has five instruments."
+
+    assert generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"]) == answer
 
 
 def test_generate_rag_answer_builds_context_before_generating(monkeypatch) -> None:
     results = [DocumentChunk("hubble.txt", 0, "Hubble has five instruments.", [1.0])]
-    monkeypatch.setattr(semantic_search, "generate_answer", lambda context, _: context)
+    request = {}
+
+    def generate_without_citation(context, question):
+        request["context"] = context
+        request["question"] = question
+        return "Answer without citation."
+
+    monkeypatch.setattr(
+        semantic_search, "generate_answer", generate_without_citation
+    )
 
     answer = semantic_search.generate_rag_answer("How many instruments?", results)
 
-    assert answer == "Source: hubble.txt\nChunk: 0\nHubble has five instruments."
+    assert request == {
+        "context": "[hubble.txt, chunk 0]\nHubble has five instruments.",
+        "question": "How many instruments?",
+    }
+    assert answer == "Answer without citation."
 
 
 def test_create_index_adds_every_embedding_vector() -> None:
