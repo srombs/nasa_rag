@@ -5,6 +5,7 @@ import types
 import embedder
 import file_loader
 import generator
+import chunkers
 import numpy as np
 import retriever
 import semantic_search
@@ -16,6 +17,31 @@ from nasa_rag import __version__
 
 def test_version() -> None:
     assert __version__ == "0.1.0"
+
+
+def test_chunk_text_creates_overlapping_word_chunks() -> None:
+    chunks = chunkers.chunk_text(
+        "one two three four five", chunk_size=3, overlap_size=1
+    )
+
+    assert chunks == ["one two three", "three four five"]
+
+
+def test_chunk_text_rejects_invalid_chunk_settings() -> None:
+    invalid_settings = [
+        (0, 0),
+        (-1, 0),
+        (3, -1),
+        (3, 3),
+        (3, 4),
+    ]
+
+    for chunk_size, overlap_size in invalid_settings:
+        try:
+            chunkers.chunk_text("one two three", chunk_size, overlap_size)
+        except ValueError:
+            continue
+        raise AssertionError("Expected invalid chunk settings to be rejected.")
 
 
 def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -> None:
@@ -126,6 +152,58 @@ def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
     assert embeddings.tolist() == [[1.0, 2.0], [3.0, 4.0]]
 
 
+def test_embed_query_raises_embedding_error_for_api_failure(monkeypatch) -> None:
+    def fail_request(**kwargs):
+        raise RuntimeError("API unavailable")
+
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "embeddings",
+                types.SimpleNamespace(create=fail_request),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    try:
+        embedder.embed_query("When was NASA founded?")
+    except embedder.EmbeddingError as error:
+        assert isinstance(error.__cause__, RuntimeError)
+        assert str(error) == "Unable to embed the query."
+    else:
+        raise AssertionError("Expected EmbeddingError for an API failure.")
+
+
+def test_embed_texts_raises_embedding_error_for_api_failure(monkeypatch) -> None:
+    def fail_request(**kwargs):
+        raise RuntimeError("API unavailable")
+
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "embeddings",
+                types.SimpleNamespace(create=fail_request),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    try:
+        embedder.embed_texts(["NASA document"], source="nasa.txt")
+    except embedder.EmbeddingError as error:
+        assert isinstance(error.__cause__, RuntimeError)
+        assert str(error) == "Unable to embed text chunks."
+    else:
+        raise AssertionError("Expected EmbeddingError for an API failure.")
+
+
 def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
     response = types.SimpleNamespace(output_text="NASA was founded in 1958.")
     request = {}
@@ -155,6 +233,56 @@ def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
     assert "Context:\nNASA was established in 1958." in caplog.text
     assert "Question:\nWhen was NASA founded?" in caplog.text
     assert request["instructions"] == generator.GENERATION_INSTRUCTIONS
+
+
+def test_generate_answer_wraps_api_failures(monkeypatch) -> None:
+    def fail_request(**kwargs):
+        raise RuntimeError("Generation API unavailable")
+
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "responses",
+                types.SimpleNamespace(create=fail_request),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    try:
+        generator.generate_answer("NASA context", "What is NASA?")
+    except generator.GenerationError as error:
+        assert isinstance(error.__cause__, RuntimeError)
+        assert str(error) == "Unable to generate an answer."
+    else:
+        raise AssertionError("Expected GenerationError for an API failure.")
+
+
+def test_generate_answer_rejects_empty_model_output(monkeypatch) -> None:
+    response = types.SimpleNamespace(output_text="   ")
+    client = type(
+        "Client",
+        (),
+        {
+            "__init__": lambda self: setattr(
+                self,
+                "responses",
+                types.SimpleNamespace(create=lambda **kwargs: response),
+            )
+        },
+    )
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=client))
+
+    try:
+        generator.generate_answer("NASA context", "What is NASA?")
+    except generator.GenerationError as error:
+        assert error.__cause__ is None
+        assert str(error) == "The generation API returned an empty answer."
+    else:
+        raise AssertionError("Expected GenerationError for empty model output.")
 
 
 def test_build_context_formats_retrieved_chunks() -> None:
@@ -191,13 +319,19 @@ def test_validate_answer_citations_appends_warning_for_invalid_citation() -> Non
 def test_validate_answer_citations_keeps_valid_citation() -> None:
     answer = "Hubble has five instruments. [hubble.txt, chunk 0]"
 
-    assert generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"]) == answer
+    assert (
+        generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"])
+        == answer
+    )
 
 
 def test_validate_answer_citations_keeps_answer_without_citations() -> None:
     answer = "Hubble has five instruments."
 
-    assert generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"]) == answer
+    assert (
+        generator.validate_answer_citations(answer, ["[hubble.txt, chunk 0]"])
+        == answer
+    )
 
 
 def test_generate_rag_answer_builds_context_before_generating(monkeypatch) -> None:
@@ -238,6 +372,53 @@ def test_create_index_adds_every_embedding_vector() -> None:
     assert indexes.tolist() == [[0]]
 
 
+def test_create_index_rejects_invalid_embedding_matrices() -> None:
+    invalid_matrices = [
+        np.array([1.0, 2.0], dtype=np.float32),
+        np.array([[0.0, 0.0]], dtype=np.float32),
+        np.array([[np.nan, 1.0]], dtype=np.float32),
+    ]
+
+    for matrix in invalid_matrices:
+        try:
+            vector_store.create_index(matrix)
+        except ValueError:
+            continue
+        raise AssertionError("Expected invalid embedding matrix to be rejected.")
+
+
+def test_create_index_wraps_faiss_failures(monkeypatch) -> None:
+    def fail_index_creation(_dimension):
+        raise RuntimeError("FAISS unavailable")
+
+    monkeypatch.setattr(vector_store.faiss, "IndexFlatIP", fail_index_creation)
+
+    try:
+        vector_store.create_index(np.array([[1.0, 0.0]], dtype=np.float32))
+    except vector_store.VectorStoreError as error:
+        assert isinstance(error.__cause__, RuntimeError)
+        assert str(error) == "Unable to create FAISS index."
+    else:
+        raise AssertionError("Expected VectorStoreError for a FAISS failure.")
+
+
+def test_validate_index_rejects_mismatched_chunk_metadata() -> None:
+    index = vector_store.create_index(
+        np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]], dtype=np.float32)
+    )
+    chunks = [
+        DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
+        DocumentChunk("b.txt", 0, "second", [0.0, 1.0]),
+    ]
+
+    try:
+        vector_store.validate_index(index, chunks)
+    except vector_store.VectorStoreError as error:
+        assert str(error) == "Index contains 3 vectors but metadata contains 2 chunks."
+    else:
+        raise AssertionError("Expected mismatched index metadata to be rejected.")
+
+
 def test_create_query_matrix_normalizes_the_query_embedding() -> None:
     query_matrix = vector_store.create_query_matrix([3.0, 4.0])
 
@@ -247,7 +428,18 @@ def test_create_query_matrix_normalizes_the_query_embedding() -> None:
     assert np.allclose(np.linalg.norm(query_matrix, axis=1), [1.0])
 
 
-def test_faiss_retriever_returns_the_top_k_document_chunks(monkeypatch, tmp_path) -> None:
+def test_create_query_matrix_rejects_zero_and_nonfinite_vectors() -> None:
+    for embedding in ([0.0, 0.0], [np.inf, 1.0]):
+        try:
+            vector_store.create_query_matrix(embedding)
+        except ValueError:
+            continue
+        raise AssertionError("Expected invalid query embedding to be rejected.")
+
+
+def test_faiss_retriever_returns_the_top_k_document_chunks(
+    monkeypatch, tmp_path
+) -> None:
     chunks = [
         DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
         DocumentChunk("b.txt", 0, "second", [0.0, 1.0]),
@@ -262,6 +454,63 @@ def test_faiss_retriever_returns_the_top_k_document_chunks(monkeypatch, tmp_path
 
     assert ranked_chunks == [chunks[0]]
     assert ranked_chunks[0].similarity == 1.0
+
+
+def test_faiss_retriever_rejects_query_dimension_mismatch(
+    monkeypatch, tmp_path
+) -> None:
+    faiss_retriever = retriever.FaissRetriever(tmp_path)
+    faiss_retriever.document_chunks = [
+        DocumentChunk("a.txt", 0, "first", [1.0, 0.0])
+    ]
+    faiss_retriever.index = vector_store.create_index(
+        np.array([[1.0, 0.0]], dtype=np.float32)
+    )
+    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0, 0.0])
+
+    try:
+        faiss_retriever.search("find first", top_k=1)
+    except ValueError as error:
+        assert str(error) == "Query embedding dimension does not match the FAISS index."
+    else:
+        raise AssertionError("Expected query/index dimension mismatch to be rejected.")
+
+
+def test_faiss_retriever_wraps_faiss_search_failures(monkeypatch, tmp_path) -> None:
+    class BrokenIndex:
+        d = 2
+        ntotal = 1
+
+        def search(self, query_matrix, top_k):
+            raise RuntimeError("FAISS search failed")
+
+    faiss_retriever = retriever.FaissRetriever(tmp_path)
+    faiss_retriever.document_chunks = [DocumentChunk("a.txt", 0, "first", [1.0, 0.0])]
+    faiss_retriever.index = BrokenIndex()
+    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
+
+    try:
+        faiss_retriever.search("find first", top_k=1)
+    except retriever.RetrievalError as error:
+        assert isinstance(error.__cause__, RuntimeError)
+        assert str(error) == "Unable to search the FAISS index."
+    else:
+        raise AssertionError("Expected RetrievalError for a FAISS search failure.")
+
+
+def test_faiss_retriever_wraps_load_failures(monkeypatch, tmp_path) -> None:
+    def fail_load(**kwargs):
+        raise OSError("Cache unavailable")
+
+    monkeypatch.setattr(retriever, "load_and_embed_directory", fail_load)
+
+    try:
+        retriever.FaissRetriever(tmp_path).load()
+    except retriever.RetrievalError as error:
+        assert isinstance(error.__cause__, OSError)
+        assert str(error) == "Unable to load the FAISS retriever."
+    else:
+        raise AssertionError("Expected RetrievalError for a load failure.")
 
 
 def test_load_or_create_index_reuses_a_compatible_cache(monkeypatch, tmp_path) -> None:

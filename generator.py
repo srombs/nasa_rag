@@ -37,6 +37,10 @@ LOGGER = logging.getLogger(__name__)
 CITATION_PATTERN = re.compile(r"\[[^\[\]\n]+,\s*chunk\s+\d+\]")
 
 
+class GenerationError(RuntimeError):
+    """Raised when an answer-generation request cannot be completed."""
+
+
 def format_chunk_reference(chunk: DocumentChunk) -> str:
     """Return the stable citation key for a retrieved document chunk."""
     return f"[{chunk.source}, chunk {chunk.chunk_index}]"
@@ -75,21 +79,27 @@ def generate_answer(context: str, question: str) -> str:
     if not question.strip():
         raise ValueError("Question cannot be empty.")
 
-    from openai import OpenAI
-
     input_text = f"Context:\n{context}\n\nQuestion:\n{question}"
     LOGGER.info(
         "Sending generation request to %s with input:\n%s",
         GENERATION_MODEL,
         input_text,
     )
-    response = OpenAI().responses.create(
-        model=GENERATION_MODEL,
-        instructions=GENERATION_INSTRUCTIONS,
-        input=input_text,
-    )
-    LOGGER.info("Received generation response from %s.", GENERATION_MODEL)
-    answer = response.output_text.strip()
-    if not answer:
-        raise ValueError("The generation API returned an empty answer.")
-    return answer
+    try:
+        from openai import OpenAI
+
+        response = OpenAI().responses.create(
+            model=GENERATION_MODEL,
+            instructions=GENERATION_INSTRUCTIONS,
+            input=input_text,
+        )
+        LOGGER.info("Received generation response from %s.", GENERATION_MODEL)
+        answer = response.output_text.strip()
+        if not answer:
+            raise GenerationError("The generation API returned an empty answer.")
+        return answer
+    except GenerationError:
+        raise
+    except Exception as error:
+        LOGGER.exception("Failed to generate answer from %s.", GENERATION_MODEL)
+        raise GenerationError("Unable to generate an answer.") from error

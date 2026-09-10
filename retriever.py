@@ -9,11 +9,20 @@ import numpy as np
 from embedder import embed_query
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
 from models import DocumentChunk
-from vector_store import create_query_matrix, load_or_create_index
+from vector_store import (
+    VectorStoreError,
+    create_query_matrix,
+    load_or_create_index,
+    validate_index,
+)
 
 
 DEFAULT_CHUNK_SIZE = 100
 DEFAULT_OVERLAP_SIZE = 20
+
+
+class RetrievalError(RuntimeError):
+    """Raised when a loaded retriever cannot complete a search."""
 
 
 class Retriever(ABC):
@@ -63,18 +72,27 @@ class FaissRetriever(Retriever):
 
     def load(self) -> None:
         """Load cached documents and create or load their FAISS index."""
-        self.document_chunks = load_and_embed_directory(
-            self.data_directory,
-            chunk_size=self.chunk_size,
-            overlap_size=self.overlap_size,
-            cache_path=self._cache_path(CACHE_FILE_NAME),
-        )
-        matrix = np.array(
-            [chunk.embed for chunk in self.document_chunks], dtype=np.float32
-        )
-        self.index = load_or_create_index(
-            matrix, self._cache_path("document.index")
-        )
+        try:
+            self.document_chunks = load_and_embed_directory(
+                self.data_directory,
+                chunk_size=self.chunk_size,
+                overlap_size=self.overlap_size,
+                cache_path=self._cache_path(CACHE_FILE_NAME),
+            )
+            if not self.document_chunks:
+                raise ValueError("No document chunks were loaded.")
+            matrix = np.array(
+                [chunk.embed for chunk in self.document_chunks], dtype=np.float32
+            )
+            index = load_or_create_index(
+                matrix, self._cache_path("document.index")
+            )
+            validate_index(index, self.document_chunks)
+            self.index = index
+        except (ValueError, VectorStoreError):
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to load the FAISS retriever.") from error
 
     def search(self, query: str, top_k: int) -> list[DocumentChunk]:
         """Search the normalized query embedding and return matching chunks."""
@@ -85,8 +103,17 @@ class FaissRetriever(Retriever):
         if top_k > self.index.ntotal:
             raise ValueError("top_k cannot exceed the number of indexed chunks.")
 
-        query_matrix = create_query_matrix(embed_query(query))
-        scores, chunk_indexes = self.index.search(query_matrix, top_k)
+        try:
+            query_matrix = create_query_matrix(embed_query(query))
+            if query_matrix.shape[1] != self.index.d:
+                raise ValueError(
+                    "Query embedding dimension does not match the FAISS index."
+                )
+            scores, chunk_indexes = self.index.search(query_matrix, top_k)
+        except ValueError:
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to search the FAISS index.") from error
         ranked_chunks = []
         for score, chunk_index in zip(scores[0], chunk_indexes[0], strict=True):
             chunk = self.document_chunks[int(chunk_index)]
