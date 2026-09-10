@@ -128,6 +128,12 @@ def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
 
 def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
     response = types.SimpleNamespace(output_text="NASA was founded in 1958.")
+    request = {}
+
+    def create_response(**kwargs):
+        request.update(kwargs)
+        return response
+
     client = type(
         "Client",
         (),
@@ -135,7 +141,7 @@ def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
             "__init__": lambda self: setattr(
                 self,
                 "responses",
-                types.SimpleNamespace(create=lambda **kwargs: response),
+                types.SimpleNamespace(create=create_response),
             )
         },
     )
@@ -148,6 +154,7 @@ def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
     assert answer == "NASA was founded in 1958."
     assert "Context:\nNASA was established in 1958." in caplog.text
     assert "Question:\nWhen was NASA founded?" in caplog.text
+    assert request["instructions"] == generator.GENERATION_INSTRUCTIONS
 
 
 def test_build_context_formats_retrieved_chunks() -> None:
