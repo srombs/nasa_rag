@@ -1,20 +1,13 @@
-"""Retrieval interfaces and the FAISS-backed implementation."""
+"""Generic retrieval orchestration for documents, tokens, and FAISS."""
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 
-import faiss
-import numpy as np
-
 from embedder import embed_query
+from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
-from models import DocumentChunk
-from vector_store import (
-    VectorStoreError,
-    create_query_matrix,
-    load_or_create_index,
-    validate_index,
-)
+from models import DocumentChunk, TokenizedChunk
+from tokenizer import score_tokenized_chunks, tokenize_chunks, tokenize_text
+from vector_store import VectorStoreError
 
 
 DEFAULT_CHUNK_SIZE = 100
@@ -25,20 +18,8 @@ class RetrievalError(RuntimeError):
     """Raised when a loaded retriever cannot complete a search."""
 
 
-class Retriever(ABC):
-    """Interface for loading documents and retrieving relevant chunks."""
-
-    @abstractmethod
-    def load(self) -> None:
-        """Load the documents and prepare the retriever for search."""
-
-    @abstractmethod
-    def search(self, query: str, top_k: int) -> list[DocumentChunk]:
-        """Return the top matching document chunks for a query."""
-
-
-class FaissRetriever(Retriever):
-    """Retriever backed by a cached FAISS inner-product index."""
+class Retriever:
+    """Load documents and tokens, then delegate vector search to FAISS."""
 
     def __init__(
         self,
@@ -56,7 +37,8 @@ class FaissRetriever(Retriever):
             else self.data_directory.parent / "cache"
         )
         self.document_chunks: list[DocumentChunk] = []
-        self.index: faiss.IndexFlatIP | None = None
+        self.tokenized_chunks: list[TokenizedChunk] = []
+        self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
 
     def _cache_path(self, file_name: str) -> Path:
         """Return a cache path unique to non-default chunking settings."""
@@ -71,7 +53,7 @@ class FaissRetriever(Retriever):
         return self.cache_directory / f"{cache_file.stem}{suffix}{cache_file.suffix}"
 
     def load(self) -> None:
-        """Load cached documents and create or load their FAISS index."""
+        """Load documents, tokenize text, and prepare FAISS retrieval."""
         try:
             self.document_chunks = load_and_embed_directory(
                 self.data_directory,
@@ -81,42 +63,46 @@ class FaissRetriever(Retriever):
             )
             if not self.document_chunks:
                 raise ValueError("No document chunks were loaded.")
-            matrix = np.array(
-                [chunk.embed for chunk in self.document_chunks], dtype=np.float32
-            )
-            index = load_or_create_index(
-                matrix, self._cache_path("document.index")
-            )
-            validate_index(index, self.document_chunks)
-            self.index = index
+            self.tokenized_chunks = tokenize_chunks(self.document_chunks)
+            self.faiss_retriever.load(self.document_chunks)
         except (ValueError, VectorStoreError):
             raise
         except Exception as error:
-            raise RetrievalError("Unable to load the FAISS retriever.") from error
+            raise RetrievalError("Unable to load the retriever.") from error
 
     def search(self, query: str, top_k: int) -> list[DocumentChunk]:
-        """Search the normalized query embedding and return matching chunks."""
-        if self.index is None:
-            raise RuntimeError("Load the retriever before searching.")
-        if top_k <= 0:
-            raise ValueError("top_k must be greater than zero.")
-        if top_k > self.index.ntotal:
-            raise ValueError("top_k cannot exceed the number of indexed chunks.")
+        """Embed a query and delegate its vector search to FAISS."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
 
         try:
-            query_matrix = create_query_matrix(embed_query(query))
-            if query_matrix.shape[1] != self.index.d:
-                raise ValueError(
-                    "Query embedding dimension does not match the FAISS index."
-                )
-            scores, chunk_indexes = self.index.search(query_matrix, top_k)
+            return self.faiss_retriever.search(embed_query(query), top_k)
         except ValueError:
             raise
         except Exception as error:
             raise RetrievalError("Unable to search the FAISS index.") from error
+
+    def search_keywords(self, query: str, top_k: int) -> list[DocumentChunk]:
+        """Rank loaded chunks by normalized keyword overlap with a query."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than zero.")
+        if top_k > len(self.tokenized_chunks):
+            raise ValueError("top_k cannot exceed the number of loaded chunks.")
+
+        tokenized_query = tokenize_text(query)
+        ranked_tokens = score_tokenized_chunks(
+            tokenized_query, self.tokenized_chunks
+        )
+        chunk_by_reference = {
+            (chunk.source, chunk.chunk_index): chunk for chunk in self.document_chunks
+        }
         ranked_chunks = []
-        for score, chunk_index in zip(scores[0], chunk_indexes[0], strict=True):
-            chunk = self.document_chunks[int(chunk_index)]
-            chunk.similarity = float(score)
+        for tokenized_chunk, score in ranked_tokens[:top_k]:
+            chunk = chunk_by_reference[
+                (tokenized_chunk.source, tokenized_chunk.chunk_index)
+            ]
+            chunk.similarity = score
             ranked_chunks.append(chunk)
         return ranked_chunks

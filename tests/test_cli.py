@@ -1,16 +1,19 @@
 import json
+import logging
 import sys
 import types
 
 import embedder
+import faiss_retriever
 import file_loader
 import generator
 import chunkers
 import numpy as np
 import retriever
 import semantic_search
+import tokenizer
 import vector_store
-from models import DocumentChunk
+from models import DocumentChunk, TokenizedChunk
 
 from nasa_rag import __version__
 
@@ -42,6 +45,78 @@ def test_chunk_text_rejects_invalid_chunk_settings() -> None:
         except ValueError:
             continue
         raise AssertionError("Expected invalid chunk settings to be rejected.")
+
+
+def test_tokenize_chunks_creates_a_token_set_for_each_chunk() -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 248, "ISS crews study Mars, Mars!", [1.0]),
+        DocumentChunk("hubble.txt", 3, "Hubble observes galaxies.", [1.0]),
+    ]
+
+    tokenized_chunks = tokenizer.tokenize_chunks(chunks)
+
+    assert tokenized_chunks == [
+        TokenizedChunk("iss.txt", 248, {"iss", "crews", "study", "mars"}),
+        TokenizedChunk("hubble.txt", 3, {"hubble", "observes", "galaxies"}),
+    ]
+
+
+def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
+    chunks = [
+        TokenizedChunk("iss.txt", 0, {"iss", "crew", "research"}),
+        TokenizedChunk("hubble.txt", 1, {"hubble", "telescope"}),
+    ]
+
+    scores = tokenizer.score_tokenized_chunks(
+        tokenizer.tokenize_text("ISS research telescope"), chunks
+    )
+
+    assert scores == [(chunks[0], 2 / 3), (chunks[1], 1 / 3)]
+    assert tokenizer.keyword_score(set(), chunks[0].tokens) == 0.0
+
+
+def test_retriever_loads_document_tokens_and_faiss(monkeypatch, tmp_path) -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 248, "ISS crews study Mars.", [1.0, 0.0]),
+        DocumentChunk("hubble.txt", 3, "Hubble observes galaxies.", [0.0, 1.0]),
+    ]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+
+    assert generic_retriever.document_chunks == chunks
+    assert generic_retriever.tokenized_chunks == [
+        TokenizedChunk("iss.txt", 248, {"iss", "crews", "study", "mars"}),
+        TokenizedChunk("hubble.txt", 3, {"hubble", "observes", "galaxies"}),
+    ]
+    assert generic_retriever.faiss_retriever.index is not None
+    assert generic_retriever.faiss_retriever.index.ntotal == len(chunks)
+
+
+def test_retriever_search_keywords_returns_matching_document_chunks(
+    monkeypatch, tmp_path
+) -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS crew research.", [1.0, 0.0]),
+        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [0.0, 1.0]),
+    ]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+
+    results = generic_retriever.search_keywords("ISS research", top_k=1)
+
+    assert results == [chunks[0]]
+    assert results[0].similarity == 1.0
 
 
 def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -> None:
@@ -205,6 +280,7 @@ def test_embed_texts_raises_embedding_error_for_api_failure(monkeypatch) -> None
 
 
 def test_generate_answer_uses_context_and_question(monkeypatch, caplog) -> None:
+    caplog.set_level(logging.INFO, logger=generator.__name__)
     response = types.SimpleNamespace(output_text="NASA was founded in 1958.")
     request = {}
 
@@ -437,39 +513,26 @@ def test_create_query_matrix_rejects_zero_and_nonfinite_vectors() -> None:
         raise AssertionError("Expected invalid query embedding to be rejected.")
 
 
-def test_faiss_retriever_returns_the_top_k_document_chunks(
-    monkeypatch, tmp_path
-) -> None:
+def test_faiss_retriever_returns_the_top_k_document_chunks(tmp_path) -> None:
     chunks = [
         DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
         DocumentChunk("b.txt", 0, "second", [0.0, 1.0]),
     ]
-    matrix = np.array([chunk.embed for chunk in chunks], dtype=np.float32)
-    faiss_retriever = retriever.FaissRetriever(tmp_path)
-    faiss_retriever.document_chunks = chunks
-    faiss_retriever.index = vector_store.create_index(matrix)
-    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
+    faiss_search = faiss_retriever.FaissRetriever(tmp_path / "document.index")
+    faiss_search.load(chunks)
 
-    ranked_chunks = faiss_retriever.search("find first", top_k=1)
+    ranked_chunks = faiss_search.search([1.0, 0.0], top_k=1)
 
     assert ranked_chunks == [chunks[0]]
     assert ranked_chunks[0].similarity == 1.0
 
 
-def test_faiss_retriever_rejects_query_dimension_mismatch(
-    monkeypatch, tmp_path
-) -> None:
-    faiss_retriever = retriever.FaissRetriever(tmp_path)
-    faiss_retriever.document_chunks = [
-        DocumentChunk("a.txt", 0, "first", [1.0, 0.0])
-    ]
-    faiss_retriever.index = vector_store.create_index(
-        np.array([[1.0, 0.0]], dtype=np.float32)
-    )
-    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0, 0.0])
+def test_faiss_retriever_rejects_query_dimension_mismatch(tmp_path) -> None:
+    faiss_search = faiss_retriever.FaissRetriever(tmp_path / "document.index")
+    faiss_search.load([DocumentChunk("a.txt", 0, "first", [1.0, 0.0])])
 
     try:
-        faiss_retriever.search("find first", top_k=1)
+        faiss_search.search([1.0, 0.0, 0.0], top_k=1)
     except ValueError as error:
         assert str(error) == "Query embedding dimension does not match the FAISS index."
     else:
@@ -484,13 +547,15 @@ def test_faiss_retriever_wraps_faiss_search_failures(monkeypatch, tmp_path) -> N
         def search(self, query_matrix, top_k):
             raise RuntimeError("FAISS search failed")
 
-    faiss_retriever = retriever.FaissRetriever(tmp_path)
-    faiss_retriever.document_chunks = [DocumentChunk("a.txt", 0, "first", [1.0, 0.0])]
-    faiss_retriever.index = BrokenIndex()
+    generic_retriever = retriever.Retriever(tmp_path)
+    generic_retriever.faiss_retriever.document_chunks = [
+        DocumentChunk("a.txt", 0, "first", [1.0, 0.0])
+    ]
+    generic_retriever.faiss_retriever.index = BrokenIndex()
     monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
 
     try:
-        faiss_retriever.search("find first", top_k=1)
+        generic_retriever.search("find first", top_k=1)
     except retriever.RetrievalError as error:
         assert isinstance(error.__cause__, RuntimeError)
         assert str(error) == "Unable to search the FAISS index."
@@ -499,16 +564,16 @@ def test_faiss_retriever_wraps_faiss_search_failures(monkeypatch, tmp_path) -> N
 
 
 def test_faiss_retriever_wraps_load_failures(monkeypatch, tmp_path) -> None:
-    def fail_load(**kwargs):
+    def fail_load(*_args, **_kwargs):
         raise OSError("Cache unavailable")
 
     monkeypatch.setattr(retriever, "load_and_embed_directory", fail_load)
 
     try:
-        retriever.FaissRetriever(tmp_path).load()
+        retriever.Retriever(tmp_path).load()
     except retriever.RetrievalError as error:
         assert isinstance(error.__cause__, OSError)
-        assert str(error) == "Unable to load the FAISS retriever."
+        assert str(error) == "Unable to load the retriever."
     else:
         raise AssertionError("Expected RetrievalError for a load failure.")
 

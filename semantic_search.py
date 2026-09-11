@@ -15,7 +15,7 @@ from generator import (
     validate_answer_citations,
 )
 from models import DocumentChunk
-from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, FaissRetriever
+from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
 TOP_K = 3
@@ -114,10 +114,10 @@ def search(query: str) -> list[tuple[str, float]]:
 def load_retriever(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap_size: int = DEFAULT_OVERLAP_SIZE,
-) -> FaissRetriever:
-    """Load the FAISS retriever used by command-line and evaluation searches."""
+) -> Retriever:
+    """Load the document retriever used by command-line and evaluation searches."""
     data_directory = Path(__file__).with_name("data")
-    retriever = FaissRetriever(
+    retriever = Retriever(
         data_directory, chunk_size=chunk_size, overlap_size=overlap_size
     )
     retriever.load()
@@ -125,7 +125,7 @@ def load_retriever(
 
 
 def run_embedded_search(
-    query: str, retriever: FaissRetriever, top_k: int = TOP_K
+    query: str, retriever: Retriever, top_k: int = TOP_K
 ) -> list[DocumentChunk]:
     """Run one query through the configured document retriever."""
     return retriever.search(query, top_k=top_k)

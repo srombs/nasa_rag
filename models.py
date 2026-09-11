@@ -42,3 +42,12 @@ class DocumentChunk:
             raise ValueError("Document cache embedding must contain only numbers.")
 
         return cls(source, chunk_index, text, [float(value) for value in embed])
+
+
+@dataclass
+class TokenizedChunk:
+    """A document chunk's source metadata and normalized token set."""
+
+    source: str
+    chunk_index: int
+    tokens: set[str]

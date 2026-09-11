@@ -18,8 +18,11 @@ The FAISS index is persisted in `cache/document.index` and reused when it
 matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
 top three matching chunks.
-`Retriever` defines `load` and `search`; `FaissRetriever` is the current
-implementation and can be replaced without changing the CLI workflow.
+`Retriever` owns document loading and tokenization, then delegates vector
+indexing and search to its `FaissRetriever`. `tokenizer.tokenize_chunks`
+creates standalone `TokenizedChunk` objects containing a source, chunk index,
+and normalized token set. `Retriever.search_keywords(query, top_k)` ranks
+those chunks by the fraction of unique query tokens found in each chunk.
 `generator.build_context(results)` formats retrieved chunks for
 `generator.generate_answer(context, question)`, which produces a
 context-grounded answer using the OpenAI Responses API and `gpt-5.6-luna`.
