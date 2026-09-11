@@ -51,3 +51,13 @@ class TokenizedChunk:
     source: str
     chunk_index: int
     tokens: set[str]
+
+
+@dataclass
+class HybridSearchResult:
+    """A document chunk and each score used to rank it in hybrid search."""
+
+    document_chunk: DocumentChunk
+    semantic_score: float
+    keyword_score: float
+    hybrid_score: float

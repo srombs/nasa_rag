@@ -7,11 +7,36 @@ from models import DocumentChunk, TokenizedChunk
 
 
 TOKEN_PATTERN = re.compile(r"\b\w+\b")
+STOP_WORDS = {
+    "the",
+    "a",
+    "an",
+    "of",
+    "in",
+    "on",
+    "at",
+    "to",
+    "for",
+    "and",
+    "or",
+    "what",
+    "which",
+    "how",
+    "was",
+    "were",
+    "is",
+    "are",
+    "after",
+}
 
 
 def tokenize_text(text: str) -> set[str]:
-    """Return lowercase word tokens from text, with duplicates removed."""
-    return set(TOKEN_PATTERN.findall(text.lower()))
+    """Return lowercase non-stop-word tokens, with duplicates removed."""
+    return {
+        token
+        for token in TOKEN_PATTERN.findall(text.lower())
+        if token not in STOP_WORDS
+    }
 
 
 def tokenize_chunks(chunks: Sequence[DocumentChunk]) -> list[TokenizedChunk]:

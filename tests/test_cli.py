@@ -13,7 +13,7 @@ import retriever
 import semantic_search
 import tokenizer
 import vector_store
-from models import DocumentChunk, TokenizedChunk
+from models import DocumentChunk, HybridSearchResult, TokenizedChunk
 
 from nasa_rag import __version__
 
@@ -59,6 +59,13 @@ def test_tokenize_chunks_creates_a_token_set_for_each_chunk() -> None:
         TokenizedChunk("iss.txt", 248, {"iss", "crews", "study", "mars"}),
         TokenizedChunk("hubble.txt", 3, {"hubble", "observes", "galaxies"}),
     ]
+
+
+def test_tokenize_text_excludes_stop_words() -> None:
+    assert tokenizer.tokenize_text("What is the power of the ISS?") == {
+        "power",
+        "iss",
+    }
 
 
 def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
@@ -117,6 +124,34 @@ def test_retriever_search_keywords_returns_matching_document_chunks(
 
     assert results == [chunks[0]]
     assert results[0].similarity == 1.0
+
+
+def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
+    monkeypatch, tmp_path
+) -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS crew research.", [1.0, 0.0]),
+        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [0.0, 1.0]),
+    ]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+
+    semantic_results, results = generic_retriever.search_semantic_and_hybrid(
+        "ISS telescope", top_k=2, semantic_weight=0.7, keyword_weight=0.3
+    )
+
+    assert semantic_results == chunks
+    assert [result.document_chunk for result in results] == chunks
+    assert results[0].semantic_score == 1.0
+    assert results[0].keyword_score == 0.5
+    assert results[0].hybrid_score == 0.85
+    assert results[1].hybrid_score == 0.15
 
 
 def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -> None:
@@ -197,7 +232,113 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
 
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
-    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0] | first\n"
+    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0]\n"
+
+
+def test_run_keyword_search_delegates_to_the_retriever() -> None:
+    class KeywordRetriever:
+        def search_keywords(self, query, top_k):
+            assert query == "ISS research"
+            assert top_k == 2
+            return [DocumentChunk("iss.txt", 0, "ISS research.", [1.0])]
+
+    results = semantic_search.run_keyword_search(
+        "ISS research", KeywordRetriever(), top_k=2
+    )
+
+    assert [(result.source, result.chunk_index) for result in results] == [
+        ("iss.txt", 0)
+    ]
+
+
+def test_run_both_searches_returns_independent_rankings() -> None:
+    class SearchRetriever:
+        def search(self, query, top_k):
+            assert (query, top_k) == ("ISS research", 2)
+            return [DocumentChunk("iss.txt", 0, "semantic", [1.0])]
+
+        def search_keywords(self, query, top_k):
+            assert (query, top_k) == ("ISS research", 2)
+            return [DocumentChunk("iss.txt", 1, "keywords", [1.0])]
+
+    faiss_results, keyword_results = semantic_search.run_both_searches(
+        "ISS research", SearchRetriever(), top_k=2
+    )
+
+    assert faiss_results[0].text == "semantic"
+    assert keyword_results[0].text == "keywords"
+
+
+def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:
+    class HybridRetriever:
+        def search_hybrid(self, query, top_k, semantic_weight, keyword_weight):
+            assert (query, top_k) == ("ISS research", 2)
+            assert (semantic_weight, keyword_weight) == (0.8, 0.2)
+            return [
+                HybridSearchResult(
+                    DocumentChunk("iss.txt", 0, "hybrid", [1.0]),
+                    semantic_score=1.0,
+                    keyword_score=1.0,
+                    hybrid_score=1.0,
+                )
+            ]
+
+    results = semantic_search.run_hybrid_search(
+        "ISS research",
+        HybridRetriever(),
+        top_k=2,
+        semantic_weight=0.8,
+        keyword_weight=0.2,
+    )
+
+    assert results[0].document_chunk.text == "hybrid"
+
+
+def test_run_semantic_and_hybrid_search_delegates_to_the_retriever() -> None:
+    semantic_result = DocumentChunk("iss.txt", 0, "semantic", [1.0])
+    hybrid_result = HybridSearchResult(
+        DocumentChunk("iss.txt", 0, "hybrid", [1.0]),
+        semantic_score=1.0,
+        keyword_score=1.0,
+        hybrid_score=1.0,
+    )
+
+    class HybridRetriever:
+        def search_semantic_and_hybrid(
+            self, query, top_k, semantic_weight, keyword_weight
+        ):
+            assert (query, top_k) == ("ISS research", 2)
+            assert (semantic_weight, keyword_weight) == (0.8, 0.2)
+            return [semantic_result], [hybrid_result]
+
+    semantic_results, hybrid_results = semantic_search.run_semantic_and_hybrid_search(
+        "ISS research",
+        HybridRetriever(),
+        top_k=2,
+        semantic_weight=0.8,
+        keyword_weight=0.2,
+    )
+
+    assert semantic_results == [semantic_result]
+    assert hybrid_results == [hybrid_result]
+
+
+def test_print_hybrid_results_includes_all_scores(capsys) -> None:
+    results = [
+        HybridSearchResult(
+            DocumentChunk("iss.txt", 0, "ISS research.", [1.0]),
+            semantic_score=0.8,
+            keyword_score=0.5,
+            hybrid_score=0.71,
+        )
+    ]
+
+    semantic_search.print_hybrid_results(results)
+
+    assert capsys.readouterr().out == (
+        "hybrid 0.7100 | semantic 0.8000 | keyword 0.5000 | "
+        "[iss.txt, chunk 0]\n"
+    )
 
 
 def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:

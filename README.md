@@ -44,6 +44,32 @@ Both search commands accept `--chunk-size`, `--overlap-size`, and `--top-k`
 (defaults: `100`, `20`, and `3`). Non-default chunk settings use their own
 document and FAISS cache files under `cache/`.
 
+Run keyword-overlap retrieval (without an embedding request for the query)
+with:
+
+```bash
+python3 semantic_search.py "What powers the ISS?" --keyword-search --top-k 3
+```
+
+Compare independent FAISS and keyword rankings in one run with:
+
+```bash
+python3 semantic_search.py "What powers the ISS?" --both-searches --top-k 3
+```
+
+Run weighted hybrid retrieval (FAISS `0.7`, keywords `0.3` by default) with:
+
+```bash
+python3 semantic_search.py "What powers the ISS?" --hybrid-search --top-k 3
+```
+
+Customize the formula `semantic_weight * semantic_score + keyword_weight *
+keyword_score` with `--semantic-weight` and `--keyword-weight`.
+Hybrid results retain the `DocumentChunk` plus `semantic_score`, `keyword_score`,
+and `hybrid_score` in a `HybridSearchResult` object.
+Hybrid CLI mode prints the FAISS ranking first, followed by the hybrid ranking;
+both use the same embedded query.
+
 The evaluation reports source-level `Recall@3`: a question is a hit when any
 of its expected source files appears among its three retrieved chunks.
 

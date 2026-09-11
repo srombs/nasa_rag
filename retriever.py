@@ -5,7 +5,7 @@ from pathlib import Path
 from embedder import embed_query
 from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
-from models import DocumentChunk, TokenizedChunk
+from models import DocumentChunk, HybridSearchResult, TokenizedChunk
 from tokenizer import score_tokenized_chunks, tokenize_chunks, tokenize_text
 from vector_store import VectorStoreError
 
@@ -106,3 +106,72 @@ class Retriever:
             chunk.similarity = score
             ranked_chunks.append(chunk)
         return ranked_chunks
+
+    def search_hybrid(
+        self,
+        query: str,
+        top_k: int,
+        semantic_weight: float = 0.7,
+        keyword_weight: float = 0.3,
+    ) -> list[HybridSearchResult]:
+        """Rank chunks using weighted semantic and keyword-overlap scores."""
+        _, hybrid_results = self.search_semantic_and_hybrid(
+            query,
+            top_k=top_k,
+            semantic_weight=semantic_weight,
+            keyword_weight=keyword_weight,
+        )
+        return hybrid_results
+
+    def search_semantic_and_hybrid(
+        self,
+        query: str,
+        top_k: int,
+        semantic_weight: float = 0.7,
+        keyword_weight: float = 0.3,
+    ) -> tuple[list[DocumentChunk], list[HybridSearchResult]]:
+        """Return FAISS and hybrid rankings using one embedded query."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than zero.")
+        if top_k > len(self.document_chunks):
+            raise ValueError("top_k cannot exceed the number of loaded chunks.")
+        if semantic_weight < 0 or keyword_weight < 0:
+            raise ValueError("Hybrid search weights cannot be negative.")
+
+        semantic_results = self.faiss_retriever.search(
+            embed_query(query), top_k=len(self.document_chunks)
+        )
+        semantic_scores = {
+            (chunk.source, chunk.chunk_index): chunk.similarity
+            for chunk in semantic_results
+        }
+        keyword_scores = {
+            (chunk.source, chunk.chunk_index): score
+            for chunk, score in score_tokenized_chunks(
+                tokenize_text(query), self.tokenized_chunks
+            )
+        }
+        hybrid_results = []
+        for chunk in self.document_chunks:
+            reference = (chunk.source, chunk.chunk_index)
+            semantic_score = semantic_scores[reference]
+            keyword_score = keyword_scores[reference]
+            hybrid_score = (
+                semantic_weight * semantic_score + keyword_weight * keyword_score
+            )
+            hybrid_results.append(
+                HybridSearchResult(
+                    document_chunk=chunk,
+                    semantic_score=semantic_score,
+                    keyword_score=keyword_score,
+                    hybrid_score=hybrid_score,
+                )
+            )
+
+        return semantic_results[:top_k], sorted(
+            hybrid_results,
+            key=lambda result: result.hybrid_score,
+            reverse=True,
+        )[:top_k]

@@ -14,7 +14,7 @@ from generator import (
     generate_answer,
     validate_answer_citations,
 )
-from models import DocumentChunk
+from models import DocumentChunk, HybridSearchResult
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
@@ -79,8 +79,18 @@ def print_ranked_chunks(
         raise ValueError("top_k must be at least zero.")
 
     for chunk in document_chunks[:top_k]:
+        print(f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)}")
+
+
+def print_hybrid_results(results: Sequence[HybridSearchResult]) -> None:
+    """Print hybrid scores and source metadata for each ranked result."""
+    for result in results:
+        chunk = result.document_chunk
         print(
-            f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)} | {chunk.text}"
+            f"hybrid {result.hybrid_score:.4f} | "
+            f"semantic {result.semantic_score:.4f} | "
+            f"keyword {result.keyword_score:.4f} | "
+            f"{format_chunk_reference(chunk)}"
         )
 
 
@@ -131,6 +141,55 @@ def run_embedded_search(
     return retriever.search(query, top_k=top_k)
 
 
+def run_keyword_search(
+    query: str, retriever: Retriever, top_k: int = TOP_K
+) -> list[DocumentChunk]:
+    """Run one query through the token-overlap retriever."""
+    return retriever.search_keywords(query, top_k=top_k)
+
+
+def run_both_searches(
+    query: str, retriever: Retriever, top_k: int = TOP_K
+) -> tuple[list[DocumentChunk], list[DocumentChunk]]:
+    """Return independent FAISS and keyword rankings for one query."""
+    return (
+        run_embedded_search(query, retriever, top_k),
+        run_keyword_search(query, retriever, top_k),
+    )
+
+
+def run_hybrid_search(
+    query: str,
+    retriever: Retriever,
+    top_k: int = TOP_K,
+    semantic_weight: float = 0.7,
+    keyword_weight: float = 0.3,
+) -> list[HybridSearchResult]:
+    """Run weighted semantic and keyword retrieval for one query."""
+    return retriever.search_hybrid(
+        query,
+        top_k=top_k,
+        semantic_weight=semantic_weight,
+        keyword_weight=keyword_weight,
+    )
+
+
+def run_semantic_and_hybrid_search(
+    query: str,
+    retriever: Retriever,
+    top_k: int = TOP_K,
+    semantic_weight: float = 0.7,
+    keyword_weight: float = 0.3,
+) -> tuple[list[DocumentChunk], list[HybridSearchResult]]:
+    """Return FAISS and hybrid rankings using a single query embedding."""
+    return retriever.search_semantic_and_hybrid(
+        query,
+        top_k=top_k,
+        semantic_weight=semantic_weight,
+        keyword_weight=keyword_weight,
+    )
+
+
 def generate_rag_answer(question: str, results: Sequence[DocumentChunk]) -> str:
     """Build retrieved context and generate an answer to a question."""
     answer = generate_answer(build_context(results), question)
@@ -170,12 +229,65 @@ def main() -> None:
         action="store_true",
         help="Generate a context-grounded answer after retrieval.",
     )
+    search_mode = parser.add_mutually_exclusive_group()
+    search_mode.add_argument(
+        "--keyword-search",
+        action="store_true",
+        help="Rank chunks by keyword overlap instead of embedding similarity.",
+    )
+    search_mode.add_argument(
+        "--both-searches",
+        action="store_true",
+        help="Print independent FAISS and keyword-overlap rankings.",
+    )
+    search_mode.add_argument(
+        "--hybrid-search",
+        action="store_true",
+        help="Rank chunks with weighted FAISS and keyword-overlap scores.",
+    )
+    parser.add_argument(
+        "--semantic-weight",
+        type=float,
+        default=0.7,
+        help="FAISS score weight for hybrid search (default: 0.7).",
+    )
+    parser.add_argument(
+        "--keyword-weight",
+        type=float,
+        default=0.3,
+        help="Keyword score weight for hybrid search (default: 0.3).",
+    )
     args = parser.parse_args()
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
-    ranked_chunks = run_embedded_search(args.query, retriever, top_k=args.top_k)
     print(f"Question: {args.query}")
-    # print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+    if args.both_searches:
+        ranked_chunks, keyword_chunks = run_both_searches(
+            args.query, retriever, top_k=args.top_k
+        )
+        print("\nFAISS results:")
+        print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+        print("\nKeyword results:")
+        print_ranked_chunks(keyword_chunks, top_k=args.top_k)
+    elif args.keyword_search:
+        ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
+        print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+    elif args.hybrid_search:
+        semantic_results, hybrid_results = run_semantic_and_hybrid_search(
+            args.query,
+            retriever,
+            top_k=args.top_k,
+            semantic_weight=args.semantic_weight,
+            keyword_weight=args.keyword_weight,
+        )
+        print("\nFAISS results:")
+        print_ranked_chunks(semantic_results, top_k=args.top_k)
+        print("\nHybrid results:")
+        print_hybrid_results(hybrid_results)
+        ranked_chunks = [result.document_chunk for result in hybrid_results]
+    else:
+        ranked_chunks = run_embedded_search(args.query, retriever, top_k=args.top_k)
+        print_ranked_chunks(ranked_chunks, top_k=args.top_k)
     if args.generate_answer:
         print(f"\nAnswer: {generate_rag_answer(args.query, ranked_chunks)}")
 
