@@ -2,11 +2,17 @@
 
 from pathlib import Path
 
+from bm25_retriever import BM25Retriever
 from embedder import embed_query
 from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
-from models import DocumentChunk, HybridSearchResult, TokenizedChunk
-from tokenizer import score_tokenized_chunks, tokenize_chunks, tokenize_text
+from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
+from tokenizer import (
+    score_tokenized_chunks,
+    tokenize_chunks,
+    tokenize_text,
+    tokenize_text_set,
+)
 from vector_store import VectorStoreError
 
 
@@ -19,7 +25,7 @@ class RetrievalError(RuntimeError):
 
 
 class Retriever:
-    """Load documents and tokens, then delegate vector search to FAISS."""
+    """Load documents and prepare token, FAISS, and BM25 retrieval."""
 
     def __init__(
         self,
@@ -39,6 +45,7 @@ class Retriever:
         self.document_chunks: list[DocumentChunk] = []
         self.tokenized_chunks: list[TokenizedChunk] = []
         self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
+        self.bm25_retriever = BM25Retriever()
 
     def _cache_path(self, file_name: str) -> Path:
         """Return a cache path unique to non-default chunking settings."""
@@ -53,7 +60,7 @@ class Retriever:
         return self.cache_directory / f"{cache_file.stem}{suffix}{cache_file.suffix}"
 
     def load(self) -> None:
-        """Load documents, tokenize text, and prepare FAISS retrieval."""
+        """Load documents, tokenize text, and prepare FAISS and BM25 retrieval."""
         try:
             self.document_chunks = load_and_embed_directory(
                 self.data_directory,
@@ -65,6 +72,7 @@ class Retriever:
                 raise ValueError("No document chunks were loaded.")
             self.tokenized_chunks = tokenize_chunks(self.document_chunks)
             self.faiss_retriever.load(self.document_chunks)
+            self.bm25_retriever.load(self.document_chunks)
         except (ValueError, VectorStoreError):
             raise
         except Exception as error:
@@ -91,7 +99,7 @@ class Retriever:
         if top_k > len(self.tokenized_chunks):
             raise ValueError("top_k cannot exceed the number of loaded chunks.")
 
-        tokenized_query = tokenize_text(query)
+        tokenized_query = tokenize_text_set(query)
         ranked_tokens = score_tokenized_chunks(
             tokenized_query, self.tokenized_chunks
         )
@@ -106,6 +114,18 @@ class Retriever:
             chunk.similarity = score
             ranked_chunks.append(chunk)
         return ranked_chunks
+
+    def search_bm25(self, query: str, top_k: int) -> list[BM25SearchResult]:
+        """Tokenize a query and delegate scoring to the BM25 retriever."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
+
+        try:
+            return self.bm25_retriever.search(tokenize_text(query), top_k)
+        except ValueError:
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to search the BM25 index.") from error
 
     def search_hybrid(
         self,
@@ -150,7 +170,7 @@ class Retriever:
         keyword_scores = {
             (chunk.source, chunk.chunk_index): score
             for chunk, score in score_tokenized_chunks(
-                tokenize_text(query), self.tokenized_chunks
+                tokenize_text_set(query), self.tokenized_chunks
             )
         }
         hybrid_results = []

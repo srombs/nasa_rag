@@ -19,7 +19,9 @@ matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
 top three matching chunks.
 `Retriever` owns document loading and tokenization, then delegates vector
-indexing and search to its `FaissRetriever`. `tokenizer.tokenize_chunks`
+indexing and search to its `FaissRetriever`, and raw token indexing to its
+`BM25Retriever`, which uses `tokenize_text` and includes every word.
+`tokenizer.tokenize_chunks`
 creates standalone `TokenizedChunk` objects containing a source, chunk index,
 and normalized token set. `Retriever.search_keywords(query, top_k)` ranks
 those chunks by the fraction of unique query tokens found in each chunk.
@@ -51,7 +53,15 @@ with:
 python3 semantic_search.py "What powers the ISS?" --keyword-search --top-k 3
 ```
 
-Compare independent FAISS and keyword rankings in one run with:
+Run BM25 retrieval (without an embedding request for the query) with:
+
+```bash
+python3 semantic_search.py "What powers the ISS?" --bm25-search --top-k 3
+```
+
+BM25 retrieval returns `BM25SearchResult(score, chunk)` objects.
+
+Compare FAISS, keyword-overlap, BM25, and hybrid rankings in one run with:
 
 ```bash
 python3 semantic_search.py "What powers the ISS?" --both-searches --top-k 3

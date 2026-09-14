@@ -30,13 +30,19 @@ STOP_WORDS = {
 }
 
 
-def tokenize_text(text: str) -> set[str]:
-    """Return lowercase non-stop-word tokens, with duplicates removed."""
-    return {
-        token
-        for token in TOKEN_PATTERN.findall(text.lower())
-        if token not in STOP_WORDS
-    }
+def tokenize_text(text: str) -> list[str]:
+    """Return lowercase word tokens, retaining stop words and duplicates."""
+    return TOKEN_PATTERN.findall(text.lower())
+
+
+def tokenize_text_excluding_stop_words(text: str) -> list[str]:
+    """Return lowercase word tokens without stop words, preserving duplicates."""
+    return [token for token in tokenize_text(text) if token not in STOP_WORDS]
+
+
+def tokenize_text_set(text: str) -> set[str]:
+    """Return unique lowercase non-stop-word tokens for overlap scoring."""
+    return set(tokenize_text_excluding_stop_words(text))
 
 
 def tokenize_chunks(chunks: Sequence[DocumentChunk]) -> list[TokenizedChunk]:
@@ -45,7 +51,7 @@ def tokenize_chunks(chunks: Sequence[DocumentChunk]) -> list[TokenizedChunk]:
         TokenizedChunk(
             source=chunk.source,
             chunk_index=chunk.chunk_index,
-            tokens=tokenize_text(chunk.text),
+            tokens=tokenize_text_set(chunk.text),
         )
         for chunk in chunks
     ]

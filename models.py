@@ -61,3 +61,11 @@ class HybridSearchResult:
     semantic_score: float
     keyword_score: float
     hybrid_score: float
+
+
+@dataclass
+class BM25SearchResult:
+    """A document chunk and its BM25 relevance score."""
+
+    score: float
+    chunk: DocumentChunk

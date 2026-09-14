@@ -14,7 +14,7 @@ from generator import (
     generate_answer,
     validate_answer_citations,
 )
-from models import DocumentChunk, HybridSearchResult
+from models import BM25SearchResult, DocumentChunk, HybridSearchResult
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
@@ -79,7 +79,9 @@ def print_ranked_chunks(
         raise ValueError("top_k must be at least zero.")
 
     for chunk in document_chunks[:top_k]:
-        print(f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)}")
+        print(
+            f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)} | {chunk.text}"
+        )
 
 
 def print_hybrid_results(results: Sequence[HybridSearchResult]) -> None:
@@ -90,7 +92,16 @@ def print_hybrid_results(results: Sequence[HybridSearchResult]) -> None:
             f"hybrid {result.hybrid_score:.4f} | "
             f"semantic {result.semantic_score:.4f} | "
             f"keyword {result.keyword_score:.4f} | "
-            f"{format_chunk_reference(chunk)}"
+            f"{format_chunk_reference(chunk)} | {chunk.text}"
+        )
+
+
+def print_bm25_results(results: Sequence[BM25SearchResult]) -> None:
+    """Print BM25 scores and source metadata for each ranked result."""
+    for result in results:
+        print(
+            f"{result.score:.4f} | {format_chunk_reference(result.chunk)} | "
+            f"{result.chunk.text}"
         )
 
 
@@ -148,13 +159,30 @@ def run_keyword_search(
     return retriever.search_keywords(query, top_k=top_k)
 
 
+def run_bm25_search(
+    query: str, retriever: Retriever, top_k: int = TOP_K
+) -> list[BM25SearchResult]:
+    """Run one query through the BM25 retriever."""
+    return retriever.search_bm25(query, top_k=top_k)
+
+
 def run_both_searches(
     query: str, retriever: Retriever, top_k: int = TOP_K
-) -> tuple[list[DocumentChunk], list[DocumentChunk]]:
-    """Return independent FAISS and keyword rankings for one query."""
+) -> tuple[
+    list[DocumentChunk],
+    list[DocumentChunk],
+    list[BM25SearchResult],
+    list[HybridSearchResult],
+]:
+    """Return FAISS, keyword, BM25, and hybrid rankings for one query."""
+    faiss_results, hybrid_results = run_semantic_and_hybrid_search(
+        query, retriever, top_k
+    )
     return (
-        run_embedded_search(query, retriever, top_k),
+        faiss_results,
         run_keyword_search(query, retriever, top_k),
+        run_bm25_search(query, retriever, top_k),
+        hybrid_results,
     )
 
 
@@ -236,9 +264,14 @@ def main() -> None:
         help="Rank chunks by keyword overlap instead of embedding similarity.",
     )
     search_mode.add_argument(
+        "--bm25-search",
+        action="store_true",
+        help="Rank chunks with BM25 scores without embedding the query.",
+    )
+    search_mode.add_argument(
         "--both-searches",
         action="store_true",
-        help="Print independent FAISS and keyword-overlap rankings.",
+        help="Print independent FAISS, keyword-overlap, and BM25 rankings.",
     )
     search_mode.add_argument(
         "--hybrid-search",
@@ -262,16 +295,24 @@ def main() -> None:
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     print(f"Question: {args.query}")
     if args.both_searches:
-        ranked_chunks, keyword_chunks = run_both_searches(
-            args.query, retriever, top_k=args.top_k
+        ranked_chunks, keyword_chunks, bm25_results, hybrid_results = (
+            run_both_searches(args.query, retriever, top_k=args.top_k)
         )
         print("\nFAISS results:")
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
         print("\nKeyword results:")
         print_ranked_chunks(keyword_chunks, top_k=args.top_k)
+        print("\nBM25 results:")
+        print_bm25_results(bm25_results)
+        print("\nHybrid results:")
+        print_hybrid_results(hybrid_results)
     elif args.keyword_search:
         ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
+    elif args.bm25_search:
+        bm25_results = run_bm25_search(args.query, retriever, top_k=args.top_k)
+        print_bm25_results(bm25_results)
+        ranked_chunks = [result.chunk for result in bm25_results]
     elif args.hybrid_search:
         semantic_results, hybrid_results = run_semantic_and_hybrid_search(
             args.query,

@@ -4,6 +4,7 @@ import sys
 import types
 
 import embedder
+import bm25_retriever
 import faiss_retriever
 import file_loader
 import generator
@@ -13,7 +14,7 @@ import retriever
 import semantic_search
 import tokenizer
 import vector_store
-from models import DocumentChunk, HybridSearchResult, TokenizedChunk
+from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
 
 from nasa_rag import __version__
 
@@ -61,11 +62,60 @@ def test_tokenize_chunks_creates_a_token_set_for_each_chunk() -> None:
     ]
 
 
-def test_tokenize_text_excludes_stop_words() -> None:
-    assert tokenizer.tokenize_text("What is the power of the ISS?") == {
+def test_tokenize_text_returns_all_words_and_preserves_duplicates() -> None:
+    assert tokenizer.tokenize_text("What is the power of the ISS, ISS?") == [
+        "what",
+        "is",
+        "the",
+        "power",
+        "of",
+        "the",
+        "iss",
+        "iss",
+    ]
+
+
+def test_tokenize_text_excluding_stop_words_preserves_duplicates() -> None:
+    assert tokenizer.tokenize_text_excluding_stop_words(
+        "What is the power of the ISS, ISS?"
+    ) == [
         "power",
         "iss",
+        "iss",
+    ]
+
+
+def test_tokenize_text_set_removes_duplicate_non_stop_words() -> None:
+    assert tokenizer.tokenize_text_set("The ISS is in orbit, orbit!") == {
+        "iss",
+        "orbit",
     }
+
+
+def test_bm25_retriever_tokenizes_every_document_chunk_word() -> None:
+    chunks = [DocumentChunk("iss.txt", 0, "The ISS is in orbit.", [1.0])]
+    bm25 = bm25_retriever.BM25Retriever()
+
+    bm25.load(chunks)
+
+    assert bm25.document_chunks == chunks
+    assert bm25.tokenized_documents == [["the", "iss", "is", "in", "orbit"]]
+    assert bm25.index is not None
+
+
+def test_bm25_retriever_scores_a_tokenized_query() -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0]),
+        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [1.0]),
+        DocumentChunk("mars.txt", 2, "Mars rover mission.", [1.0]),
+    ]
+    bm25 = bm25_retriever.BM25Retriever()
+    bm25.load(chunks)
+
+    results = bm25.search(["iss", "research"], top_k=1)
+
+    assert results[0].chunk == chunks[0]
+    assert results[0].score > 0
 
 
 def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
@@ -75,7 +125,7 @@ def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
     ]
 
     scores = tokenizer.score_tokenized_chunks(
-        tokenizer.tokenize_text("ISS research telescope"), chunks
+        tokenizer.tokenize_text_set("ISS research telescope"), chunks
     )
 
     assert scores == [(chunks[0], 2 / 3), (chunks[1], 1 / 3)]
@@ -103,6 +153,7 @@ def test_retriever_loads_document_tokens_and_faiss(monkeypatch, tmp_path) -> Non
     ]
     assert generic_retriever.faiss_retriever.index is not None
     assert generic_retriever.faiss_retriever.index.ntotal == len(chunks)
+    assert generic_retriever.bm25_retriever.index is not None
 
 
 def test_retriever_search_keywords_returns_matching_document_chunks(
@@ -124,6 +175,49 @@ def test_retriever_search_keywords_returns_matching_document_chunks(
 
     assert results == [chunks[0]]
     assert results[0].similarity == 1.0
+
+
+def test_retriever_search_bm25_tokenizes_the_query(monkeypatch, tmp_path) -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0, 0.0]),
+        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [0.0, 1.0]),
+        DocumentChunk("mars.txt", 2, "Mars rover mission.", [0.5, 0.5]),
+    ]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+
+    results = generic_retriever.search_bm25("What ISS research?", top_k=1)
+
+    assert results[0].chunk == chunks[0]
+    assert results[0].score > 0
+
+
+def test_retriever_search_bm25_passes_every_query_word(monkeypatch, tmp_path) -> None:
+    chunks = [DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0, 0.0])]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+    received = {}
+
+    def capture_search(tokens, top_k):
+        received["tokens"] = tokens
+        received["top_k"] = top_k
+        return []
+
+    monkeypatch.setattr(generic_retriever.bm25_retriever, "search", capture_search)
+
+    generic_retriever.search_bm25("What is the ISS?", top_k=1)
+
+    assert received == {"tokens": ["what", "is", "the", "iss"], "top_k": 1}
 
 
 def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
@@ -232,7 +326,7 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
 
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
-    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0]\n"
+    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0] | first\n"
 
 
 def test_run_keyword_search_delegates_to_the_retriever() -> None:
@@ -251,22 +345,77 @@ def test_run_keyword_search_delegates_to_the_retriever() -> None:
     ]
 
 
+def test_run_bm25_search_delegates_to_the_retriever() -> None:
+    class BM25Retriever:
+        def search_bm25(self, query, top_k):
+            assert query == "ISS research"
+            assert top_k == 2
+            return [
+                BM25SearchResult(
+                    score=1.0,
+                    chunk=DocumentChunk("iss.txt", 0, "ISS research.", [1.0]),
+                )
+            ]
+
+    results = semantic_search.run_bm25_search(
+        "ISS research", BM25Retriever(), top_k=2
+    )
+
+    assert [(result.chunk.source, result.chunk.chunk_index) for result in results] == [
+        ("iss.txt", 0)
+    ]
+
+
+def test_print_bm25_results_uses_the_result_object(capsys) -> None:
+    results = [
+        BM25SearchResult(
+            score=2.5,
+            chunk=DocumentChunk("iss.txt", 0, "ISS research.", [1.0]),
+        )
+    ]
+
+    semantic_search.print_bm25_results(results)
+
+    assert capsys.readouterr().out == "2.5000 | [iss.txt, chunk 0] | ISS research.\n"
+
+
 def test_run_both_searches_returns_independent_rankings() -> None:
     class SearchRetriever:
-        def search(self, query, top_k):
+        def search_semantic_and_hybrid(
+            self, query, top_k, semantic_weight, keyword_weight
+        ):
             assert (query, top_k) == ("ISS research", 2)
-            return [DocumentChunk("iss.txt", 0, "semantic", [1.0])]
+            assert (semantic_weight, keyword_weight) == (0.7, 0.3)
+            return [DocumentChunk("iss.txt", 0, "semantic", [1.0])], [
+                HybridSearchResult(
+                    DocumentChunk("iss.txt", 3, "hybrid", [1.0]),
+                    semantic_score=1.0,
+                    keyword_score=1.0,
+                    hybrid_score=1.0,
+                )
+            ]
 
         def search_keywords(self, query, top_k):
             assert (query, top_k) == ("ISS research", 2)
             return [DocumentChunk("iss.txt", 1, "keywords", [1.0])]
 
-    faiss_results, keyword_results = semantic_search.run_both_searches(
-        "ISS research", SearchRetriever(), top_k=2
+        def search_bm25(self, query, top_k):
+            assert (query, top_k) == ("ISS research", 2)
+            return [
+                BM25SearchResult(
+                    score=1.0,
+                    chunk=DocumentChunk("iss.txt", 2, "bm25", [1.0]),
+                )
+            ]
+
+    faiss_results, keyword_results, bm25_results, hybrid_results = (
+        semantic_search.run_both_searches("ISS research", SearchRetriever(), top_k=2)
     )
 
     assert faiss_results[0].text == "semantic"
     assert keyword_results[0].text == "keywords"
+    assert bm25_results[0].chunk.text == "bm25"
+    assert hybrid_results[0].document_chunk.text == "hybrid"
 
 
 def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:
@@ -337,7 +486,7 @@ def test_print_hybrid_results_includes_all_scores(capsys) -> None:
 
     assert capsys.readouterr().out == (
         "hybrid 0.7100 | semantic 0.8000 | keyword 0.5000 | "
-        "[iss.txt, chunk 0]\n"
+        "[iss.txt, chunk 0] | ISS research.\n"
     )
 
 
