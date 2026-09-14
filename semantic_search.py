@@ -18,7 +18,8 @@ from models import BM25SearchResult, DocumentChunk, HybridSearchResult
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
-TOP_K = 3
+TOP_K = 30
+RRF_TOP_K = 10
 
 
 # documents = [
@@ -79,9 +80,7 @@ def print_ranked_chunks(
         raise ValueError("top_k must be at least zero.")
 
     for chunk in document_chunks[:top_k]:
-        print(
-            f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)} | {chunk.text}"
-        )
+        print(f"{chunk.similarity:.4f} | {format_chunk_reference(chunk)}")
 
 
 def print_hybrid_results(results: Sequence[HybridSearchResult]) -> None:
@@ -92,7 +91,7 @@ def print_hybrid_results(results: Sequence[HybridSearchResult]) -> None:
             f"hybrid {result.hybrid_score:.4f} | "
             f"semantic {result.semantic_score:.4f} | "
             f"keyword {result.keyword_score:.4f} | "
-            f"{format_chunk_reference(chunk)} | {chunk.text}"
+            f"{format_chunk_reference(chunk)}"
         )
 
 
@@ -100,8 +99,18 @@ def print_bm25_results(results: Sequence[BM25SearchResult]) -> None:
     """Print BM25 scores and source metadata for each ranked result."""
     for result in results:
         print(
-            f"{result.score:.4f} | {format_chunk_reference(result.chunk)} | "
-            f"{result.chunk.text}"
+            f"{result.score:.4f} | {format_chunk_reference(result.chunk)}"
+        )
+
+
+def print_rrf_results(results: Sequence[DocumentChunk]) -> None:
+    """Print RRF scores with the source rankings that produced each score."""
+    for chunk in results:
+        print(
+            f"rrf {chunk.rrf_score:.4f} | "
+            f"FAISS rank {chunk.faiss_rank} | "
+            f"BM25 rank {chunk.bm25_rank} | "
+            f"{format_chunk_reference(chunk)}"
         )
 
 
@@ -167,22 +176,14 @@ def run_bm25_search(
 
 
 def run_both_searches(
-    query: str, retriever: Retriever, top_k: int = TOP_K
-) -> tuple[
-    list[DocumentChunk],
-    list[DocumentChunk],
-    list[BM25SearchResult],
-    list[HybridSearchResult],
-]:
-    """Return FAISS, keyword, BM25, and hybrid rankings for one query."""
-    faiss_results, hybrid_results = run_semantic_and_hybrid_search(
-        query, retriever, top_k
-    )
-    return (
-        faiss_results,
-        run_keyword_search(query, retriever, top_k),
-        run_bm25_search(query, retriever, top_k),
-        hybrid_results,
+    query: str,
+    retriever: Retriever,
+    top_k: int = TOP_K,
+    rrf_top_k: int = RRF_TOP_K,
+) -> tuple[list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]]:
+    """Return FAISS, BM25, and reciprocal-rank-fusion rankings for one query."""
+    return retriever.search_faiss_bm25_and_rrf(
+        query, top_k=top_k, rrf_top_k=rrf_top_k
     )
 
 
@@ -271,7 +272,7 @@ def main() -> None:
     search_mode.add_argument(
         "--both-searches",
         action="store_true",
-        help="Print independent FAISS, keyword-overlap, and BM25 rankings.",
+        help="Print FAISS, BM25, and reciprocal-rank-fusion rankings.",
     )
     search_mode.add_argument(
         "--hybrid-search",
@@ -295,17 +296,15 @@ def main() -> None:
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     print(f"Question: {args.query}")
     if args.both_searches:
-        ranked_chunks, keyword_chunks, bm25_results, hybrid_results = (
+        ranked_chunks, bm25_results, rrf_results = (
             run_both_searches(args.query, retriever, top_k=args.top_k)
         )
         print("\nFAISS results:")
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
-        print("\nKeyword results:")
-        print_ranked_chunks(keyword_chunks, top_k=args.top_k)
         print("\nBM25 results:")
         print_bm25_results(bm25_results)
-        print("\nHybrid results:")
-        print_hybrid_results(hybrid_results)
+        print("\nRRF results:")
+        print_rrf_results(rrf_results)
     elif args.keyword_search:
         ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)

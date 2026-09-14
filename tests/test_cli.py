@@ -220,6 +220,46 @@ def test_retriever_search_bm25_passes_every_query_word(monkeypatch, tmp_path) ->
     assert received == {"tokens": ["what", "is", "the", "iss"], "top_k": 1}
 
 
+def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_path) -> None:
+    chunks = [
+        DocumentChunk("a.txt", 0, "first", [1.0, 0.0]),
+        DocumentChunk("b.txt", 1, "second", [0.0, 1.0]),
+        DocumentChunk("c.txt", 2, "third", [0.5, 0.5]),
+    ]
+    monkeypatch.setattr(
+        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
+    )
+    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
+    generic_retriever = retriever.Retriever(
+        tmp_path, cache_directory=tmp_path / "cache"
+    )
+    generic_retriever.load()
+    monkeypatch.setattr(
+        generic_retriever.faiss_retriever,
+        "search",
+        lambda _embedding, top_k: chunks[:top_k],
+    )
+    monkeypatch.setattr(
+        generic_retriever.bm25_retriever,
+        "search",
+        lambda _tokens, top_k: [
+            BM25SearchResult(1.0, chunks[1]),
+            BM25SearchResult(1.0, chunks[2]),
+            BM25SearchResult(1.0, chunks[0]),
+        ][:top_k],
+    )
+
+    results = generic_retriever.search_rrf("ISS research", top_k=3, rrf_k=1)
+
+    assert results == [chunks[1], chunks[0], chunks[2]]
+    assert round(chunks[0].rrf_score, 4) == 0.75
+    assert round(chunks[1].rrf_score, 4) == 0.8333
+    assert round(chunks[2].rrf_score, 4) == 0.5833
+    assert (chunks[0].faiss_rank, chunks[0].bm25_rank) == (1, 3)
+    assert (chunks[1].faiss_rank, chunks[1].bm25_rank) == (2, 1)
+    assert (chunks[2].faiss_rank, chunks[2].bm25_rank) == (3, 2)
+
+
 def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
     monkeypatch, tmp_path
 ) -> None:
@@ -326,7 +366,7 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
 
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
-    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0] | first\n"
+    assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0]\n"
 
 
 def test_run_keyword_search_delegates_to_the_retriever() -> None:
@@ -376,46 +416,48 @@ def test_print_bm25_results_uses_the_result_object(capsys) -> None:
 
     semantic_search.print_bm25_results(results)
 
-    assert capsys.readouterr().out == "2.5000 | [iss.txt, chunk 0] | ISS research.\n"
+    assert capsys.readouterr().out == "2.5000 | [iss.txt, chunk 0]\n"
+
+
+def test_print_rrf_results_includes_source_rankings(capsys) -> None:
+    chunk = DocumentChunk(
+        "iss.txt",
+        0,
+        "ISS research.",
+        [1.0],
+        rrf_score=0.03,
+        faiss_rank=1,
+        bm25_rank=2,
+    )
+
+    semantic_search.print_rrf_results([chunk])
+
+    assert capsys.readouterr().out == (
+        "rrf 0.0300 | FAISS rank 1 | BM25 rank 2 | "
+        "[iss.txt, chunk 0]\n"
+    )
 
 
 def test_run_both_searches_returns_independent_rankings() -> None:
     class SearchRetriever:
-        def search_semantic_and_hybrid(
-            self, query, top_k, semantic_weight, keyword_weight
-        ):
+        def search_faiss_bm25_and_rrf(self, query, top_k, rrf_top_k):
             assert (query, top_k) == ("ISS research", 2)
-            assert (semantic_weight, keyword_weight) == (0.7, 0.3)
+            assert rrf_top_k == semantic_search.RRF_TOP_K
             return [DocumentChunk("iss.txt", 0, "semantic", [1.0])], [
-                HybridSearchResult(
-                    DocumentChunk("iss.txt", 3, "hybrid", [1.0]),
-                    semantic_score=1.0,
-                    keyword_score=1.0,
-                    hybrid_score=1.0,
-                )
-            ]
-
-        def search_keywords(self, query, top_k):
-            assert (query, top_k) == ("ISS research", 2)
-            return [DocumentChunk("iss.txt", 1, "keywords", [1.0])]
-
-        def search_bm25(self, query, top_k):
-            assert (query, top_k) == ("ISS research", 2)
-            return [
                 BM25SearchResult(
-                    score=1.0,
-                    chunk=DocumentChunk("iss.txt", 2, "bm25", [1.0]),
+                    score=1.0, chunk=DocumentChunk("iss.txt", 1, "bm25", [1.0])
                 )
+            ], [
+                DocumentChunk("iss.txt", 2, "rrf", [1.0], rrf_score=0.03)
             ]
 
-    faiss_results, keyword_results, bm25_results, hybrid_results = (
+    faiss_results, bm25_results, rrf_results = (
         semantic_search.run_both_searches("ISS research", SearchRetriever(), top_k=2)
     )
 
     assert faiss_results[0].text == "semantic"
-    assert keyword_results[0].text == "keywords"
     assert bm25_results[0].chunk.text == "bm25"
-    assert hybrid_results[0].document_chunk.text == "hybrid"
+    assert rrf_results[0].text == "rrf"
 
 
 def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:
@@ -486,7 +528,7 @@ def test_print_hybrid_results_includes_all_scores(capsys) -> None:
 
     assert capsys.readouterr().out == (
         "hybrid 0.7100 | semantic 0.8000 | keyword 0.5000 | "
-        "[iss.txt, chunk 0] | ISS research.\n"
+        "[iss.txt, chunk 0]\n"
     )
 
 

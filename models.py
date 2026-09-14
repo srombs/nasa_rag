@@ -12,6 +12,9 @@ class DocumentChunk:
     text: str
     embed: list[float]
     similarity: float | None = None
+    rrf_score: float | None = None
+    faiss_rank: int | None = None
+    bm25_rank: int | None = None
 
     def to_cache_record(self) -> dict[str, str | int | list[float]]:
         """Return the persistent fields used by the document cache."""

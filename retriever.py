@@ -127,6 +127,64 @@ class Retriever:
         except Exception as error:
             raise RetrievalError("Unable to search the BM25 index.") from error
 
+    def search_rrf(
+        self, query: str, top_k: int, rrf_k: int = 60
+    ) -> list[DocumentChunk]:
+        """Fuse full FAISS and BM25 rankings with reciprocal rank fusion."""
+        _, _, rrf_results = self.search_faiss_bm25_and_rrf(
+            query, top_k=top_k, rrf_top_k=top_k, rrf_k=rrf_k
+        )
+        return rrf_results
+
+    def search_faiss_bm25_and_rrf(
+        self, query: str, top_k: int, rrf_top_k: int = 10, rrf_k: int = 60
+    ) -> tuple[
+        list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]
+    ]:
+        """Return FAISS, BM25, and fused RRF rankings for one query."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
+        if top_k <= 0:
+            raise ValueError("top_k must be greater than zero.")
+        if top_k > len(self.document_chunks):
+            raise ValueError("top_k cannot exceed the number of loaded chunks.")
+        if rrf_top_k <= 0:
+            raise ValueError("rrf_top_k must be greater than zero.")
+        if rrf_top_k > len(self.document_chunks):
+            raise ValueError("rrf_top_k cannot exceed the number of loaded chunks.")
+        if rrf_k < 0:
+            raise ValueError("rrf_k cannot be negative.")
+
+        try:
+            faiss_results = self.faiss_retriever.search(
+                embed_query(query), top_k=len(self.document_chunks)
+            )
+            bm25_results = self.bm25_retriever.search(
+                tokenize_text(query), top_k=len(self.document_chunks)
+            )
+        except ValueError:
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to calculate reciprocal rank fusion.") from error
+
+        for chunk in self.document_chunks:
+            chunk.rrf_score = 0.0
+            chunk.faiss_rank = None
+            chunk.bm25_rank = None
+        for rank, chunk in enumerate(faiss_results, start=1):
+            chunk.faiss_rank = rank
+            chunk.rrf_score += 1 / (rrf_k + rank)
+        for rank, result in enumerate(bm25_results, start=1):
+            result.chunk.bm25_rank = rank
+            result.chunk.rrf_score += 1 / (rrf_k + rank)
+
+        rrf_results = sorted(
+            self.document_chunks,
+            key=lambda chunk: chunk.rrf_score if chunk.rrf_score is not None else 0.0,
+            reverse=True,
+        )[:rrf_top_k]
+        return faiss_results[:top_k], bm25_results[:top_k], rrf_results
+
     def search_hybrid(
         self,
         query: str,

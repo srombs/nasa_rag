@@ -17,7 +17,7 @@ Query embeddings are also converted to one-row, L2-normalized matrices.
 The FAISS index is persisted in `cache/document.index` and reused when it
 matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
-top three matching chunks.
+top 30 matching chunks by default.
 `Retriever` owns document loading and tokenization, then delegates vector
 indexing and search to its `FaissRetriever`, and raw token indexing to its
 `BM25Retriever`, which uses `tokenize_text` and includes every word.
@@ -43,7 +43,7 @@ python3 eval/run_evaluation.py
 ```
 
 Both search commands accept `--chunk-size`, `--overlap-size`, and `--top-k`
-(defaults: `100`, `20`, and `3`). Non-default chunk settings use their own
+(defaults: `100`, `20`, and `30`). Non-default chunk settings use their own
 document and FAISS cache files under `cache/`.
 
 Run keyword-overlap retrieval (without an embedding request for the query)
@@ -61,11 +61,14 @@ python3 semantic_search.py "What powers the ISS?" --bm25-search --top-k 3
 
 BM25 retrieval returns `BM25SearchResult(score, chunk)` objects.
 
-Compare FAISS, keyword-overlap, BM25, and hybrid rankings in one run with:
+Compare FAISS, BM25, and reciprocal-rank-fusion rankings in one run with:
 
 ```bash
 python3 semantic_search.py "What powers the ISS?" --both-searches --top-k 3
 ```
+
+This prints the requested FAISS and BM25 result counts, then the top 10 RRF
+results by default.
 
 Run weighted hybrid retrieval (FAISS `0.7`, keywords `0.3` by default) with:
 
@@ -79,9 +82,12 @@ Hybrid results retain the `DocumentChunk` plus `semantic_score`, `keyword_score`
 and `hybrid_score` in a `HybridSearchResult` object.
 Hybrid CLI mode prints the FAISS ranking first, followed by the hybrid ranking;
 both use the same embedded query.
+`Retriever.search_rrf(query, top_k, rrf_k=60)` fuses FAISS and BM25 rankings
+with `1 / (rrf_k + rank)` and stores the combined value in `chunk.rrf_score`.
+It also stores each source rank in `chunk.faiss_rank` and `chunk.bm25_rank`.
 
-The evaluation reports source-level `Recall@3`: a question is a hit when any
-of its expected source files appears among its three retrieved chunks.
+The evaluation reports source-level `Recall@30`: a question is a hit when any
+of its expected source files appears among its 30 retrieved chunks.
 
 Run all combinations of `Recall@1` through `Recall@5` for chunk/overlap
 settings `50/10`, `100/20`, and `200/50` with:
