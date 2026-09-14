@@ -68,7 +68,7 @@ python3 semantic_search.py "What powers the ISS?" --both-searches --top-k 3
 ```
 
 This prints the requested FAISS and BM25 result counts, then the top 10 RRF
-results by default.
+results by default, followed by model-reranked RRF results.
 
 Run weighted hybrid retrieval (FAISS `0.7`, keywords `0.3` by default) with:
 
@@ -85,6 +85,9 @@ both use the same embedded query.
 `Retriever.search_rrf(query, top_k, rrf_k=60)` fuses FAISS and BM25 rankings
 with `1 / (rrf_k + rank)` and stores the combined value in `chunk.rrf_score`.
 It also stores each source rank in `chunk.faiss_rank` and `chunk.bm25_rank`.
+`Reranker.rerank(query, rrf_results)` sends each query-chunk pair to the model
+and returns `RerankResult(chunk, score, reason)` objects for a second-pass
+ranking of RRF candidates.
 
 The evaluation reports source-level `Recall@30`: a question is a hit when any
 of its expected source files appears among its 30 retrieved chunks.

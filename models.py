@@ -72,3 +72,12 @@ class BM25SearchResult:
 
     score: float
     chunk: DocumentChunk
+
+
+@dataclass
+class RerankResult:
+    """A reranked chunk, its reranking score, and scoring explanation."""
+
+    chunk: DocumentChunk
+    score: float
+    reason: str

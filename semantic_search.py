@@ -14,7 +14,7 @@ from generator import (
     generate_answer,
     validate_answer_citations,
 )
-from models import BM25SearchResult, DocumentChunk, HybridSearchResult
+from models import BM25SearchResult, DocumentChunk, HybridSearchResult, RerankResult
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
@@ -114,6 +114,15 @@ def print_rrf_results(results: Sequence[DocumentChunk]) -> None:
         )
 
 
+def print_rerank_results(results: Sequence[RerankResult]) -> None:
+    """Print model-reranked chunks with their score and relevance reason."""
+    for result in results:
+        print(
+            f"rerank {result.score:.4f} | "
+            f"{format_chunk_reference(result.chunk)} | {result.reason}"
+        )
+
+
 def compare_query_to_documents(
     query_embedding: Sequence[float],
     document_embeddings: Sequence[Sequence[float]],
@@ -180,9 +189,14 @@ def run_both_searches(
     retriever: Retriever,
     top_k: int = TOP_K,
     rrf_top_k: int = RRF_TOP_K,
-) -> tuple[list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]]:
-    """Return FAISS, BM25, and reciprocal-rank-fusion rankings for one query."""
-    return retriever.search_faiss_bm25_and_rrf(
+) -> tuple[
+    list[DocumentChunk],
+    list[BM25SearchResult],
+    list[DocumentChunk],
+    list[RerankResult],
+]:
+    """Return FAISS, BM25, RRF, and model-reranked rankings for one query."""
+    return retriever.search_faiss_bm25_rrf_and_rerank(
         query, top_k=top_k, rrf_top_k=rrf_top_k
     )
 
@@ -296,7 +310,7 @@ def main() -> None:
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     print(f"Question: {args.query}")
     if args.both_searches:
-        ranked_chunks, bm25_results, rrf_results = (
+        ranked_chunks, bm25_results, rrf_results, rerank_results = (
             run_both_searches(args.query, retriever, top_k=args.top_k)
         )
         print("\nFAISS results:")
@@ -305,6 +319,9 @@ def main() -> None:
         print_bm25_results(bm25_results)
         print("\nRRF results:")
         print_rrf_results(rrf_results)
+        print("\nReranked results:")
+        print_rerank_results(rerank_results)
+        ranked_chunks = [result.chunk for result in rerank_results]
     elif args.keyword_search:
         ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)

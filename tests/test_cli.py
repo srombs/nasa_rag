@@ -11,10 +11,17 @@ import generator
 import chunkers
 import numpy as np
 import retriever
+import reranker
 import semantic_search
 import tokenizer
 import vector_store
-from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
+from models import (
+    BM25SearchResult,
+    DocumentChunk,
+    HybridSearchResult,
+    RerankResult,
+    TokenizedChunk,
+)
 
 from nasa_rag import __version__
 
@@ -260,6 +267,79 @@ def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_pat
     assert (chunks[2].faiss_rank, chunks[2].bm25_rank) == (3, 2)
 
 
+def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
+    rrf_results = [
+        DocumentChunk("iss.txt", 0, "ISS power systems.", [1.0], rrf_score=0.02),
+        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [1.0], rrf_score=0.03),
+    ]
+
+    requests = []
+
+    def create_response(**kwargs):
+        requests.append(kwargs)
+        output_text = (
+            '{"score": 1.0, "reason": "The chunk directly discusses ISS power."}'
+            if "ISS power systems." in kwargs["input"]
+            else '{"score": 0.0, "reason": "The chunk is about Hubble."}'
+        )
+        return types.SimpleNamespace(output_text=output_text)
+
+    client = types.SimpleNamespace(
+        responses=types.SimpleNamespace(create=create_response)
+    )
+    results = reranker.Reranker(client=client).rerank("ISS power", rrf_results)
+
+    assert results == [
+        RerankResult(
+            chunk=rrf_results[0],
+            score=1.0,
+            reason="The chunk directly discusses ISS power.",
+        ),
+        RerankResult(
+            chunk=rrf_results[1],
+            score=0.0,
+            reason="The chunk is about Hubble.",
+        ),
+    ]
+    assert len(requests) == 2
+    assert requests[0]["model"] == reranker.RERANK_MODEL
+    assert requests[0]["instructions"] == reranker.RERANK_INSTRUCTIONS
+    assert requests[0]["input"] == "Query:\nISS power\n\nChunk:\nISS power systems."
+
+
+def test_retriever_delegates_rrf_results_to_the_reranker(monkeypatch, tmp_path) -> None:
+    generic_retriever = retriever.Retriever(tmp_path)
+    rrf_results = [DocumentChunk("iss.txt", 0, "ISS power.", [1.0])]
+    expected = [RerankResult(rrf_results[0], 1.0, "Matched query tokens: iss.")]
+    monkeypatch.setattr(generic_retriever.reranker, "rerank", lambda *_args: expected)
+
+    assert generic_retriever.rerank_rrf_results("ISS", rrf_results) == expected
+
+
+def test_retriever_reranks_after_building_rrf_results(monkeypatch, tmp_path) -> None:
+    generic_retriever = retriever.Retriever(tmp_path)
+    faiss_results = [DocumentChunk("iss.txt", 0, "FAISS", [1.0])]
+    bm25_results = [BM25SearchResult(1.0, DocumentChunk("iss.txt", 1, "BM25", [1.0]))]
+    rrf_results = [DocumentChunk("iss.txt", 2, "RRF", [1.0])]
+    rerank_results = [RerankResult(rrf_results[0], 1.0, "Directly relevant.")]
+    monkeypatch.setattr(
+        generic_retriever,
+        "search_faiss_bm25_and_rrf",
+        lambda *_args, **_kwargs: (faiss_results, bm25_results, rrf_results),
+    )
+    monkeypatch.setattr(
+        generic_retriever,
+        "rerank_rrf_results",
+        lambda _query, results: rerank_results if results == rrf_results else [],
+    )
+
+    results = generic_retriever.search_faiss_bm25_rrf_and_rerank(
+        "ISS", top_k=1
+    )
+
+    assert results == (faiss_results, bm25_results, rrf_results, rerank_results)
+
+
 def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
     monkeypatch, tmp_path
 ) -> None:
@@ -438,9 +518,26 @@ def test_print_rrf_results_includes_source_rankings(capsys) -> None:
     )
 
 
+def test_print_rerank_results_includes_model_score_and_reason(capsys) -> None:
+    results = [
+        RerankResult(
+            DocumentChunk("iss.txt", 0, "ISS research.", [1.0]),
+            score=0.9,
+            reason="The chunk directly answers the query.",
+        )
+    ]
+
+    semantic_search.print_rerank_results(results)
+
+    assert capsys.readouterr().out == (
+        "rerank 0.9000 | [iss.txt, chunk 0] | "
+        "The chunk directly answers the query.\n"
+    )
+
+
 def test_run_both_searches_returns_independent_rankings() -> None:
     class SearchRetriever:
-        def search_faiss_bm25_and_rrf(self, query, top_k, rrf_top_k):
+        def search_faiss_bm25_rrf_and_rerank(self, query, top_k, rrf_top_k):
             assert (query, top_k) == ("ISS research", 2)
             assert rrf_top_k == semantic_search.RRF_TOP_K
             return [DocumentChunk("iss.txt", 0, "semantic", [1.0])], [
@@ -449,15 +546,22 @@ def test_run_both_searches_returns_independent_rankings() -> None:
                 )
             ], [
                 DocumentChunk("iss.txt", 2, "rrf", [1.0], rrf_score=0.03)
+            ], [
+                RerankResult(
+                    DocumentChunk("iss.txt", 3, "reranked", [1.0]),
+                    score=1.0,
+                    reason="Directly relevant.",
+                )
             ]
 
-    faiss_results, bm25_results, rrf_results = (
+    faiss_results, bm25_results, rrf_results, rerank_results = (
         semantic_search.run_both_searches("ISS research", SearchRetriever(), top_k=2)
     )
 
     assert faiss_results[0].text == "semantic"
     assert bm25_results[0].chunk.text == "bm25"
     assert rrf_results[0].text == "rrf"
+    assert rerank_results[0].chunk.text == "reranked"
 
 
 def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:

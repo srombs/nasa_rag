@@ -1,5 +1,6 @@
 """Generic retrieval orchestration for documents, tokens, and FAISS."""
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from bm25_retriever import BM25Retriever
@@ -7,6 +8,8 @@ from embedder import embed_query
 from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
 from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
+from models import RerankResult
+from reranker import Reranker
 from tokenizer import (
     score_tokenized_chunks,
     tokenize_chunks,
@@ -46,6 +49,7 @@ class Retriever:
         self.tokenized_chunks: list[TokenizedChunk] = []
         self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
         self.bm25_retriever = BM25Retriever()
+        self.reranker = Reranker()
 
     def _cache_path(self, file_name: str) -> Path:
         """Return a cache path unique to non-default chunking settings."""
@@ -135,6 +139,27 @@ class Retriever:
             query, top_k=top_k, rrf_top_k=top_k, rrf_k=rrf_k
         )
         return rrf_results
+
+    def rerank_rrf_results(
+        self, query: str, rrf_results: Sequence[DocumentChunk]
+    ) -> list[RerankResult]:
+        """Rerank reciprocal-rank-fusion candidates with the configured reranker."""
+        return self.reranker.rerank(query, rrf_results)
+
+    def search_faiss_bm25_rrf_and_rerank(
+        self, query: str, top_k: int, rrf_top_k: int = 10, rrf_k: int = 60
+    ) -> tuple[
+        list[DocumentChunk],
+        list[BM25SearchResult],
+        list[DocumentChunk],
+        list[RerankResult],
+    ]:
+        """Run FAISS, BM25, RRF, then model-rerank the RRF candidates."""
+        faiss_results, bm25_results, rrf_results = self.search_faiss_bm25_and_rrf(
+            query, top_k=top_k, rrf_top_k=rrf_top_k, rrf_k=rrf_k
+        )
+        rerank_results = self.rerank_rrf_results(query, rrf_results)
+        return faiss_results, bm25_results, rrf_results, rerank_results
 
     def search_faiss_bm25_and_rrf(
         self, query: str, top_k: int, rrf_top_k: int = 10, rrf_k: int = 60
