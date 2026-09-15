@@ -9,6 +9,7 @@ from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
 from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
 from models import RerankResult
+from query_rewriter import QueryRewriter
 from reranker import Reranker
 from tokenizer import (
     score_tokenized_chunks,
@@ -49,6 +50,7 @@ class Retriever:
         self.tokenized_chunks: list[TokenizedChunk] = []
         self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
         self.bm25_retriever = BM25Retriever()
+        self.query_rewriter = QueryRewriter()
         self.reranker = Reranker()
 
     def _cache_path(self, file_name: str) -> Path:
@@ -83,12 +85,13 @@ class Retriever:
             raise RetrievalError("Unable to load the retriever.") from error
 
     def search(self, query: str, top_k: int) -> list[DocumentChunk]:
-        """Embed a query and delegate its vector search to FAISS."""
+        """Rewrite a query, embed it, and delegate its vector search to FAISS."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
-            return self.faiss_retriever.search(embed_query(query), top_k)
+            rewritten_query = self.query_rewriter.rewrite(query)
+            return self.faiss_retriever.search(embed_query(rewritten_query), top_k)
         except ValueError:
             raise
         except Exception as error:
@@ -120,12 +123,13 @@ class Retriever:
         return ranked_chunks
 
     def search_bm25(self, query: str, top_k: int) -> list[BM25SearchResult]:
-        """Tokenize a query and delegate scoring to the BM25 retriever."""
+        """Rewrite and tokenize a query, then delegate scoring to BM25."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
-            return self.bm25_retriever.search(tokenize_text(query), top_k)
+            rewritten_query = self.query_rewriter.rewrite(query)
+            return self.bm25_retriever.search(tokenize_text(rewritten_query), top_k)
         except ValueError:
             raise
         except Exception as error:
@@ -153,16 +157,39 @@ class Retriever:
         list[BM25SearchResult],
         list[DocumentChunk],
         list[RerankResult],
+        str,
     ]:
-        """Run FAISS, BM25, RRF, then model-rerank the RRF candidates."""
+        """Run retrieval with a rewritten query and rerank with the original one."""
+        try:
+            rewritten_query = self.query_rewriter.rewrite(query)
+        except ValueError:
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to rewrite the retrieval query.") from error
+
         faiss_results, bm25_results, rrf_results = self.search_faiss_bm25_and_rrf(
-            query, top_k=top_k, rrf_top_k=rrf_top_k, rrf_k=rrf_k
+            query,
+            top_k=top_k,
+            rrf_top_k=rrf_top_k,
+            rrf_k=rrf_k,
+            rewritten_query=rewritten_query,
         )
         rerank_results = self.rerank_rrf_results(query, rrf_results)
-        return faiss_results, bm25_results, rrf_results, rerank_results
+        return (
+            faiss_results,
+            bm25_results,
+            rrf_results,
+            rerank_results,
+            rewritten_query,
+        )
 
     def search_faiss_bm25_and_rrf(
-        self, query: str, top_k: int, rrf_top_k: int = 10, rrf_k: int = 60
+        self,
+        query: str,
+        top_k: int,
+        rrf_top_k: int = 10,
+        rrf_k: int = 60,
+        rewritten_query: str | None = None,
     ) -> tuple[
         list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]
     ]:
@@ -181,11 +208,12 @@ class Retriever:
             raise ValueError("rrf_k cannot be negative.")
 
         try:
+            search_query = rewritten_query or self.query_rewriter.rewrite(query)
             faiss_results = self.faiss_retriever.search(
-                embed_query(query), top_k=len(self.document_chunks)
+                embed_query(search_query), top_k=len(self.document_chunks)
             )
             bm25_results = self.bm25_retriever.search(
-                tokenize_text(query), top_k=len(self.document_chunks)
+                tokenize_text(search_query), top_k=len(self.document_chunks)
             )
         except ValueError:
             raise
@@ -243,8 +271,9 @@ class Retriever:
         if semantic_weight < 0 or keyword_weight < 0:
             raise ValueError("Hybrid search weights cannot be negative.")
 
+        rewritten_query = self.query_rewriter.rewrite(query)
         semantic_results = self.faiss_retriever.search(
-            embed_query(query), top_k=len(self.document_chunks)
+            embed_query(rewritten_query), top_k=len(self.document_chunks)
         )
         semantic_scores = {
             (chunk.source, chunk.chunk_index): chunk.similarity

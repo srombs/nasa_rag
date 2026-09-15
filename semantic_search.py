@@ -194,8 +194,9 @@ def run_both_searches(
     list[BM25SearchResult],
     list[DocumentChunk],
     list[RerankResult],
+    str,
 ]:
-    """Return FAISS, BM25, RRF, and model-reranked rankings for one query."""
+    """Return the rewritten query and all combined retrieval rankings."""
     return retriever.search_faiss_bm25_rrf_and_rerank(
         query, top_k=top_k, rrf_top_k=rrf_top_k
     )
@@ -308,11 +309,18 @@ def main() -> None:
     args = parser.parse_args()
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
-    print(f"Question: {args.query}")
     if args.both_searches:
-        ranked_chunks, bm25_results, rrf_results, rerank_results = (
+        (
+            ranked_chunks,
+            bm25_results,
+            rrf_results,
+            rerank_results,
+            rewritten_query,
+        ) = (
             run_both_searches(args.query, retriever, top_k=args.top_k)
         )
+        print(f"Original query:\n{args.query}")
+        print(f"\nRewritten query:\n{rewritten_query}")
         print("\nFAISS results:")
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
         print("\nBM25 results:")
@@ -322,14 +330,16 @@ def main() -> None:
         print("\nReranked results:")
         print_rerank_results(rerank_results)
         ranked_chunks = [result.chunk for result in rerank_results]
-    elif args.keyword_search:
+    else:
+        print(f"Question: {args.query}")
+    if not args.both_searches and args.keyword_search:
         ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
-    elif args.bm25_search:
+    elif not args.both_searches and args.bm25_search:
         bm25_results = run_bm25_search(args.query, retriever, top_k=args.top_k)
         print_bm25_results(bm25_results)
         ranked_chunks = [result.chunk for result in bm25_results]
-    elif args.hybrid_search:
+    elif not args.both_searches and args.hybrid_search:
         semantic_results, hybrid_results = run_semantic_and_hybrid_search(
             args.query,
             retriever,
@@ -342,7 +352,7 @@ def main() -> None:
         print("\nHybrid results:")
         print_hybrid_results(hybrid_results)
         ranked_chunks = [result.document_chunk for result in hybrid_results]
-    else:
+    elif not args.both_searches:
         ranked_chunks = run_embedded_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
     if args.generate_answer:

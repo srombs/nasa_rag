@@ -88,6 +88,10 @@ It also stores each source rank in `chunk.faiss_rank` and `chunk.bm25_rank`.
 `Reranker.rerank(query, rrf_results)` sends each query-chunk pair to the model
 and returns `RerankResult(chunk, score, reason)` objects for a second-pass
 ranking of RRF candidates.
+`QueryRewriter().rewrite(query)` sends the original user query to the model,
+using its built-in search-query rewrite instructions, and returns the rewritten
+search query. FAISS, BM25, and RRF use that rewritten query; the model
+reranker receives the original user query and each RRF chunk.
 
 The evaluation reports source-level `Recall@30`: a question is a hit when any
 of its expected source files appears among its 30 retrieved chunks.

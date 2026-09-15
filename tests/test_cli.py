@@ -12,6 +12,7 @@ import chunkers
 import numpy as np
 import retriever
 import reranker
+import query_rewriter
 import semantic_search
 import tokenizer
 import vector_store
@@ -197,6 +198,7 @@ def test_retriever_search_bm25_tokenizes_the_query(monkeypatch, tmp_path) -> Non
         tmp_path, cache_directory=tmp_path / "cache"
     )
     generic_retriever.load()
+    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", lambda query: query)
 
     results = generic_retriever.search_bm25("What ISS research?", top_k=1)
 
@@ -221,10 +223,15 @@ def test_retriever_search_bm25_passes_every_query_word(monkeypatch, tmp_path) ->
         return []
 
     monkeypatch.setattr(generic_retriever.bm25_retriever, "search", capture_search)
+    monkeypatch.setattr(
+        generic_retriever.query_rewriter,
+        "rewrite",
+        lambda _query: "ISS electrical power",
+    )
 
     generic_retriever.search_bm25("What is the ISS?", top_k=1)
 
-    assert received == {"tokens": ["what", "is", "the", "iss"], "top_k": 1}
+    assert received == {"tokens": ["iss", "electrical", "power"], "top_k": 1}
 
 
 def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_path) -> None:
@@ -241,6 +248,7 @@ def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_pat
         tmp_path, cache_directory=tmp_path / "cache"
     )
     generic_retriever.load()
+    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", lambda query: query)
     monkeypatch.setattr(
         generic_retriever.faiss_retriever,
         "search",
@@ -265,6 +273,56 @@ def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_pat
     assert (chunks[0].faiss_rank, chunks[0].bm25_rank) == (1, 3)
     assert (chunks[1].faiss_rank, chunks[1].bm25_rank) == (2, 1)
     assert (chunks[2].faiss_rank, chunks[2].bm25_rank) == (3, 2)
+
+
+def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking(
+    monkeypatch, tmp_path
+) -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS power.", [1.0, 0.0]),
+        DocumentChunk("iss.txt", 1, "ISS crew.", [0.0, 1.0]),
+    ]
+    generic_retriever = retriever.Retriever(tmp_path)
+    generic_retriever.document_chunks = chunks
+    received = {}
+
+    def rewrite(query):
+        received["rewrite_query"] = query
+        return "ISS electrical power"
+
+    def embed(query):
+        received["faiss_query"] = query
+        return [1.0, 0.0]
+
+    def bm25_search(tokens, top_k):
+        received["bm25_tokens"] = tokens
+        return [BM25SearchResult(1.0, chunk) for chunk in chunks[:top_k]]
+
+    def rerank(original_query, rrf_results):
+        received["rerank_query"] = original_query
+        return [RerankResult(rrf_results[0], 1.0, "Directly relevant.")]
+
+    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", rewrite)
+    monkeypatch.setattr(retriever, "embed_query", embed)
+    monkeypatch.setattr(
+        generic_retriever.faiss_retriever,
+        "search",
+        lambda _embedding, top_k: chunks[:top_k],
+    )
+    monkeypatch.setattr(generic_retriever.bm25_retriever, "search", bm25_search)
+    monkeypatch.setattr(generic_retriever, "rerank_rrf_results", rerank)
+
+    results = generic_retriever.search_faiss_bm25_rrf_and_rerank(
+        "What powers the ISS?", top_k=2, rrf_top_k=2
+    )
+
+    assert received == {
+        "rewrite_query": "What powers the ISS?",
+        "faiss_query": "ISS electrical power",
+        "bm25_tokens": ["iss", "electrical", "power"],
+        "rerank_query": "What powers the ISS?",
+    }
+    assert results[-1] == "ISS electrical power"
 
 
 def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
@@ -307,6 +365,38 @@ def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
     assert requests[0]["input"] == "Query:\nISS power\n\nChunk:\nISS power systems."
 
 
+def test_query_rewriter_sends_the_user_query_to_the_model() -> None:
+    request = {}
+
+    def create_response(**kwargs):
+        request.update(kwargs)
+        return types.SimpleNamespace(output_text="ISS electrical power system")
+
+    client = types.SimpleNamespace(
+        responses=types.SimpleNamespace(create=create_response)
+    )
+    rewriter = query_rewriter.QueryRewriter(client=client)
+
+    rewritten_query = rewriter.rewrite("What powers the ISS?")
+
+    assert rewritten_query == "ISS electrical power system"
+    assert request == {
+        "model": query_rewriter.QUERY_REWRITE_MODEL,
+        "instructions": query_rewriter.QUERY_REWRITE_INSTRUCTIONS,
+        "input": "What powers the ISS?",
+    }
+
+
+def test_query_rewriter_rejects_empty_query() -> None:
+    rewriter = query_rewriter.QueryRewriter()
+    try:
+        rewriter.rewrite("   ")
+    except ValueError as error:
+        assert str(error) == "Query text cannot be empty."
+    else:
+        raise AssertionError("Expected an empty query to be rejected.")
+
+
 def test_retriever_delegates_rrf_results_to_the_reranker(monkeypatch, tmp_path) -> None:
     generic_retriever = retriever.Retriever(tmp_path)
     rrf_results = [DocumentChunk("iss.txt", 0, "ISS power.", [1.0])]
@@ -328,6 +418,9 @@ def test_retriever_reranks_after_building_rrf_results(monkeypatch, tmp_path) -> 
         lambda *_args, **_kwargs: (faiss_results, bm25_results, rrf_results),
     )
     monkeypatch.setattr(
+        generic_retriever.query_rewriter, "rewrite", lambda _query: "rewritten ISS"
+    )
+    monkeypatch.setattr(
         generic_retriever,
         "rerank_rrf_results",
         lambda _query, results: rerank_results if results == rrf_results else [],
@@ -337,7 +430,13 @@ def test_retriever_reranks_after_building_rrf_results(monkeypatch, tmp_path) -> 
         "ISS", top_k=1
     )
 
-    assert results == (faiss_results, bm25_results, rrf_results, rerank_results)
+    assert results == (
+        faiss_results,
+        bm25_results,
+        rrf_results,
+        rerank_results,
+        "rewritten ISS",
+    )
 
 
 def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
@@ -355,6 +454,7 @@ def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
         tmp_path, cache_directory=tmp_path / "cache"
     )
     generic_retriever.load()
+    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", lambda query: query)
 
     semantic_results, results = generic_retriever.search_semantic_and_hybrid(
         "ISS telescope", top_k=2, semantic_weight=0.7, keyword_weight=0.3
@@ -552,9 +652,9 @@ def test_run_both_searches_returns_independent_rankings() -> None:
                     score=1.0,
                     reason="Directly relevant.",
                 )
-            ]
+            ], "ISS research rewritten"
 
-    faiss_results, bm25_results, rrf_results, rerank_results = (
+    faiss_results, bm25_results, rrf_results, rerank_results, rewritten_query = (
         semantic_search.run_both_searches("ISS research", SearchRetriever(), top_k=2)
     )
 
@@ -562,6 +662,32 @@ def test_run_both_searches_returns_independent_rankings() -> None:
     assert bm25_results[0].chunk.text == "bm25"
     assert rrf_results[0].text == "rrf"
     assert rerank_results[0].chunk.text == "reranked"
+    assert rewritten_query == "ISS research rewritten"
+
+
+def test_both_searches_prints_original_and_rewritten_queries(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(semantic_search, "load_retriever", lambda *_args: object())
+    monkeypatch.setattr(
+        semantic_search,
+        "run_both_searches",
+        lambda *_args, **_kwargs: ([], [], [], [], "ISS electrical power"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["semantic_search.py", "What powers the ISS?", "--both-searches"],
+    )
+
+    semantic_search.main()
+
+    output = capsys.readouterr().out
+    assert "Original query:\nWhat powers the ISS?" in output
+    assert "Rewritten query:\nISS electrical power" in output
+    assert output.index("Original query:") < output.index("Rewritten query:")
+    assert output.index("Rewritten query:") < output.index("FAISS results:")
+    assert output.index("FAISS results:") < output.index("BM25 results:")
+    assert output.index("BM25 results:") < output.index("RRF results:")
+    assert output.index("RRF results:") < output.index("Reranked results:")
 
 
 def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:
@@ -989,6 +1115,7 @@ def test_faiss_retriever_wraps_faiss_search_failures(monkeypatch, tmp_path) -> N
     ]
     generic_retriever.faiss_retriever.index = BrokenIndex()
     monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
+    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", lambda query: query)
 
     try:
         generic_retriever.search("find first", top_k=1)
