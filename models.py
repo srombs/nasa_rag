@@ -75,6 +75,14 @@ class BM25SearchResult:
 
 
 @dataclass
+class RetrievalPlan:
+    """A model-created query and optional source-file restriction."""
+
+    search_query: str
+    source_file_filter: str | None
+
+
+@dataclass
 class RerankResult:
     """A reranked chunk, its reranking score, and scoring explanation."""
 

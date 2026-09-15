@@ -1,12 +1,11 @@
 """Model-based reranking for reciprocal-rank-fusion candidates."""
 
-from collections.abc import Sequence
 import json
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 from models import DocumentChunk, RerankResult
-
 
 RERANK_MODEL = "gpt-5.6-luna"
 RERANK_INSTRUCTIONS = """You are evaluating whether a passage contains evidence
@@ -82,11 +81,10 @@ class Reranker:
         """Ask the model to score one query-chunk pair."""
         input_text = f"Query:\n{query}\n\nChunk:\n{chunk.text}"
         LOGGER.info(
-            "Sending reranking request to %s for %s, chunk %s with input:\n%s",
+            "Sending reranking request to %s for %s, chunk %s.",
             RERANK_MODEL,
             chunk.source,
             chunk.chunk_index,
-            input_text,
         )
         try:
             response = self._get_client().responses.create(

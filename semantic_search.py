@@ -1,8 +1,8 @@
 """Starter documents for semantic search experiments."""
 
-from collections.abc import Sequence
 import argparse
 import logging
+from collections.abc import Sequence
 from math import sqrt
 from pathlib import Path
 
@@ -15,6 +15,7 @@ from generator import (
     validate_answer_citations,
 )
 from models import BM25SearchResult, DocumentChunk, HybridSearchResult, RerankResult
+from retrieval_planner import RetrievalPlanner
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 
 TOP_RESULTS = 10
@@ -200,6 +201,7 @@ def run_both_searches(
     top_k: int = TOP_K,
     rrf_top_k: int = RRF_TOP_K,
     source_file_filter: str | None = None,
+    search_query: str | None = None,
 ) -> tuple[
     list[DocumentChunk],
     list[BM25SearchResult],
@@ -213,6 +215,7 @@ def run_both_searches(
         top_k=top_k,
         rrf_top_k=rrf_top_k,
         source_file_filter=source_file_filter,
+        search_query=search_query,
     )
 
 
@@ -330,6 +333,8 @@ def main() -> None:
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     if args.both_searches:
+        retrieval_plan = RetrievalPlanner().infer(args.query)
+        retriever.validate_source_file_filter(retrieval_plan.source_file_filter)
         (
             ranked_chunks,
             bm25_results,
@@ -341,11 +346,19 @@ def main() -> None:
                 args.query,
                 retriever,
                 top_k=args.top_k,
-                source_file_filter=args.source_file,
+                source_file_filter=(
+                    args.source_file or retrieval_plan.source_file_filter
+                ),
+                search_query=retrieval_plan.search_query,
             )
         )
         print(f"Original query:\n{args.query}")
+        print(f"\nRetrieval plan:\n{retrieval_plan}")
         print(f"\nRewritten query:\n{rewritten_query}")
+        print(
+            "\nSource file filter:\n"
+            f"{args.source_file or retrieval_plan.source_file_filter or 'None'}"
+        )
         print("\nFAISS results:")
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
         print("\nBM25 results:")

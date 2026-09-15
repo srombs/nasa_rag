@@ -3,16 +3,18 @@ import logging
 import sys
 import types
 
-import embedder
+import numpy as np
+
 import bm25_retriever
+import chunkers
+import embedder
 import faiss_retriever
 import file_loader
 import generator
-import chunkers
-import numpy as np
-import retriever
-import reranker
 import query_rewriter
+import retrieval_planner
+import reranker
+import retriever
 import semantic_search
 import tokenizer
 import vector_store
@@ -21,6 +23,7 @@ from models import (
     DocumentChunk,
     HybridSearchResult,
     RerankResult,
+    RetrievalPlan,
     TokenizedChunk,
 )
 
@@ -241,6 +244,23 @@ def test_retriever_search_keywords_returns_matching_document_chunks(
     assert results[0].similarity == 1.0
 
 
+def test_retriever_rejects_a_source_file_filter_that_is_not_loaded(tmp_path) -> None:
+    generic_retriever = retriever.Retriever(tmp_path)
+    generic_retriever.document_chunks = [
+        DocumentChunk("iss.txt", 0, "ISS research.", [1.0])
+    ]
+
+    try:
+        generic_retriever.validate_source_file_filter("fake_source.txt")
+    except ValueError as error:
+        assert str(error) == (
+            "Source file filter 'fake_source.txt' does not match a loaded source "
+            "file."
+        )
+    else:
+        raise AssertionError("Expected an unknown source file filter to fail.")
+
+
 def test_retriever_search_bm25_tokenizes_the_query(monkeypatch, tmp_path) -> None:
     chunks = [
         DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0, 0.0]),
@@ -338,7 +358,7 @@ def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_pat
     assert (chunks[2].faiss_rank, chunks[2].bm25_rank) == (3, 2)
 
 
-def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking(
+def test_retriever_uses_planned_query_for_rrf_and_original_query_for_reranking(
     monkeypatch, tmp_path
 ) -> None:
     chunks = [
@@ -349,9 +369,8 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
     generic_retriever.document_chunks = chunks
     received = {}
 
-    def rewrite(query):
-        received["rewrite_query"] = query
-        return "ISS electrical power"
+    def rewrite(_query):
+        raise AssertionError("The planned query should not be rewritten again.")
 
     def embed(query):
         received["faiss_query"] = query
@@ -377,11 +396,13 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
     monkeypatch.setattr(generic_retriever, "rerank_rrf_results", rerank)
 
     results = generic_retriever.search_faiss_bm25_rrf_and_rerank(
-        "What powers the ISS?", top_k=2, rrf_top_k=2
+        "What powers the ISS?",
+        top_k=2,
+        rrf_top_k=2,
+        search_query="ISS electrical power",
     )
 
     assert received == {
-        "rewrite_query": "What powers the ISS?",
         "faiss_query": "ISS electrical power",
         "bm25_tokens": ["iss", "electrical", "power"],
         "bm25_source_file_filter": None,
@@ -390,7 +411,7 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
     assert results[-1] == "ISS electrical power"
 
 
-def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
+def test_reranker_reranks_rrf_results_without_logging_input_text(caplog) -> None:
     rrf_results = [
         DocumentChunk("iss.txt", 0, "ISS power systems.", [1.0], rrf_score=0.02),
         DocumentChunk("hubble.txt", 1, "Hubble telescope.", [1.0], rrf_score=0.03),
@@ -410,6 +431,7 @@ def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
     client = types.SimpleNamespace(
         responses=types.SimpleNamespace(create=create_response)
     )
+    caplog.set_level(logging.INFO, logger=reranker.__name__)
     results = reranker.Reranker(client=client).rerank("ISS power", rrf_results)
 
     assert results == [
@@ -428,6 +450,8 @@ def test_reranker_reranks_rrf_results_with_model_scores_and_reasons() -> None:
     assert requests[0]["model"] == reranker.RERANK_MODEL
     assert requests[0]["instructions"] == reranker.RERANK_INSTRUCTIONS
     assert requests[0]["input"] == "Query:\nISS power\n\nChunk:\nISS power systems."
+    assert "Sending reranking request" in caplog.text
+    assert "ISS power systems." not in caplog.text
 
 
 def test_query_rewriter_sends_the_user_query_to_the_model() -> None:
@@ -460,6 +484,56 @@ def test_query_rewriter_rejects_empty_query() -> None:
         assert str(error) == "Query text cannot be empty."
     else:
         raise AssertionError("Expected an empty query to be rejected.")
+
+
+def test_retrieval_planner_returns_a_valid_retrieval_plan() -> None:
+    request = {}
+
+    def create_response(**kwargs):
+        request.update(kwargs)
+        return types.SimpleNamespace(
+            output_text=(
+                '{"search_query":"Hubble telescope instruments",'
+                '"source_file_filter":"hubble.txt"}'
+            )
+        )
+
+    client = types.SimpleNamespace(
+        responses=types.SimpleNamespace(create=create_response)
+    )
+    planner = retrieval_planner.RetrievalPlanner(client=client)
+
+    plan = planner.infer("How many instruments does Hubble have?")
+
+    assert plan == RetrievalPlan("Hubble telescope instruments", "hubble.txt")
+    assert request == {
+        "model": retrieval_planner.RETRIEVAL_PLANNER_MODEL,
+        "instructions": retrieval_planner.RETRIEVAL_PLANNER_INSTRUCTIONS,
+        "input": "How many instruments does Hubble have?",
+        "text": {"format": retrieval_planner.RETRIEVAL_PLANNER_RESPONSE_FORMAT},
+    }
+
+
+def test_retrieval_planner_rejects_an_invalid_search_query() -> None:
+    client = types.SimpleNamespace(
+        responses=types.SimpleNamespace(
+            create=lambda **_kwargs: types.SimpleNamespace(
+                output_text=(
+                    '{"search_query":"", "source_file_filter":null}'
+                )
+            )
+        )
+    )
+    planner = retrieval_planner.RetrievalPlanner(client=client)
+
+    try:
+        planner.infer("How many instruments?")
+    except retrieval_planner.RetrievalPlanningError as error:
+        assert str(error) == (
+            "The retrieval-plan API returned an invalid search query."
+        )
+    else:
+        raise AssertionError("Expected an invalid search query to fail.")
 
 
 def test_retriever_delegates_rrf_results_to_the_reranker(monkeypatch, tmp_path) -> None:
@@ -704,11 +778,12 @@ def test_print_rerank_results_includes_model_score_and_reason(capsys) -> None:
 def test_run_both_searches_returns_independent_rankings() -> None:
     class SearchRetriever:
         def search_faiss_bm25_rrf_and_rerank(
-            self, query, top_k, rrf_top_k, source_file_filter
+            self, query, top_k, rrf_top_k, source_file_filter, search_query
         ):
             assert (query, top_k) == ("ISS research", 2)
             assert rrf_top_k == semantic_search.RRF_TOP_K
             assert source_file_filter is None
+            assert search_query is None
             return [DocumentChunk("iss.txt", 0, "semantic", [1.0])], [
                 BM25SearchResult(
                     score=1.0, chunk=DocumentChunk("iss.txt", 1, "bm25", [1.0])
@@ -734,13 +809,35 @@ def test_run_both_searches_returns_independent_rankings() -> None:
     assert rewritten_query == "ISS research rewritten"
 
 
-def test_both_searches_prints_original_and_rewritten_queries(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(semantic_search, "load_retriever", lambda *_args: object())
+def test_both_searches_prints_the_retrieval_plan_and_reranked_results(
+    monkeypatch, capsys
+) -> None:
+    loaded_retriever = types.SimpleNamespace(
+        validate_source_file_filter=lambda source_file: (
+            None
+            if source_file == "iss.txt"
+            else (_ for _ in ()).throw(AssertionError("Unexpected source file"))
+        )
+    )
+    monkeypatch.setattr(
+        semantic_search, "load_retriever", lambda *_args: loaded_retriever
+    )
     monkeypatch.setattr(
         semantic_search,
-        "run_both_searches",
-        lambda *_args, **_kwargs: ([], [], [], [], "ISS electrical power"),
+        "RetrievalPlanner",
+        lambda: types.SimpleNamespace(
+            infer=lambda query: RetrievalPlan("ISS electrical power", "iss.txt")
+        ),
     )
+    def run_both_searches(_query, _retriever, **kwargs):
+        assert kwargs == {
+            "top_k": semantic_search.TOP_K,
+            "source_file_filter": "iss.txt",
+            "search_query": "ISS electrical power",
+        }
+        return [], [], [], [], "ISS electrical power"
+
+    monkeypatch.setattr(semantic_search, "run_both_searches", run_both_searches)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -751,7 +848,13 @@ def test_both_searches_prints_original_and_rewritten_queries(monkeypatch, capsys
 
     output = capsys.readouterr().out
     assert "Original query:\nWhat powers the ISS?" in output
+    assert (
+        "Retrieval plan:\n"
+        "RetrievalPlan(search_query='ISS electrical power', "
+        "source_file_filter='iss.txt')"
+    ) in output
     assert "Rewritten query:\nISS electrical power" in output
+    assert "Source file filter:\niss.txt" in output
     assert output.index("Original query:") < output.index("Rewritten query:")
     assert output.index("Rewritten query:") < output.index("FAISS results:")
     assert output.index("FAISS results:") < output.index("BM25 results:")

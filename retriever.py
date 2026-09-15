@@ -7,8 +7,13 @@ from bm25_retriever import BM25Retriever
 from embedder import embed_query
 from faiss_retriever import FaissRetriever
 from file_loader import CACHE_FILE_NAME, load_and_embed_directory
-from models import BM25SearchResult, DocumentChunk, HybridSearchResult, TokenizedChunk
-from models import RerankResult
+from models import (
+    BM25SearchResult,
+    DocumentChunk,
+    HybridSearchResult,
+    RerankResult,
+    TokenizedChunk,
+)
 from query_rewriter import QueryRewriter
 from reranker import Reranker
 from tokenizer import (
@@ -18,7 +23,6 @@ from tokenizer import (
     tokenize_text_set,
 )
 from vector_store import VectorStoreError
-
 
 DEFAULT_CHUNK_SIZE = 100
 DEFAULT_OVERLAP_SIZE = 20
@@ -83,6 +87,20 @@ class Retriever:
             raise
         except Exception as error:
             raise RetrievalError("Unable to load the retriever.") from error
+
+    def validate_source_file_filter(self, source_file_filter: str | None) -> None:
+        """Reject a source filter that does not name a loaded source file."""
+        if source_file_filter is None:
+            return
+        if not source_file_filter.strip():
+            raise ValueError("Source file filter cannot be empty.")
+
+        available_sources = {chunk.source for chunk in self.document_chunks}
+        if source_file_filter not in available_sources:
+            raise ValueError(
+                f"Source file filter {source_file_filter!r} does not match a "
+                "loaded source file."
+            )
 
     def search(
         self,
@@ -183,6 +201,7 @@ class Retriever:
         rrf_top_k: int = 10,
         rrf_k: int = 60,
         source_file_filter: str | None = None,
+        search_query: str | None = None,
     ) -> tuple[
         list[DocumentChunk],
         list[BM25SearchResult],
@@ -190,9 +209,9 @@ class Retriever:
         list[RerankResult],
         str,
     ]:
-        """Run retrieval with a rewritten query and rerank with the original one."""
+        """Run planned retrieval and rerank against the original user query."""
         try:
-            rewritten_query = self.query_rewriter.rewrite(query)
+            rewritten_query = search_query or self.query_rewriter.rewrite(query)
         except ValueError:
             raise
         except Exception as error:
@@ -255,7 +274,9 @@ class Retriever:
         except ValueError:
             raise
         except Exception as error:
-            raise RetrievalError("Unable to calculate reciprocal rank fusion.") from error
+            raise RetrievalError(
+                "Unable to calculate reciprocal rank fusion."
+            ) from error
 
         eligible_chunks = self.document_chunks
         if source_file_filter is not None:
