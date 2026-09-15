@@ -84,14 +84,23 @@ class Retriever:
         except Exception as error:
             raise RetrievalError("Unable to load the retriever.") from error
 
-    def search(self, query: str, top_k: int) -> list[DocumentChunk]:
-        """Rewrite a query, embed it, and delegate its vector search to FAISS."""
+    def search(
+        self,
+        query: str,
+        top_k: int,
+        source_file_filter: str | None = None,
+    ) -> list[DocumentChunk]:
+        """Rewrite, embed, and search FAISS with an optional source file filter."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
             rewritten_query = self.query_rewriter.rewrite(query)
-            return self.faiss_retriever.search(embed_query(rewritten_query), top_k)
+            return self.faiss_retriever.search(
+                embed_query(rewritten_query),
+                top_k,
+                source_file_filter=source_file_filter,
+            )
         except ValueError:
             raise
         except Exception as error:
@@ -122,25 +131,42 @@ class Retriever:
             ranked_chunks.append(chunk)
         return ranked_chunks
 
-    def search_bm25(self, query: str, top_k: int) -> list[BM25SearchResult]:
-        """Rewrite and tokenize a query, then delegate scoring to BM25."""
+    def search_bm25(
+        self,
+        query: str,
+        top_k: int,
+        source_file_filter: str | None = None,
+    ) -> list[BM25SearchResult]:
+        """Rewrite a query and return BM25 results from an optional source file."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
             rewritten_query = self.query_rewriter.rewrite(query)
-            return self.bm25_retriever.search(tokenize_text(rewritten_query), top_k)
+            return self.bm25_retriever.search(
+                tokenize_text(rewritten_query),
+                top_k,
+                source_file_filter=source_file_filter,
+            )
         except ValueError:
             raise
         except Exception as error:
             raise RetrievalError("Unable to search the BM25 index.") from error
 
     def search_rrf(
-        self, query: str, top_k: int, rrf_k: int = 60
+        self,
+        query: str,
+        top_k: int,
+        rrf_k: int = 60,
+        source_file_filter: str | None = None,
     ) -> list[DocumentChunk]:
         """Fuse full FAISS and BM25 rankings with reciprocal rank fusion."""
         _, _, rrf_results = self.search_faiss_bm25_and_rrf(
-            query, top_k=top_k, rrf_top_k=top_k, rrf_k=rrf_k
+            query,
+            top_k=top_k,
+            rrf_top_k=top_k,
+            rrf_k=rrf_k,
+            source_file_filter=source_file_filter,
         )
         return rrf_results
 
@@ -151,7 +177,12 @@ class Retriever:
         return self.reranker.rerank(query, rrf_results)
 
     def search_faiss_bm25_rrf_and_rerank(
-        self, query: str, top_k: int, rrf_top_k: int = 10, rrf_k: int = 60
+        self,
+        query: str,
+        top_k: int,
+        rrf_top_k: int = 10,
+        rrf_k: int = 60,
+        source_file_filter: str | None = None,
     ) -> tuple[
         list[DocumentChunk],
         list[BM25SearchResult],
@@ -173,6 +204,7 @@ class Retriever:
             rrf_top_k=rrf_top_k,
             rrf_k=rrf_k,
             rewritten_query=rewritten_query,
+            source_file_filter=source_file_filter,
         )
         rerank_results = self.rerank_rrf_results(query, rrf_results)
         return (
@@ -190,6 +222,7 @@ class Retriever:
         rrf_top_k: int = 10,
         rrf_k: int = 60,
         rewritten_query: str | None = None,
+        source_file_filter: str | None = None,
     ) -> tuple[
         list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]
     ]:
@@ -210,17 +243,29 @@ class Retriever:
         try:
             search_query = rewritten_query or self.query_rewriter.rewrite(query)
             faiss_results = self.faiss_retriever.search(
-                embed_query(search_query), top_k=len(self.document_chunks)
+                embed_query(search_query),
+                top_k=len(self.document_chunks),
+                source_file_filter=source_file_filter,
             )
             bm25_results = self.bm25_retriever.search(
-                tokenize_text(search_query), top_k=len(self.document_chunks)
+                tokenize_text(search_query),
+                top_k=len(self.document_chunks),
+                source_file_filter=source_file_filter,
             )
         except ValueError:
             raise
         except Exception as error:
             raise RetrievalError("Unable to calculate reciprocal rank fusion.") from error
 
-        for chunk in self.document_chunks:
+        eligible_chunks = self.document_chunks
+        if source_file_filter is not None:
+            eligible_chunks = [
+                chunk
+                for chunk in self.document_chunks
+                if chunk.source == source_file_filter
+            ]
+
+        for chunk in eligible_chunks:
             chunk.rrf_score = 0.0
             chunk.faiss_rank = None
             chunk.bm25_rank = None
@@ -232,7 +277,7 @@ class Retriever:
             result.chunk.rrf_score += 1 / (rrf_k + rank)
 
         rrf_results = sorted(
-            self.document_chunks,
+            eligible_chunks,
             key=lambda chunk: chunk.rrf_score if chunk.rrf_score is not None else 0.0,
             reverse=True,
         )[:rrf_top_k]

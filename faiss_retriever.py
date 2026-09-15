@@ -32,15 +32,20 @@ class FaissRetriever:
         self.index = index
 
     def search(
-        self, query_embedding: Sequence[float], top_k: int
+        self,
+        query_embedding: Sequence[float],
+        top_k: int,
+        source_file_filter: str | None = None,
     ) -> list[DocumentChunk]:
-        """Search a query embedding and return its top document chunks."""
+        """Search a query embedding and optionally keep one source file's chunks."""
         if self.index is None:
             raise RuntimeError("Load the FAISS retriever before searching.")
         if top_k <= 0:
             raise ValueError("top_k must be greater than zero.")
         if top_k > self.index.ntotal:
             raise ValueError("top_k cannot exceed the number of indexed chunks.")
+        if source_file_filter is not None and not source_file_filter.strip():
+            raise ValueError("Source file filter cannot be empty.")
 
         query_matrix = create_query_matrix(query_embedding)
         if query_matrix.shape[1] != self.index.d:
@@ -48,10 +53,18 @@ class FaissRetriever:
                 "Query embedding dimension does not match the FAISS index."
             )
 
-        scores, chunk_indexes = self.index.search(query_matrix, top_k)
+        candidate_count = top_k
+        if source_file_filter is not None:
+            candidate_count = min(top_k * 2, self.index.ntotal)
+
+        scores, chunk_indexes = self.index.search(query_matrix, candidate_count)
         ranked_chunks = []
         for score, chunk_index in zip(scores[0], chunk_indexes[0], strict=True):
             chunk = self.document_chunks[int(chunk_index)]
+            if source_file_filter is not None and chunk.source != source_file_filter:
+                continue
             chunk.similarity = float(score)
             ranked_chunks.append(chunk)
+            if len(ranked_chunks) == top_k:
+                break
         return ranked_chunks

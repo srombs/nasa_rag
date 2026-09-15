@@ -164,10 +164,15 @@ def load_retriever(
 
 
 def run_embedded_search(
-    query: str, retriever: Retriever, top_k: int = TOP_K
+    query: str,
+    retriever: Retriever,
+    top_k: int = TOP_K,
+    source_file_filter: str | None = None,
 ) -> list[DocumentChunk]:
-    """Run one query through the configured document retriever."""
-    return retriever.search(query, top_k=top_k)
+    """Run one query through FAISS with an optional source file filter."""
+    return retriever.search(
+        query, top_k=top_k, source_file_filter=source_file_filter
+    )
 
 
 def run_keyword_search(
@@ -178,10 +183,15 @@ def run_keyword_search(
 
 
 def run_bm25_search(
-    query: str, retriever: Retriever, top_k: int = TOP_K
+    query: str,
+    retriever: Retriever,
+    top_k: int = TOP_K,
+    source_file_filter: str | None = None,
 ) -> list[BM25SearchResult]:
-    """Run one query through the BM25 retriever."""
-    return retriever.search_bm25(query, top_k=top_k)
+    """Run one query through BM25, optionally restricted to one source file."""
+    return retriever.search_bm25(
+        query, top_k=top_k, source_file_filter=source_file_filter
+    )
 
 
 def run_both_searches(
@@ -189,6 +199,7 @@ def run_both_searches(
     retriever: Retriever,
     top_k: int = TOP_K,
     rrf_top_k: int = RRF_TOP_K,
+    source_file_filter: str | None = None,
 ) -> tuple[
     list[DocumentChunk],
     list[BM25SearchResult],
@@ -198,7 +209,10 @@ def run_both_searches(
 ]:
     """Return the rewritten query and all combined retrieval rankings."""
     return retriever.search_faiss_bm25_rrf_and_rerank(
-        query, top_k=top_k, rrf_top_k=rrf_top_k
+        query,
+        top_k=top_k,
+        rrf_top_k=rrf_top_k,
+        source_file_filter=source_file_filter,
     )
 
 
@@ -284,6 +298,10 @@ def main() -> None:
         action="store_true",
         help="Rank chunks with BM25 scores without embedding the query.",
     )
+    parser.add_argument(
+        "--source-file",
+        help="Restrict FAISS and BM25 results to this source file, such as iss.txt.",
+    )
     search_mode.add_argument(
         "--both-searches",
         action="store_true",
@@ -307,6 +325,8 @@ def main() -> None:
         help="Keyword score weight for hybrid search (default: 0.3).",
     )
     args = parser.parse_args()
+    if args.source_file and (args.keyword_search or args.hybrid_search):
+        parser.error("--source-file is not supported with keyword or hybrid search.")
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     if args.both_searches:
@@ -317,7 +337,12 @@ def main() -> None:
             rerank_results,
             rewritten_query,
         ) = (
-            run_both_searches(args.query, retriever, top_k=args.top_k)
+            run_both_searches(
+                args.query,
+                retriever,
+                top_k=args.top_k,
+                source_file_filter=args.source_file,
+            )
         )
         print(f"Original query:\n{args.query}")
         print(f"\nRewritten query:\n{rewritten_query}")
@@ -336,7 +361,12 @@ def main() -> None:
         ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
     elif not args.both_searches and args.bm25_search:
-        bm25_results = run_bm25_search(args.query, retriever, top_k=args.top_k)
+        bm25_results = run_bm25_search(
+            args.query,
+            retriever,
+            top_k=args.top_k,
+            source_file_filter=args.source_file,
+        )
         print_bm25_results(bm25_results)
         ranked_chunks = [result.chunk for result in bm25_results]
     elif not args.both_searches and args.hybrid_search:
@@ -353,7 +383,12 @@ def main() -> None:
         print_hybrid_results(hybrid_results)
         ranked_chunks = [result.document_chunk for result in hybrid_results]
     elif not args.both_searches:
-        ranked_chunks = run_embedded_search(args.query, retriever, top_k=args.top_k)
+        ranked_chunks = run_embedded_search(
+            args.query,
+            retriever,
+            top_k=args.top_k,
+            source_file_filter=args.source_file,
+        )
         print_ranked_chunks(ranked_chunks, top_k=args.top_k)
     if args.generate_answer:
         print(f"\nAnswer: {generate_rag_answer(args.query, ranked_chunks)}")

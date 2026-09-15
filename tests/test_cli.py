@@ -126,6 +126,62 @@ def test_bm25_retriever_scores_a_tokenized_query() -> None:
     assert results[0].score > 0
 
 
+def test_bm25_retriever_filters_results_by_source_file() -> None:
+    chunks = [
+        DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0]),
+        DocumentChunk("hubble.txt", 1, "ISS telescope research.", [1.0]),
+        DocumentChunk("iss.txt", 2, "ISS crew research.", [1.0]),
+    ]
+    bm25 = bm25_retriever.BM25Retriever()
+    bm25.load(chunks)
+
+    results = bm25.search(
+        ["iss", "research"], top_k=2, source_file_filter="iss.txt"
+    )
+
+    assert [result.chunk for result in results] == [chunks[0], chunks[2]]
+
+
+def test_bm25_retriever_returns_no_results_when_source_file_does_not_match() -> None:
+    chunks = [DocumentChunk("iss.txt", 0, "ISS orbit research.", [1.0])]
+    bm25 = bm25_retriever.BM25Retriever()
+    bm25.load(chunks)
+
+    assert bm25.search(["iss"], top_k=1, source_file_filter="hubble.txt") == []
+
+
+def test_faiss_source_filter_doubles_the_candidate_count(tmp_path) -> None:
+    chunks = [
+        DocumentChunk("hubble.txt", 0, "Hubble.", [1.0, 0.0]),
+        DocumentChunk("iss.txt", 1, "ISS power.", [0.9, 0.1]),
+        DocumentChunk("hubble.txt", 2, "Telescope.", [0.8, 0.2]),
+        DocumentChunk("iss.txt", 3, "ISS crew.", [0.7, 0.3]),
+    ]
+    received = {}
+
+    class SearchIndex:
+        d = 2
+        ntotal = len(chunks)
+
+        def search(self, _query_matrix, top_k):
+            received["top_k"] = top_k
+            return (
+                np.array([[1.0, 0.9, 0.8, 0.7]], dtype=np.float32),
+                np.array([[0, 1, 2, 3]], dtype=np.int64),
+            )
+
+    faiss_search = faiss_retriever.FaissRetriever(tmp_path / "document.index")
+    faiss_search.document_chunks = chunks
+    faiss_search.index = SearchIndex()
+
+    results = faiss_search.search(
+        [1.0, 0.0], top_k=2, source_file_filter="iss.txt"
+    )
+
+    assert received["top_k"] == 4
+    assert results == [chunks[1], chunks[3]]
+
+
 def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
     chunks = [
         TokenizedChunk("iss.txt", 0, {"iss", "crew", "research"}),
@@ -217,9 +273,10 @@ def test_retriever_search_bm25_passes_every_query_word(monkeypatch, tmp_path) ->
     generic_retriever.load()
     received = {}
 
-    def capture_search(tokens, top_k):
+    def capture_search(tokens, top_k, source_file_filter=None):
         received["tokens"] = tokens
         received["top_k"] = top_k
+        received["source_file_filter"] = source_file_filter
         return []
 
     monkeypatch.setattr(generic_retriever.bm25_retriever, "search", capture_search)
@@ -229,9 +286,15 @@ def test_retriever_search_bm25_passes_every_query_word(monkeypatch, tmp_path) ->
         lambda _query: "ISS electrical power",
     )
 
-    generic_retriever.search_bm25("What is the ISS?", top_k=1)
+    generic_retriever.search_bm25(
+        "What is the ISS?", top_k=1, source_file_filter="iss.txt"
+    )
 
-    assert received == {"tokens": ["iss", "electrical", "power"], "top_k": 1}
+    assert received == {
+        "tokens": ["iss", "electrical", "power"],
+        "top_k": 1,
+        "source_file_filter": "iss.txt",
+    }
 
 
 def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_path) -> None:
@@ -252,12 +315,12 @@ def test_retriever_search_rrf_fuses_faiss_and_bm25_rankings(monkeypatch, tmp_pat
     monkeypatch.setattr(
         generic_retriever.faiss_retriever,
         "search",
-        lambda _embedding, top_k: chunks[:top_k],
+        lambda _embedding, top_k, source_file_filter=None: chunks[:top_k],
     )
     monkeypatch.setattr(
         generic_retriever.bm25_retriever,
         "search",
-        lambda _tokens, top_k: [
+        lambda _tokens, top_k, source_file_filter=None: [
             BM25SearchResult(1.0, chunks[1]),
             BM25SearchResult(1.0, chunks[2]),
             BM25SearchResult(1.0, chunks[0]),
@@ -294,8 +357,9 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
         received["faiss_query"] = query
         return [1.0, 0.0]
 
-    def bm25_search(tokens, top_k):
+    def bm25_search(tokens, top_k, source_file_filter=None):
         received["bm25_tokens"] = tokens
+        received["bm25_source_file_filter"] = source_file_filter
         return [BM25SearchResult(1.0, chunk) for chunk in chunks[:top_k]]
 
     def rerank(original_query, rrf_results):
@@ -307,7 +371,7 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
     monkeypatch.setattr(
         generic_retriever.faiss_retriever,
         "search",
-        lambda _embedding, top_k: chunks[:top_k],
+        lambda _embedding, top_k, source_file_filter=None: chunks[:top_k],
     )
     monkeypatch.setattr(generic_retriever.bm25_retriever, "search", bm25_search)
     monkeypatch.setattr(generic_retriever, "rerank_rrf_results", rerank)
@@ -320,6 +384,7 @@ def test_retriever_uses_rewritten_query_for_rrf_and_original_query_for_reranking
         "rewrite_query": "What powers the ISS?",
         "faiss_query": "ISS electrical power",
         "bm25_tokens": ["iss", "electrical", "power"],
+        "bm25_source_file_filter": None,
         "rerank_query": "What powers the ISS?",
     }
     assert results[-1] == "ISS electrical power"
@@ -567,9 +632,10 @@ def test_run_keyword_search_delegates_to_the_retriever() -> None:
 
 def test_run_bm25_search_delegates_to_the_retriever() -> None:
     class BM25Retriever:
-        def search_bm25(self, query, top_k):
+        def search_bm25(self, query, top_k, source_file_filter):
             assert query == "ISS research"
             assert top_k == 2
+            assert source_file_filter == "iss.txt"
             return [
                 BM25SearchResult(
                     score=1.0,
@@ -578,7 +644,7 @@ def test_run_bm25_search_delegates_to_the_retriever() -> None:
             ]
 
     results = semantic_search.run_bm25_search(
-        "ISS research", BM25Retriever(), top_k=2
+        "ISS research", BM25Retriever(), top_k=2, source_file_filter="iss.txt"
     )
 
     assert [(result.chunk.source, result.chunk.chunk_index) for result in results] == [
@@ -637,9 +703,12 @@ def test_print_rerank_results_includes_model_score_and_reason(capsys) -> None:
 
 def test_run_both_searches_returns_independent_rankings() -> None:
     class SearchRetriever:
-        def search_faiss_bm25_rrf_and_rerank(self, query, top_k, rrf_top_k):
+        def search_faiss_bm25_rrf_and_rerank(
+            self, query, top_k, rrf_top_k, source_file_filter
+        ):
             assert (query, top_k) == ("ISS research", 2)
             assert rrf_top_k == semantic_search.RRF_TOP_K
+            assert source_file_filter is None
             return [DocumentChunk("iss.txt", 0, "semantic", [1.0])], [
                 BM25SearchResult(
                     score=1.0, chunk=DocumentChunk("iss.txt", 1, "bm25", [1.0])

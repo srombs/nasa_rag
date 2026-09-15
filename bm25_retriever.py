@@ -31,24 +31,33 @@ class BM25Retriever:
         self.index = BM25Okapi(self.tokenized_documents)
 
     def search(
-        self, tokenized_query: Sequence[str], top_k: int
+        self,
+        tokenized_query: Sequence[str],
+        top_k: int,
+        source_file_filter: str | None = None,
     ) -> list[BM25SearchResult]:
-        """Score tokenized query terms and return the highest-ranked chunks."""
+        """Score query terms and optionally keep chunks from one source file."""
         if self.index is None:
             raise RuntimeError("Load the BM25 retriever before searching.")
         if top_k <= 0:
             raise ValueError("top_k must be greater than zero.")
         if top_k > len(self.document_chunks):
             raise ValueError("top_k cannot exceed the number of loaded chunks.")
+        if source_file_filter is not None and not source_file_filter.strip():
+            raise ValueError("Source file filter cannot be empty.")
 
         scores = self.index.get_scores(tokenized_query)
         ranked_indexes = sorted(
             range(len(scores)), key=lambda index: scores[index], reverse=True
         )
         ranked_chunks = []
-        for index in ranked_indexes[:top_k]:
+        for index in ranked_indexes:
             chunk = self.document_chunks[index]
+            if source_file_filter is not None and chunk.source != source_file_filter:
+                continue
             ranked_chunks.append(
                 BM25SearchResult(score=float(scores[index]), chunk=chunk)
             )
+            if len(ranked_chunks) == top_k:
+                break
         return ranked_chunks
