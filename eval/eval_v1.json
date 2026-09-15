@@ -1,0 +1,314 @@
+[
+  {
+    "id": "factual_001",
+    "question": "What mission launched the Hubble Space Telescope, and which Space Shuttle orbiter carried it?",
+    "expected_answer": "Hubble was launched on STS-31 by Space Shuttle Discovery on April 24, 1990.",
+    "relevant_chunks": [
+      "[hubble.txt, chunk 50]"
+    ],
+    "difficulty": "easy",
+    "category": "factual",
+    "expected_source_filter": null
+  },
+  {
+    "id": "factual_002",
+    "question": "What defect affected Hubble's primary mirror after launch?",
+    "expected_answer": "The primary mirror had been polished to the wrong shape, causing severe spherical aberration.",
+    "relevant_chunks": [
+      "[hubble.txt, chunk 56]"
+    ],
+    "difficulty": "easy",
+    "category": "factual",
+    "expected_source_filter": null
+  },
+  {
+    "id": "factual_003",
+    "question": "When did the first long-term crew arrive at the ISS, and what spacecraft brought them?",
+    "expected_answer": "Expedition 1 arrived in November 2000 aboard Soyuz TM-31.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 48]"
+    ],
+    "difficulty": "easy",
+    "category": "factual",
+    "expected_source_filter": null
+  },
+  {
+    "id": "factual_004",
+    "question": "What was the first Space Shuttle mission, and when did it launch?",
+    "expected_answer": "The first Space Shuttle mission was STS-1, flown by Columbia, and it launched on April 12, 1981.",
+    "relevant_chunks": [
+      "[space_shuttle.txt, chunk 27]"
+    ],
+    "difficulty": "easy",
+    "category": "factual",
+    "expected_source_filter": null
+  },
+  {
+    "id": "factual_005",
+    "question": "Who became the first American woman in space, and on which Shuttle mission did she fly?",
+    "expected_answer": "Sally Ride became the first American woman in space aboard STS-7.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 40]"
+    ],
+    "difficulty": "easy",
+    "category": "factual",
+    "expected_source_filter": null
+  },
+  {
+    "id": "semantic_001",
+    "question": "What reusable spacecraft played a major role in assembling the orbital laboratory built by the United States and its international partners?",
+    "expected_answer": "The Space Shuttle played a major role in assembling the International Space Station.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 45]",
+      "[iss.txt, chunk 46]",
+      "[iss.txt, chunk 50]",
+      "[space_shuttle.txt, chunk 100]"
+    ],
+    "difficulty": "medium",
+    "category": "semantic",
+    "expected_source_filter": null
+  },
+  {
+    "id": "semantic_002",
+    "question": "Which program enabled American Space Shuttles to dock with the Russian Mir space station?",
+    "expected_answer": "The Shuttle-Mir program.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 11]",
+      "[nasa_overview.txt, chunk 44]"
+    ],
+    "difficulty": "medium",
+    "category": "semantic",
+    "expected_source_filter": null
+  },
+  {
+    "id": "semantic_003",
+    "question": "Why did American astronauts rely on Russian spacecraft for transportation to the ISS after the Shuttle era?",
+    "expected_answer": "After the Space Shuttle was retired in 2011, the United States lacked a domestic crew transport system, so astronauts relied on Russian Soyuz spacecraft until commercial crew vehicles became operational in 2020.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 52]",
+      "[nasa_overview.txt, chunk 64]",
+      "[space_shuttle.txt, chunk 5]"
+    ],
+    "difficulty": "medium",
+    "category": "semantic",
+    "expected_source_filter": null
+  },
+  {
+    "id": "semantic_004",
+    "question": "What reusable transportation system was intended to make access to Earth orbit more economical?",
+    "expected_answer": "The Space Shuttle.",
+    "relevant_chunks": [
+      "[space_shuttle.txt, chunk 9]"
+    ],
+    "difficulty": "medium",
+    "category": "semantic",
+    "expected_source_filter": null
+  },
+  {
+    "id": "semantic_005",
+    "question": "Which spacecraft was used to service the Hubble Space Telescope?",
+    "expected_answer": "NASA Space Shuttles were used to service Hubble.",
+    "relevant_chunks": [
+      "[hubble.txt, chunk 3]",
+      "[hubble.txt, chunk 69]"
+    ],
+    "difficulty": "medium",
+    "category": "semantic",
+    "expected_source_filter": null
+  },
+  {
+    "id": "entity_001",
+    "question": "According to the Hubble document, what did STS-61 accomplish?",
+    "expected_answer": "STS-61 was Hubble's first servicing mission in 1993 and corrected its optical problem using corrective optics, including COSTAR and WFPC2.",
+    "relevant_chunks": [
+      "[hubble.txt, chunk 2]",
+      "[hubble.txt, chunk 3]",
+      "[hubble.txt, chunk 74]",
+      "[hubble.txt, chunk 75]"
+    ],
+    "difficulty": "medium",
+    "category": "entity",
+    "expected_source_filter": "hubble.txt"
+  },
+  {
+    "id": "entity_002",
+    "question": "Which Shuttle mission delivered the Rassvet module to the ISS, and which orbiter flew it?",
+    "expected_answer": "Rassvet was delivered by Space Shuttle Atlantis on STS-132 in May 2010.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 52]",
+      "[iss.txt, chunk 75]"
+    ],
+    "difficulty": "medium",
+    "category": "entity",
+    "expected_source_filter": null
+  },
+  {
+    "id": "entity_003",
+    "question": "According to the ISS document, what happened after Columbia was lost?",
+    "expected_answer": "The Shuttle fleet was grounded, ISS construction halted, and station crews were temporarily reduced because the station could not be fully resupplied. Assembly resumed after Shuttle flights returned.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 50]",
+      "[iss.txt, chunk 133]"
+    ],
+    "difficulty": "medium",
+    "category": "entity",
+    "expected_source_filter": "iss.txt"
+  },
+  {
+    "id": "entity_004",
+    "question": "How long was the Space Shuttle fleet grounded after the Challenger disaster?",
+    "expected_answer": "The fleet was grounded for 36 months.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 43]"
+    ],
+    "difficulty": "medium",
+    "category": "entity",
+    "expected_source_filter": null
+  },
+  {
+    "id": "relational_001",
+    "question": "How did NASA correct Hubble's spherical aberration without replacing the primary mirror?",
+    "expected_answer": "NASA designed corrective optics with an opposite optical error. The first servicing mission installed COSTAR for several instruments and replaced WF/PC with WFPC2, which had built-in corrective optics.",
+    "relevant_chunks": [
+      "[hubble.txt, chunk 64]",
+      "[hubble.txt, chunk 65]",
+      "[hubble.txt, chunk 67]",
+      "[hubble.txt, chunk 74]",
+      "[hubble.txt, chunk 75]"
+    ],
+    "difficulty": "hard",
+    "category": "relational",
+    "expected_source_filter": null
+  },
+  {
+    "id": "relational_002",
+    "question": "How were the major components of the International Space Station assembled in orbit?",
+    "expected_answer": "Most Russian-segment modules docked autonomously, while many other modules and components were delivered by the Space Shuttle and installed with robotic arms and astronaut spacewalks.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 45]",
+      "[iss.txt, chunk 46]"
+    ],
+    "difficulty": "hard",
+    "category": "relational",
+    "expected_source_filter": null
+  },
+  {
+    "id": "relational_003",
+    "question": "How did the Columbia disaster affect both ISS construction and Hubble servicing?",
+    "expected_answer": "Columbia's loss grounded the Shuttle fleet and halted ISS construction. It also led NASA to cancel future crewed Hubble servicing missions temporarily because a Hubble mission could not reach the ISS as a safe haven; a final servicing mission was later approved and flown by Atlantis in 2009.",
+    "relevant_chunks": [
+      "[iss.txt, chunk 50]",
+      "[hubble.txt, chunk 80]",
+      "[hubble.txt, chunk 81]",
+      "[hubble.txt, chunk 85]",
+      "[hubble.txt, chunk 86]"
+    ],
+    "difficulty": "hard",
+    "category": "relational",
+    "expected_source_filter": null
+  },
+  {
+    "id": "relational_004",
+    "question": "How did U.S. astronaut transportation to the ISS change between the retirement of the Space Shuttle and the return of domestic crew launches?",
+    "expected_answer": "After the Shuttle retired in 2011, American astronauts relied on Russian Soyuz spacecraft. Commercial Crew later restored domestic launch capability, with SpaceX Crew-1 beginning operational service in 2020.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 52]",
+      "[nasa_overview.txt, chunk 56]",
+      "[nasa_overview.txt, chunk 57]",
+      "[nasa_overview.txt, chunk 64]"
+    ],
+    "difficulty": "hard",
+    "category": "relational",
+    "expected_source_filter": null
+  },
+  {
+    "id": "relational_005",
+    "question": "What ISS transportation responsibilities did NASA increasingly shift to private companies?",
+    "expected_answer": "NASA shifted ISS cargo delivery to commercial providers through Commercial Resupply Services and crew transportation through the Commercial Crew Program.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 56]",
+      "[nasa_overview.txt, chunk 65]",
+      "[nasa_overview.txt, chunk 69]",
+      "[nasa_overview.txt, chunk 70]"
+    ],
+    "difficulty": "hard",
+    "category": "relational",
+    "expected_source_filter": null
+  },
+  {
+    "id": "hard_001",
+    "question": "What spacecraft launched major observatories and interplanetary probes from its cargo bay?",
+    "expected_answer": "The Space Shuttle.",
+    "relevant_chunks": [
+      "[space_shuttle.txt, chunk 55]",
+      "[space_shuttle.txt, chunk 100]",
+      "[nasa_overview.txt, chunk 29]",
+      "[nasa_overview.txt, chunk 30]",
+      "[nasa_overview.txt, chunk 91]"
+    ],
+    "difficulty": "hard",
+    "category": "ambiguous_hard",
+    "expected_source_filter": null
+  },
+  {
+    "id": "hard_002",
+    "question": "Which NASA program suffered two fatal orbiter losses during its operational lifetime?",
+    "expected_answer": "The Space Shuttle program, which lost Challenger in 1986 and Columbia in 2003.",
+    "relevant_chunks": [
+      "[space_shuttle.txt, chunk 5]",
+      "[space_shuttle.txt, chunk 119]",
+      "[space_shuttle.txt, chunk 120]",
+      "[space_shuttle.txt, chunk 125]"
+    ],
+    "difficulty": "hard",
+    "category": "ambiguous_hard",
+    "expected_source_filter": null
+  },
+  {
+    "id": "hard_003",
+    "question": "How did NASA's human-spaceflight strategy change after the Columbia disaster and the end of the Space Shuttle program?",
+    "expected_answer": "NASA moved toward retiring the Shuttle after ISS assembly, relied temporarily on Russian Soyuz vehicles for crew transport, and increasingly used commercial providers for ISS cargo and crew transportation while redirecting NASA toward deeper-space exploration.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 45]",
+      "[nasa_overview.txt, chunk 52]",
+      "[nasa_overview.txt, chunk 56]",
+      "[nasa_overview.txt, chunk 57]"
+    ],
+    "difficulty": "hard",
+    "category": "ambiguous_hard",
+    "expected_source_filter": null
+  },
+  {
+    "id": "hard_004",
+    "question": "What developments restored the United States' ability to launch astronauts domestically after nearly a decade of relying on Russia?",
+    "expected_answer": "NASA's Commercial Crew Program matured, and SpaceX's Crew Dragon began operational crew service in 2020, restoring U.S. domestic human launch capability.",
+    "relevant_chunks": [
+      "[nasa_overview.txt, chunk 56]",
+      "[nasa_overview.txt, chunk 57]",
+      "[nasa_overview.txt, chunk 64]",
+      "[nasa_overview.txt, chunk 70]",
+      "[nasa_overview.txt, chunk 71]"
+    ],
+    "difficulty": "hard",
+    "category": "ambiguous_hard",
+    "expected_source_filter": null
+  },
+  {
+    "id": "unanswerable_001",
+    "question": "What was Neil Armstrong's favorite food?",
+    "expected_answer": null,
+    "relevant_chunks": [],
+    "difficulty": "hard",
+    "category": "unanswerable",
+    "expected_source_filter": null
+  },
+  {
+    "id": "unanswerable_002",
+    "question": "What was Sally Ride's favorite book?",
+    "expected_answer": null,
+    "relevant_chunks": [],
+    "difficulty": "hard",
+    "category": "unanswerable",
+    "expected_source_filter": null
+  }
+]

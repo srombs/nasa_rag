@@ -6,6 +6,7 @@ import types
 import numpy as np
 
 import bm25_retriever
+import chunk_corpus
 import chunkers
 import embedder
 import faiss_retriever
@@ -20,6 +21,7 @@ import tokenizer
 import vector_store
 from models import (
     BM25SearchResult,
+    CorpusChunk,
     DocumentChunk,
     HybridSearchResult,
     RerankResult,
@@ -675,6 +677,46 @@ def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -
         (["four five"], "b.txt"),
     ]
     assert cached_chunks == chunks
+
+
+def test_load_and_chunk_directory_caches_unembedded_chunks(tmp_path) -> None:
+    (tmp_path / "b.txt").write_text("four five", encoding="utf-8")
+    (tmp_path / "a.txt").write_text("one two three", encoding="utf-8")
+
+    cache_path = tmp_path / "cache" / file_loader.NO_EMBED_CACHE_FILE_NAME
+    chunks = file_loader.load_and_chunk_directory(
+        tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
+    )
+
+    assert chunks == [
+        CorpusChunk("a.txt", 0, "one two"),
+        CorpusChunk("a.txt", 1, "three"),
+        CorpusChunk("b.txt", 0, "four five"),
+    ]
+    assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "documents": {
+            "a.txt": [
+                {"source": "a.txt", "chunk_index": 0, "text": "one two"},
+                {"source": "a.txt", "chunk_index": 1, "text": "three"},
+            ],
+            "b.txt": [
+                {"source": "b.txt", "chunk_index": 0, "text": "four five"}
+            ],
+        }
+    }
+
+    assert file_loader.load_and_chunk_directory(
+        tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
+    ) == chunks
+
+
+def test_no_embed_cache_file_name_includes_the_no_embed_suffix() -> None:
+    assert chunk_corpus.no_embed_cache_file_name(100, 20) == (
+        "document_cache_no_embed.json"
+    )
+    assert chunk_corpus.no_embed_cache_file_name(200, 50) == (
+        "document_cache_200_50_no_embed.json"
+    )
 
 
 def test_print_ranked_chunks_uses_top_k(capsys) -> None:

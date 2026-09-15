@@ -48,6 +48,41 @@ class DocumentChunk:
 
 
 @dataclass
+class CorpusChunk:
+    """A chunk of source text before an embedding has been created."""
+
+    source: str
+    chunk_index: int
+    text: str
+
+    def to_cache_record(self) -> dict[str, str | int]:
+        """Return the persistent fields for a chunk-only cache record."""
+        return {
+            "source": self.source,
+            "chunk_index": self.chunk_index,
+            "text": self.text,
+        }
+
+    @classmethod
+    def from_cache_record(cls, record: dict[str, object]) -> "CorpusChunk":
+        """Re-create an unembedded chunk from a cache record."""
+        try:
+            source = record["source"]
+            chunk_index = record["chunk_index"]
+            text = record["text"]
+        except KeyError as error:
+            message = f"Chunk-only cache record is missing {error.args[0]!r}."
+            raise ValueError(message) from error
+
+        if not isinstance(source, str) or not isinstance(chunk_index, int):
+            raise ValueError("Chunk-only cache record has invalid source or chunk_index.")
+        if not isinstance(text, str):
+            raise ValueError("Chunk-only cache record has an invalid text value.")
+
+        return cls(source, chunk_index, text)
+
+
+@dataclass
 class TokenizedChunk:
     """A document chunk's source metadata and normalized token set."""
 
