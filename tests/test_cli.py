@@ -13,12 +13,17 @@ import faiss_retriever
 import file_loader
 import generator
 import query_rewriter
-import retrieval_planner
 import reranker
+import retrieval_planner
 import retriever
 import semantic_search
 import tokenizer
 import vector_store
+from eval import (
+    run_faiss_retrieval_evaluation,
+    run_faiss_top_k_evaluation,
+    run_retrieval_evaluation,
+)
 from models import (
     BM25SearchResult,
     CorpusChunk,
@@ -28,12 +33,165 @@ from models import (
     RetrievalPlan,
     TokenizedChunk,
 )
-
 from nasa_rag import __version__
 
 
 def test_version() -> None:
     assert __version__ == "0.1.0"
+
+
+def test_retrieval_evaluation_loads_answer_level_cases(tmp_path) -> None:
+    evaluation_path = tmp_path / "eval_v1.json"
+    cases = [
+        {
+            "id": "factual_001",
+            "question": "What mission launched Hubble?",
+            "expected_answer": "STS-31.",
+            "relevant_chunks": ["[hubble.txt, chunk 50]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        }
+    ]
+    evaluation_path.write_text(json.dumps(cases), encoding="utf-8")
+
+    assert run_retrieval_evaluation.load_evaluation_cases(evaluation_path) == cases
+
+
+def test_retrieval_evaluation_rejects_cases_with_missing_fields(tmp_path) -> None:
+    evaluation_path = tmp_path / "eval_v1.json"
+    evaluation_path.write_text(
+        json.dumps([{"id": "factual_001", "question": "Missing fields."}]),
+        encoding="utf-8",
+    )
+
+    try:
+        run_retrieval_evaluation.load_evaluation_cases(evaluation_path)
+    except ValueError as error:
+        assert str(error) == (
+            "Each retrieval evaluation case must contain the required fields."
+        )
+    else:
+        raise AssertionError("Expected a malformed evaluation case to fail.")
+
+
+def test_chunk_reference_uses_the_evaluation_reference_format() -> None:
+    chunk = DocumentChunk("iss.txt", 248, "ISS research", [1.0])
+
+    assert (
+        run_faiss_retrieval_evaluation.chunk_reference(chunk)
+        == "[iss.txt, chunk 248]"
+    )
+    assert (
+        run_faiss_retrieval_evaluation.normalize_chunk_reference(
+            " [ iss.txt , chunk 0248 ] "
+        )
+        == "[iss.txt, chunk 248]"
+    )
+
+
+def test_retrieval_metrics_calculate_hit_and_recall_at_k() -> None:
+    retrieved = ["[iss.txt, chunk 1]", "[hubble.txt, chunk 2]"]
+    relevant = ["[iss.txt, chunk 1]", "[iss.txt, chunk 3]"]
+
+    assert run_faiss_retrieval_evaluation.hit_at_k(retrieved, relevant, k=1) == 1.0
+    assert run_faiss_retrieval_evaluation.recall_at_k(retrieved, relevant, k=1) == 0.5
+    assert run_faiss_retrieval_evaluation.recall_at_k(retrieved, [], k=1) == 0.0
+
+
+def test_faiss_evaluation_compares_normalized_chunk_references(
+    monkeypatch, capsys
+) -> None:
+    cases = [
+        {
+            "id": "hit",
+            "question": "Find the ISS fact.",
+            "expected_answer": "ISS fact.",
+            "relevant_chunks": [" [ iss.txt , chunk 1 ] "],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        },
+        {
+            "id": "miss",
+            "question": "Find the Hubble fact.",
+            "expected_answer": "Hubble fact.",
+            "relevant_chunks": ["[hubble.txt, chunk 2]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        },
+        {
+            "id": "unanswerable",
+            "question": "Find an absent fact.",
+            "expected_answer": None,
+            "relevant_chunks": [],
+            "difficulty": "hard",
+            "category": "unanswerable",
+            "expected_source_filter": None,
+        },
+    ]
+    result_by_question = {
+        "Find the ISS fact.": [DocumentChunk("iss.txt", 1, "ISS fact", [1.0])],
+        "Find the Hubble fact.": [DocumentChunk("iss.txt", 1, "ISS fact", [1.0])],
+    }
+
+    def fake_search(question, _retriever, top_k):
+        return result_by_question[question][:top_k]
+
+    monkeypatch.setattr(
+        run_faiss_retrieval_evaluation.semantic_search,
+        "run_embedded_search",
+        fake_search,
+    )
+
+    metrics = run_faiss_retrieval_evaluation.evaluate_faiss_retrieval(
+        cases, retriever=object(), top_k=1
+    )
+
+    assert metrics.hit_at_k == 0.5
+    assert metrics.recall_at_k == 0.5
+    output = capsys.readouterr().out
+    assert "Expected chunks: [iss.txt, chunk 1]" in output
+    assert "[FAISS] Retrieving top 1 for 2 answerable cases." in output
+    assert "[FAISS] 1/2 | hit | Find the ISS fact." in output
+    assert "Matching chunks: [iss.txt, chunk 1]" in output
+    assert "Result: SKIP (no relevant chunks)" in output
+    assert "Chunk Hit@1: 1/2" in output
+    assert "Mean Chunk Recall@1: 50.0%" in output
+
+
+def test_faiss_top_k_evaluation_reuses_the_maximum_rankings(monkeypatch) -> None:
+    cases = [
+        {
+            "id": "retrieval_case",
+            "question": "Find the ISS fact.",
+            "expected_answer": "ISS fact.",
+            "relevant_chunks": ["[iss.txt, chunk 1]", "[iss.txt, chunk 2]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        }
+    ]
+    calls = []
+
+    def fake_retrieve(_cases, _retriever, top_k):
+        calls.append(top_k)
+        return {"retrieval_case": ["[iss.txt, chunk 1]", "[iss.txt, chunk 2]"]}
+
+    monkeypatch.setattr(
+        run_faiss_top_k_evaluation, "retrieve_faiss_references", fake_retrieve
+    )
+
+    results = run_faiss_top_k_evaluation.run_top_k_evaluation(
+        cases, retriever=object(), top_k_values=[1, 2]
+    )
+
+    assert calls == [2]
+    assert [result.top_k for result in results] == [1, 2]
+    assert results[0].metrics.hit_at_k == 1.0
+    assert results[0].metrics.recall_at_k == 0.5
+    assert results[1].metrics.recall_at_k == 1.0
 
 
 def test_chunk_text_creates_overlapping_word_chunks() -> None:

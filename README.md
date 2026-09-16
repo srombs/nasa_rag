@@ -2,6 +2,10 @@
 
 A Python foundation for a retrieval-augmented generation project using NASA data.
 
+Install the project dependencies with `uv sync`, then run the examples below
+with `uv run python ...`. This ensures optional retrieval dependencies such as
+`rank-bm25` are available; the system `python3` interpreter may not have them.
+
 The search script reads every `.txt` file in `data/`, chunks and embeds each
 file separately, and retains its filename on every `DocumentChunk` result.
 
@@ -39,8 +43,31 @@ generate an answer from their combined context.
 Run the question evaluation loop with:
 
 ```bash
-python3 eval/run_evaluation.py
+uv run python eval/run_evaluation.py
 ```
+
+Inspect the answer-level retrieval cases in `eval/eval_v1.json` with:
+
+```bash
+uv run python eval/run_retrieval_evaluation.py
+```
+
+Run FAISS retrieval against those expected chunk references with:
+
+```bash
+uv run python eval/run_faiss_retrieval_evaluation.py
+```
+
+Compare multiple FAISS top-K values while retrieving only once per question:
+
+```bash
+uv run python eval/run_faiss_top_k_evaluation.py --top-k-values 1 3 5 10 30
+```
+
+The evaluator compares canonical `[source.txt, chunk N]` references and
+reports chunk Hit@K plus macro-average chunk Recall@K. Cases with no relevant
+chunks are displayed as skipped and do not affect either metric, because FAISS
+always returns ranked chunks.
 
 Both search commands accept `--chunk-size`, `--overlap-size`, and `--top-k`
 (defaults: `100`, `20`, and `30`). Non-default chunk settings use their own
@@ -50,13 +77,13 @@ Run keyword-overlap retrieval (without an embedding request for the query)
 with:
 
 ```bash
-python3 semantic_search.py "What powers the ISS?" --keyword-search --top-k 3
+uv run python semantic_search.py "What powers the ISS?" --keyword-search --top-k 3
 ```
 
 Run BM25 retrieval (without an embedding request for the query) with:
 
 ```bash
-python3 semantic_search.py "What powers the ISS?" --bm25-search --top-k 3
+uv run python semantic_search.py "What powers the ISS?" --bm25-search --top-k 3
 ```
 
 BM25 retrieval returns `BM25SearchResult(score, chunk)` objects.
@@ -64,7 +91,7 @@ BM25 retrieval returns `BM25SearchResult(score, chunk)` objects.
 Compare FAISS, BM25, and reciprocal-rank-fusion rankings in one run with:
 
 ```bash
-python3 semantic_search.py "What powers the ISS?" --both-searches --top-k 3
+uv run python semantic_search.py "What powers the ISS?" --both-searches --top-k 3
 ```
 
 This prints the requested FAISS and BM25 result counts, then the top 10 RRF
@@ -73,7 +100,7 @@ results by default, followed by model-reranked RRF results.
 Run weighted hybrid retrieval (FAISS `0.7`, keywords `0.3` by default) with:
 
 ```bash
-python3 semantic_search.py "What powers the ISS?" --hybrid-search --top-k 3
+uv run python semantic_search.py "What powers the ISS?" --hybrid-search --top-k 3
 ```
 
 Customize the formula `semantic_weight * semantic_score + keyword_weight *
@@ -100,7 +127,7 @@ Run all combinations of `Recall@1` through `Recall@5` for chunk/overlap
 settings `50/10`, `100/20`, and `200/50` with:
 
 ```bash
-python3 eval/run_grid_evaluation.py
+uv run python eval/run_grid_evaluation.py
 ```
 
 The grid run prints only failed questions with their expected source and
