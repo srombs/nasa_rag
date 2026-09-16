@@ -1,0 +1,906 @@
+The International Space Station (ISS)[c] is a space station in low Earth orbit (LEO). It is the product of the International Space Station program and is operated by five partner space agencies: NASA (United States), Roscosmos (Russia), ESA (Europe), JAXA (Japan), and CSA (Canada).[13] It is the first space station built, maintained and crewed through international cooperation and the largest human spacecraft ever constructed.[14][15] It is an orbital research station, where scientific experiments in microgravity are conducted and the space environment is studied.[15] Since 2 November 2000, it has hosted the longest continuous human presence in space.[16] Alongside China's Tiangong, it is one of two currently operational space stations.[17]
+
+The station orbits between 51.64° north and south, at about 400 kilometres (250 miles)[18] above Earth, below the Van Allen radiation belts and most space debris.[19] Its orbit takes it at 7.67 km/s (27,600 km/h; 17,200 mph) roughly every 93 minutes around Earth, 15.5 times a day.[20] Measuring 109 m (358 ft) (with solar arrays) by 73 m (239 ft),[21] it is as large as a full-sized football or soccer field,[22] and has a pressurised internal volume of 1,005 m3 (35,491 ft3), comparable to a Boeing 747 airliner.[21]
+
+The station is a modular space station divided into two main sections: the Russian Orbital Segment (ROS), developed by Roscosmos, and the US Orbital Segment (USOS), built by NASA, ESA, JAXA, and CSA. The Integrated Truss Structure connects the station's vast system of solar panels and radiators to its 16 major pressurized modules. These modules support scientific research, crew habitation, storage, spacecraft control, and airlock operations. The ISS has eight docking and berthing ports for visiting spacecraft. In total, the station consists of 43 different modules and elements.[23] Crews visit via the Soyuz and Crew Dragon spacecraft, and previously the Space Shuttle.[d] Cargo supply craft include Progress, Cargo Dragon, Cygnus, Automated Transfer Vehicle, and HTV-X.
+
+The ISS is the political product of the development of international cooperation in space throughout the space age. The station combines two previously planned crewed Earth-orbiting stations: the United States' Space Station Freedom and the Soviet Union's Mir-2. The first ISS module was launched in 1998, with major components delivered by Proton, Soyuz and Space Shuttle launch vehicles. Long-term occupancy began with the arrival of the Expedition 1 crew on 2 November 2000. Since then, the ISS has remained continuously inhabited for 25 years and 308 days, the longest continuous human presence in space. As of August 2025, 290 individuals from 26 countries had visited the station.[24]
+
+Future plans for the ISS include the addition of at least one module, the Payload Power Thermal Module by Axiom Space, forming the commercial segment of the station. The station is expected to remain operational until the end of 2030, by which parts of it are to be used for Axiom Station and the Russian Orbital Service Station. After this the ISS is planned to be de-orbited using the US Deorbit Vehicle,[25] but critique of this plan and the proposal of parking the station at a more stable higher orbit has gathered congressional support as of 2026.
+
+Conception
+This section is an excerpt from International Space Station program § Conception.edit
+
+A painting of Apollo–Soyuz, a first milestone in international spaceflight
+Early into the space age and ensuing space race the US and USSR began to find opportunities for potential collaborations in outer space. This culminated in the 1975 Apollo–Soyuz Test Project, the first docking of spacecraft from two different spacefaring nations. The ASTP was considered a success, and further joint missions were also contemplated.
+
+One such concept was International Skylab, which proposed launching the backup Skylab B space station for a mission that would see multiple visits by both Apollo and Soyuz crew vehicles.[26] More ambitious was the Skylab-Salyut Space Laboratory, which proposed docking the Skylab B to a Soviet Salyut space station. Falling budgets and rising Cold War tensions in the late 1970s saw these concepts fall by the wayside, along with another plan to have the Space Shuttle dock with a Salyut space station.[27]
+
+In the early 1980s, NASA planned to launch a modular space station called Freedom as a counterpart to the Salyut and Mir space stations. In 1984 the European Space Agency (ESA) was invited to participate in Space Station Freedom, and the ESA approved the Columbus laboratory by 1987.[28] The Japanese Experiment Module (JEM), or Kibō, was announced in 1985, as part of the Freedom space station in response to a NASA request in 1982.
+
+In early 1985, science ministers from the ESA countries approved the Columbus program, the most ambitious effort in space undertaken by that organization at the time. The plan spearheaded by Germany and Italy included a module which would be attached to Freedom, and with the capability to evolve into a full-fledged European orbital outpost before the end of the century.[29]
+
+Increasing costs threw these plans into doubt in the early 1990s. Congress was unwilling to provide enough money to build and operate Freedom, and demanded NASA increase international participation to defray the rising costs or they would cancel the entire project outright.[30]
+
+Simultaneously, the USSR was conducting planning for the Mir-2 space station, and had begun constructing modules for the new station by the mid-1980s. However the collapse of the Soviet Union required these plans to be greatly downscaled, and soon Mir-2 was in danger of never being launched at all.[31] With both space station projects in jeopardy, American and Russian officials met and proposed they be combined.[32]
+
+In September 1993, American Vice-President Al Gore and Russian Prime Minister Viktor Chernomyrdin announced plans for a new space station, which eventually became the International Space Station.[33] They also agreed, in preparation for this new project, that the United States would be involved in the Mir program, including American Shuttles docking, in the Shuttle–Mir program.[34]
+
+Purpose
+The ISS was originally intended to be a laboratory, observatory, and factory while providing transportation, maintenance, and a low Earth orbit staging base for possible future missions to the Moon, Mars, and asteroids. However, not all of the uses envisioned in the initial memorandum of understanding between NASA and Roscosmos have been realised.[35] In the 2010 United States National Space Policy, the ISS was given additional roles of serving commercial, diplomatic,[36] and educational purposes.[37]
+
+Scientific research
+Main article: Scientific research on the International Space Station
+
+Comet Lovejoy photographed during Expedition 30
+
+Michael Foale conducts an inspection of the Microgravity Science Glovebox during Expedition 8.
+
+Fisheye view of several labs and the Space Shuttle
+
+CubeSats are deployed by the NanoRacks CubeSat Deployer.
+The ISS provides a platform to conduct scientific research, with power, data, cooling, and crew available to support experiments. Small uncrewed spacecraft can also provide platforms for experiments, especially those involving zero gravity and exposure to space, but space stations offer a long-term environment where studies can be performed potentially for decades, with ready access by human researchers.[38][39] Released research has been presented and maid available through the ISS National Laboratory,[40] summarized annually by NASA.[41]
+
+The ISS simplifies individual experiments by allowing groups of experiments to share the same launches and crew time. Research is conducted in a wide variety of fields, including astrobiology, astronomy, physical sciences, materials science, space weather, meteorology, and human research including space medicine and the life sciences.[42][43][44][45] Scientists on Earth have timely access to the data and can suggest experimental modifications to the crew. If follow-on experiments are necessary, the routinely scheduled launches of resupply craft allows new hardware to be launched with relative ease.[39] Crews fly expeditions of several months' duration, providing approximately 160 man-hours per week of labour with a crew of six. However, a considerable amount of crew time is taken up by station maintenance.[46]
+
+A notable ISS experiment is the Alpha Magnetic Spectrometer (AMS), which is intended to detect dark matter and answer other fundamental questions about the universe. According to NASA, the AMS is as important as the Hubble Space Telescope. It is docked on the station, and could not have been easily accommodated on a free flying satellite platform because of its power and bandwidth needs.[47][48] On 3 April 2013, scientists reported that hints of dark matter may have been detected by the AMS.[49][50][51][52][53][54] According to these scientists, "The first results from the space-borne Alpha Magnetic Spectrometer confirm an unexplained excess of high-energy positrons in Earth-bound cosmic rays".[55]
+
+The space environment is hostile to life. Unprotected presence in space results in exposure to intense radiation (consisting primarily of protons and other subatomic charged particles from the solar wind, in addition to cosmic rays), vacuum, extreme temperatures, and microgravity.[56] Some simple forms of life called extremophiles,[57] as well as small invertebrates called tardigrades,[58] can survive in this environment in an extremely dry state through desiccation.
+
+Medical research improves knowledge about the effects of long-term space exposure on the human body, including muscle atrophy, bone loss, and fluid shift. This data will be used to determine whether long-lasting human spaceflight and space colonisation is feasible. In 2006, data on bone loss and muscular atrophy suggested that there would be a significant risk of fractures and movement problems if astronauts landed on a planet after a lengthy interplanetary cruise, such as the six-month interval required to travel to Mars.[59][60][needs update]
+
+Medical studies are conducted aboard the ISS on behalf of the National Space Biomedical Research Institute (NSBRI). Prominent among these is the Advanced Diagnostic Ultrasound in Microgravity study in which astronauts perform ultrasound scans under the guidance of remote experts. The study considers the diagnosis and treatment of medical conditions in space. There is usually no physician on board the ISS and diagnosis of medical conditions is a challenge. It is anticipated that remotely guided ultrasound scans will have application on Earth in emergency and rural care situations where in-person access to a trained physician is difficult.[61][62][63]
+
+In August 2020, scientists reported that bacteria from Earth, particularly Deinococcus radiodurans bacteria, which is highly resistant to environmental hazards, were found to survive for three years in outer space, based on studies conducted on the International Space Station. These findings supported the notion of panspermia, the hypothesis that life exists throughout the Universe, distributed in various ways, including space dust, meteoroids, asteroids, comets, planetoids or contaminated spacecraft.[64][65]
+
+Remote sensing of the Earth, astronomy, and deep space research on the ISS have significantly increased during the 2010s after the completion of the US Orbital Segment in 2011. Throughout the more than 20 years of the ISS program, researchers aboard the ISS and on the ground have examined aerosols, ozone, lightning, and oxides in Earth's atmosphere, as well as the Sun, cosmic rays, cosmic dust, antimatter, and dark matter in the universe. Examples of Earth-viewing remote sensing experiments that have flown on the ISS are the Orbiting Carbon Observatory 3, ISS-RapidScat, ECOSTRESS, the Global Ecosystem Dynamics Investigation, and the Cloud Aerosol Transport System. ISS-based astronomy telescopes and experiments include SOLAR, the Neutron Star Interior Composition Explorer, the Calorimetric Electron Telescope, the Monitor of All-sky X-ray Image (MAXI), and the Alpha Magnetic Spectrometer.[42][66]
+
+Microgravity environment
+
+Jessica Watkins and Bob Hines working on XROOTS, an experiment using the Veggie facility of the station testing soilless hydroponic and aeroponic plant growth
+
+A comparison between the combustion of a candle on Earth (left) and in a free fall environment, such as that found on the ISS (right)
+Researchers are investigating the effect of the station's near-weightless environment on the evolution, development, growth and internal processes of plants and animals. In response to some of the data, NASA wants to investigate microgravity's effects on the growth of three-dimensional, human-like tissues and the unusual protein crystals that can be formed in space.[42]
+
+Investigating the physics of fluids in microgravity will provide better models of the behaviour of fluids. Because fluids can be almost completely combined in microgravity, physicists investigate fluids that do not mix well on Earth. Examining reactions that are slowed by low gravity and low temperatures will improve our understanding of superconductivity.[42]
+
+The study of materials science is an important ISS research activity, with the objective of reaping economic benefits through the improvement of techniques used on Earth.[67] Other areas of interest include the effect of low gravity on combustion, through the study of the efficiency of burning and control of emissions and pollutants. These findings may improve knowledge about energy production and lead to economic and environmental benefits.[42]
+
+Exploration
+The ISS provides a location in the relative safety of low Earth orbit to test spacecraft systems that will be required for long-duration missions to the Moon and Mars. This provides experience in operations, maintenance, and repair and replacement activities on-orbit. This will help develop essential skills in operating spacecraft farther from Earth, reduce mission risks, and advance the capabilities of interplanetary spacecraft.[68] Referring to the MARS-500 experiment, a crew isolation experiment conducted on Earth, ESA states, "Whereas the ISS is essential for answering questions concerning the possible impact of weightlessness, radiation and other space-specific factors, aspects such as the effect of long-term isolation and confinement can be more appropriately addressed via ground-based simulations".[69] Sergey Krasnov, the head of human space flight programs for Russia's space agency, Roscosmos, in 2011 suggested a "shorter version" of MARS-500 may be carried out on the ISS.[70]
+
+In 2009, noting the value of the partnership framework itself, Sergey Krasnov wrote, "When compared with partners acting separately, partners developing complementary abilities and resources could give us much more assurance of the success and safety of space exploration. The ISS is helping further advance near-Earth space exploration and realisation of prospective programs of research and exploration of the Solar system, including the Moon and Mars."[71] A crewed mission to Mars may be a multinational effort involving space agencies and countries outside the current ISS partnership. In 2010, ESA Director-General Jean-Jacques Dordain stated his agency was ready to propose to the other four partners that China, India, and South Korea be invited to join the ISS partnership.[72] NASA chief Charles Bolden stated in February 2011, "Any mission to Mars is likely to be a global effort."[73] Currently, US federal legislation prevents NASA co-operation with China on space projects without approval by the FBI and Congress.[74]
+
+Education and cultural outreach
+
+Original Jules Verne manuscripts displayed by crew inside the Jules Verne ATV (Automated Transfer Vehicle)
+The ISS crew provides opportunities for students on Earth by running student-developed experiments, making educational demonstrations, allowing for student participation in classroom versions of ISS experiments, and directly engaging students using radio, and email.[75][76] ESA offers a wide range of free teaching materials that can be downloaded for use in classrooms.[77] In one lesson, students can navigate a 3D model of the interior and exterior of the ISS, and face spontaneous challenges to solve in real time.[78]
+
+The Japanese Aerospace Exploration Agency (JAXA) aims to inspire children to "pursue craftsmanship" and to heighten their "awareness of the importance of life and their responsibilities in society".[79] Through a series of education guides, students develop a deeper understanding of the past and near-term future of crewed space flight, as well as that of Earth and life.[80][81] In the JAXA "Seeds in Space" experiments, the mutation effects of spaceflight on plant seeds aboard the ISS are explored by growing sunflower seeds that have flown on the ISS for about nine months. In the first phase of Kibō utilisation from 2008 to mid-2010, researchers from more than a dozen Japanese universities conducted experiments in diverse fields.[82]
+
+Cultural activities are another major objective of the ISS program. Tetsuo Tanaka, the director of JAXA's Space Environment and Utilization Center, has said: "There is something about space that touches even people who are not interested in science."[83]
+
+Amateur Radio on the ISS (ARISS) is a volunteer program that encourages students worldwide to pursue careers in science, technology, engineering, and mathematics, through amateur radio communications opportunities with the ISS crew. ARISS is an international working group, consisting of delegations from nine countries including several in Europe, as well as Japan, Russia, Canada, and the United States. In areas where radio equipment cannot be used, speakerphones connect students to ground stations which then connect the calls to the space station.[84] Other licensed operators are able to contact the station freely via various methods, including NFM , APRS and SSTV (Only during events, and downlink only)[85]
+
+Duration: 45 seconds.0:45
+The first content made in space for Wikipedia, from November 2017. It is a voice recording of ESA astronaut Paolo Nespoli in which he introduces himself by stating his spaceflight history
+First Orbit is a 2011 feature-length documentary film about Vostok 1, the first crewed space flight around the Earth. By matching the orbit of the ISS to that of Vostok 1 as closely as possible, in terms of ground path and time of day, documentary filmmaker Christopher Riley and ESA astronaut Paolo Nespoli were able to film the view that Yuri Gagarin saw on his pioneering orbital space flight. This new footage was cut together with the original Vostok 1 mission audio recordings sourced from the Russian State Archive. Nespoli is credited as the director of photography for this documentary film, as he recorded the majority of the footage himself during Expedition 26/27.[86] The film was streamed in a global YouTube premiere in 2011 under a free licence through the website firstorbit.org.[87]
+
+In May 2013, commander Chris Hadfield shot a music video of David Bowie's "Space Oddity" on board the station, which was released on YouTube.[88][89] It was the first music video filmed in space.[90]
+
+In November 2017, while participating in Expedition 52/53 on the ISS, Paolo Nespoli made two recordings of his spoken voice (one in English and the other in his native Italian), for use on Wikipedia articles. These were the first content made in space specifically for Wikipedia.[91][92]
+
+In November 2021, a virtual reality exhibit called The Infinite featuring life aboard the ISS was announced.[93]
+
+International co-operation
+Main articles: Politics of the International Space Station and International Space Station program
+
+A Commemorative Plaque honouring Space Station Intergovernmental Agreement signed on 28 January 1998
+Involving five space programs and fifteen countries,[94] the International Space Station is the most politically and legally complex space exploration program in history.[94] The 1998 Space Station Intergovernmental Agreement sets forth the primary framework for international cooperation among the parties. A series of subsequent agreements govern other aspects of the station, ranging from jurisdictional issues to a code of conduct among visiting astronauts.[95]
+
+Brazil was also invited to participate in the program, the only developing country to receive such an invitation. Under the agreement framework, Brazil was to provide six pieces of hardware, and in exchange, would receive ISS utilization rights. However, Brazil was unable to deliver any of the elements due to a lack of funding and political priority within the country. Brazil officially dropped out of the ISS program in 2007.[96][97]
+
+Following the 2022 Russian invasion of Ukraine, continued cooperation between Russia and other countries on the International Space Station has been put into question. Roscosmos Director General Dmitry Rogozin insinuated that Russian withdrawal could cause the International Space Station to de-orbit due to lack of reboost capabilities, writing in a series of tweets, "If you block cooperation with us, who will save the ISS from an unguided de-orbit to impact on the territory of the US or Europe? There's also the chance of impact of the 500-ton construction in India or China. Do you want to threaten them with such a prospect? The ISS doesn't fly over Russia, so all the risk is yours. Are you ready for it?"[98] (This latter claim is untrue: the ISS flies over all parts of the Earth between 51.6 degrees latitude north and south, approximately the latitude of Saratov.) Rogozin later tweeted that normal relations between ISS partners could only be restored once sanctions have been lifted, and indicated that Roscosmos would submit proposals to the Russian government on ending cooperation.[99] NASA stated that, if necessary, US corporation Northrop Grumman has offered a reboost capability that would keep the ISS in orbit.[100]
+
+On 26 July 2022, Yury Borisov, Rogozin's successor as head of Roscosmos, submitted to Russian President Vladimir Putin plans for withdrawal from the program after 2024.[101] However, Robyn Gatens, the NASA official in charge of the space station, responded that NASA had not received any formal notices from Roscosmos concerning withdrawal plans.[102]
+
+Participating countries
+ Canada
+ European Space Agency
+ Belgium
+ Denmark
+ France
+ Germany
+ Italy
+ Netherlands
+ Norway
+ Spain
+ Sweden
+  Switzerland
+ United Kingdom
+ Japan
+ Russia
+ United States
+Construction
+Manufacturing
+Main article: Manufacture of the International Space Station
+
+S3-S4 Truss being hoist to the payload transfer container inside the Space Station Processing Facility next to several other ISS modules (2007)
+The International Space Station is a product of global collaboration, with its components manufactured across the world.
+
+The modules of the Russian Orbital Segment, including Zarya and Zvezda, were produced at the Khrunichev State Research and Production Space Center in Moscow. Zvezda was initially manufactured in 1985 as a component for the Mir-2 space station, which was never launched.[103][104]
+
+Much of the US Orbital Segment, including the Destiny and Unity modules, the Integrated Truss Structure, and solar arrays, were built at NASA's Marshall Space Flight Center in Huntsville, Alabama and Michoud Assembly Facility in New Orleans.[103] These components underwent final assembly and processing for launch at the Operations and Checkout Building and the Space Station Processing Facility (SSPF) at the Kennedy Space Center in Florida.[105]
+
+The US Orbital Segment also hosts the Columbus module contributed by the European Space Agency and built in Germany, the Kibō module contributed by Japan and built at the Tsukuba Space Center and the Institute of Space and Astronautical Science, along with the Canadarm2 and Dextre, a joint Canadian-U.S. endeavor. All of these components were shipped to the SSPF for launch processing.[103][106]
+
+Assembly
+Main articles: Assembly of the International Space Station and List of ISS spacewalks
+Animation of the assembly of the International Space Station
+The assembly of the International Space Station, a major endeavour in space architecture, began in November 1998.[10]
+
+Modules in the Russian segment launched and docked autonomously, with the exception of Rassvet. Other modules and components were delivered by the Space Shuttle, which then had to be installed by astronauts either remotely using robotic arms or during spacewalks, more formally known as extra-vehicular activities (EVAs). By 5 June 2011 astronauts had made over 159 EVAs to add components to the station, totaling more than 1,000 hours in space.[107][108]
+
+
+Zarya and Unity, the first two modules of the ISS, pictured in May 2000
+The beginning of the core of the ISS's tenure in orbit was the launch of the Russian-built Zarya module atop a Proton rocket on 20 November 1998. Zarya provided propulsion, attitude control, communications, and electrical power. Two weeks later on 4 December 1998, the American-made Unity was ferried aboard Space Shuttle Endeavour on STS-88 and joined with Zarya. Unity provided the connection between the Russian and US segments of the station and would provide ports to connect future modules and visiting spacecraft.
+
+While the connection of two modules built on different continents by nations that were once bitter rivals was a significant milestone, these two initial modules lacked life-support systems and the ISS remained unmanned for the next two years. At the time, the Russian station Mir was still inhabited.
+
+The turning point arrived in July 2000 with the launch of the Zvezda module. Equipped with living quarters and life-support systems, Zvezda enabled continuous human presence aboard the station. The first crew, Expedition 1, arrived that November aboard Soyuz TM-31.[109][110]
+
+The ISS grew steadily over the following years, with modules delivered by both Russian rockets and the Space Shuttle.
+
+Expedition 1 arrived midway between the Space Shuttle flights of missions STS-92 and STS-97. These two flights each added segments of the station's Integrated Truss Structure, which provided the station with Ku band communications, additional attitude control needed for the additional mass of the USOS, and additional solar arrays.[111] Over the next two years, the station continued to expand. A Soyuz-U rocket delivered the Pirs docking compartment. The Space Shuttles Discovery, Atlantis, and Endeavour delivered the American Destiny laboratory and Quest airlock, in addition to the station's main robot arm, the Canadarm2, and several more segments of the Integrated Truss Structure.
+
+Tragedy struck in 2003 with the loss of the Space Shuttle Columbia, which grounded the rest of the Shuttle fleet, halting construction of the ISS.
+
+
+The ISS as seen from Space Shuttle Atlantis during STS-132, pictured in May 2010
+Assembly resumed in 2006 with the arrival of STS-115 with Atlantis, which delivered the station's second set of solar arrays. Several more truss segments and a third set of arrays were delivered on STS-116, STS-117, and STS-118. As a result of the major expansion of the station's power-generating capabilities, more modules could be accommodated, and the US Harmony module and Columbus European laboratory were added. These were soon followed by the first two components of the Japanese Kibō laboratory. In March 2009, STS-119 completed the Integrated Truss Structure with the installation of the fourth and final set of solar arrays. The final section of Kibō was delivered in July 2009 on STS-127, followed by the Russian Poisk module. The US Tranquility module was delivered in February 2010 during STS-130, alongside the Cupola, followed by the penultimate Russian module, Rassvet, in May 2010. Rassvet was delivered by Space Shuttle Atlantis on STS-132 in exchange for the Russian Proton delivery of the US-funded Zarya module in 1998.[112] The last pressurised module of the USOS, Leonardo, was brought to the station in February 2011 on the final flight of Discovery, STS-133.[113]
+
+Russia's new primary research module Nauka docked in July 2021,[114] along with the European Robotic Arm which can relocate itself to different parts of the Russian modules of the station.[115] Russia's latest addition, the Prichal module, docked in November 2021.[116]
+
+As of June 2025, nasa.gov states that there are 43 different modules and elements installed on the ISS.[117]
+
+Structure
+The ISS functions as a modular space station, enabling the addition or removal of modules from its structure for increased adaptability.
+
+Blueprint of the ISS (as of 2018)
+Blueprint of the ISS (as of 2018)
+ 
+Rendering of the ISS (as of 2023)
+Rendering of the ISS (as of 2023)
+Below is a diagram of major station components. The Unity node joins directly to the Destiny laboratory; for clarity, they are shown apart. Similar cases are also seen in other parts of the structure.
+
+Key to box background colors:
+
+  Pressurised component, accessible by the crew without using spacesuits
+  Docking/berthing port, pressurized when a visiting spacecraft is present
+  Airlock, to move people or material between pressurized and unpressurized environment
+  Unpressurised station superstructure
+  Unpressurised component
+  Temporarily defunct or non-commissioned component
+  Former, no longer installed component
+  Future, not yet installed component
+Russian
+docking port
+Means of
+attachment of
+large payloads		Heat radiator						Poisk	Russian
+docking port
+Portable workpost															
+European Robotic Arm							Solar array		Zvezda		Solar array
+Solar array		Nauka		Solar array			Pirs [e]	Russian
+docking port
+Russian
+docking port		Experiment airlock						
+Russian
+docking port		Prichal		Russian
+docking port			
+Russian
+docking port		Russian
+docking port					
+Solar array[f]		Zarya		Solar array[g]
+Russian
+docking port	Rassvet						
+iROSA			iROSA											iROSA			iROSA			
+Solar array			Solar array		Heat radiator			Heat radiator		Solar array			Solar array				
+ELC 2, AMS					Z1 truss					ELC 3								
+S5/6 Truss	S3/S4 Truss	S1 Truss	S0 Truss	P1 Truss	P3/P4 Truss	P5/6 Truss				
+ELC 4, ESP 3													ELC 1								
+Dextre
+robotic arm			Canadarm2
+robotic arm												
+Solar array			Solar array											Solar array			Solar array					
+iROSA			iROSA											iROSA			iROSA			
+PMA 1		BEAM
+ESP-2	Quest airlock		Unity		Tranquility		Bishop airlock
+Cupola
+Cargo spacecraft
+berthing port							
+Leonardo
+ESP-1	Destiny			
+PMA / IDA
+docking port
+Kibō
+cargo bay	Kibō
+robotic arm
+External payloads	Columbus		Harmony			Kibō	Kibō
+external platform
+Cargo spacecraft
+berthing port		
+PMA / IDA
+docking port	
+Pressurised modules
+Zarya
+
+Zarya as seen by Space Shuttle Endeavour during STS-88
+Main article: Zarya (ISS module)
+Zarya (Russian: Заря, lit. 'Sunrise'[h]), also known as the Functional Cargo Block (Russian: Функционально-грузовой блок), was the inaugural component of the ISS. Launched in 1998, it initially served as the ISS's power source, storage, propulsion, and guidance system. As the station has grown, Zarya's role has transitioned primarily to storage, both internally and in its external fuel tanks.[119]
+
+A descendant of the TKS spacecraft used in the Salyut program, Zarya was built in Russia but is owned by the United States. Its name symbolizes the beginning of a new era of international space cooperation.[120]
+
+Unity
+
+Unity as seen by Space Shuttle Endeavour during STS-88
+Main article: Unity (ISS module)
+Unity, also known as Node 1, is the inaugural U.S.-built component of the ISS.[121][122] Serving as the connection between the Russian and U.S. segments, this cylindrical module features six Common Berthing Mechanism locations (forward, aft, port, starboard, zenith, and nadir) for attaching additional modules. Measuring 4.57 metres (15.0 ft) in diameter and 5.47 metres (17.9 ft) in length, Unity was constructed of steel by Boeing for NASA at the Marshall Space Flight Center in Huntsville, Alabama. It was the first of three connecting nodes – Unity, Harmony, and Tranquility – that forms the structural backbone of the U.S. segment of the ISS.[123]
+
+Zvezda
+
+Zvezda as seen by Space Shuttle Atlantis during STS-106
+Main article: Zvezda (ISS module)
+Zvezda (Russian: Звезда, lit. 'star') launched in July 2000, is the core of the Russian Orbital Segment of the ISS. Initially providing essential living quarters and life-support systems, it enabled the first continuous human presence aboard the station. While additional modules have expanded the ISS's capabilities, Zvezda remains the command and control center for the Russian segment and it is where crews gather during emergencies.[124][125][126]
+
+A descendant of the Salyut program's DOS spacecraft, Zvezda was built by RKK Energia and launched atop a Proton rocket.[127]
+
+Destiny
+
+The Destiny module being installed on the ISS
+Main article: Destiny (ISS module)
+The Destiny laboratory is the primary research facility for U.S. experiments on the ISS. NASA's first permanent orbital research station since Skylab, the module was built by Boeing and launched aboard Space Shuttle Atlantis during STS-98. Attached to Unity over a period of five days in February 2001, Destiny has been a hub for scientific research ever since.[128][129][130]
+
+Within Destiny, astronauts conduct experiments in fields such as medicine, engineering, biotechnology, physics, materials science, and Earth science. Researchers worldwide benefit from these studies. The module also houses life-support systems, including the Oxygen Generating System.[131]
+
+Quest Joint Airlock
+
+Quest Joint Airlock Module
+Main article: Quest Joint Airlock
+The Quest Joint Airlock enables extravehicular activities (EVAs) using either the U.S. Extravehicular Mobility Unit (EMU) or the Russian Orlan space suit.[132]
+
+Before its installation, conducting EVAs from the ISS was challenging due to a variety of system and design differences. Only the Orlan suit could be used from the Transfer Chamber on the Zvezda module (which was not a purpose-built airlock) and the EMU could only be used from the airlock on a visiting Space Shuttle, which could not accommodate the Orlan.[133]
+
+Launched aboard Space Shuttle Atlantis during STS-104 in July 2001 and attached to the Unity module, Quest is a 6.1-metre-long (20 ft), 4.0-metre-wide (13 ft) structure built by Boeing.[134] It houses the crew airlock for astronaut egress, an equipment airlock for suit storage, and has facilities to accommodate astronauts during their overnight pre-breathe procedures to prevent decompression sickness.[133]
+
+The crew airlock, derived from the Space Shuttle, features essential equipment like lighting, handrails, and an Umbilical Interface Assembly (UIA) that provides life-support and communication systems for up to two spacesuits simultaneously. These can be either two EMUs, two Orlan suits, or one of each design.
+
+Poisk
+
+Poisk with its own propulsion module (soon to be jettisoned)
+Main article: Poisk (ISS module)
+Poisk (Russian: По́иск, lit. 'Search'), also known as the Mini-Research Module 2 (Russian: Малый исследовательский модуль 2), serves as both a secondary airlock on the Russian segment of the ISS and supports docking for Soyuz and Progress spacecraft, facilitates propellant transfers from the latter.[135] Launched on 10 November 2009 attached to a modified Progress spacecraft, called Progress M-MIM2.[136][137]
+
+Poisk provides facilities to maintain Orlan spacesuits and is equipped with two inward-opening hatches, a design change from Mir, which encountered a dangerous situation caused by an outward-opening hatch that opened too quickly because of a small amount of air pressure remaining in the airlock.[138] Since the departure of Pirs in 2021, it's become the sole airlock on the Russian segment.
+
+Harmony
+
+Harmony (center) shown connected to Columbus, Kibo, and Destiny. The dark PMA-2 faces the camera. The nadir and zenith locations are open.
+Main article: Harmony (ISS module)
+Harmony, or Node 2, is the central connecting hub of the US segment of the ISS, linking the U.S., European, and Japanese laboratory modules. It's also been called the "utility hub" of the ISS as it provides essential power, data, and life-support systems. The module also houses sleeping quarters for four crew members.[139]
+
+Launched on 23 October 2007 aboard Space Shuttle Discovery on STS-120,[140][141] Harmony was initially attached to the Unity[142][143] before being relocated to its permanent position at the front of the Destiny laboratory on 14 November 2007.[144] This expansion added significant living space to the ISS, marking a key milestone in the construction of the U.S. segment.
+
+Tranquility
+
+Tranquility in 2011
+Main article: Tranquility (ISS module)
+Tranquility, also known as Node 3, is a module of the ISS. It contains environmental control systems, life-support systems, a toilet, exercise equipment, and an observation cupola.
+
+The European Space Agency and the Italian Space Agency had Tranquility manufactured by Thales Alenia Space. A ceremony on 20 November 2009 transferred ownership of the module to NASA.[145] On 8 February 2010, NASA launched the module on the Space Shuttle's STS-130 mission.
+
+Columbus
+
+The Columbus module on the ISS
+Main article: Columbus (ISS module)
+Columbus is a science laboratory that is part of the ISS and is the largest single contribution to the station made by the European Space Agency.
+
+Like the Harmony and Tranquility modules, the Columbus laboratory was constructed in Turin, Italy by Thales Alenia Space. The functional equipment and software of the lab was designed by EADS in Bremen, Germany. It was also integrated in Bremen before being flown to the Kennedy Space Center in Florida in an Airbus Beluga jet. It was launched aboard Space Shuttle Atlantis on 7 February 2008, on flight STS-122. It is designed for ten years of operation. The module is controlled by the Columbus Control center, located at the German Space Operations Center, part of the German Aerospace Center in Oberpfaffenhofen near Munich, Germany.
+
+The European Space Agency has spent €1.4 billion (about US$1.6 billion) on building Columbus, including the experiments it carries and the ground control infrastructure necessary to operate them.[146]
+
+Kibō
+
+Kibō with its exposed facility on the right
+Main article: Kibō (ISS module)
+Kibō (Japanese: きぼう; lit. 'hope'), also known as the Japanese Experiment Module, is Japan's research facility on the ISS. It is the largest single module on the ISS, consisting of a pressurized lab, an exposed facility for conducting experiments in the space environment, two storage compartments, and a robotic arm. Attached to the Harmony module, Kibō was assembled in space over three Space Shuttle missions: STS-123, STS-124 and STS-127.[147]
+
+Cupola
+
+The Cupola's windows with shutters open
+Main article: Cupola (ISS module)
+The Cupola is an ESA-built observatory module of the ISS. Its name derives from the Italian word cupola, which means "dome". Its seven windows are used to conduct experiments, dockings and observations of Earth. It was launched aboard Space Shuttle mission STS-130 on 8 February 2010 and attached to the Tranquility (Node 3) module. With the Cupola attached, ISS assembly reached 85 per cent completion. The Cupola's central window has a diameter of 80 cm (31 in).[148]
+
+Rassvet
+
+Rassvet module with MLM-outfitting equipment (consisting of experiment airlock, RTOd radiators, and ERA workpost) at KSC
+Main article: Rassvet (ISS module)
+Rassvet (Russian: Рассвет, lit. 'first light'), also known as the Mini-Research Module 1 (Russian: Малый исследовательский модуль 1) and formerly known as the Docking Cargo Module is primarily used for cargo storage and as a docking port for visiting spacecraft on the Russian segment of the ISS. Rassvet replaced the cancelled Docking and Storage Module and used a design largely based on the Mir Docking Module built in 1995.
+
+Rassvet was delivered in on 14 May 2010 Space Shuttle Atlantis on STS-132 in exchange for the Russian Proton delivery of the US-funded Zarya module in 1998.[149] Rassvet was attached to Zarya shortly thereafter.[150]
+
+Leonardo
+
+The Leonardo module hours after berthing
+Main article: Leonardo (ISS module)
+The Leonardo Permanent Multipurpose Module (PMM) was flown into space aboard the Space Shuttle Discovery on STS-133 on 24 February 2011 and installed on 1 March. Leonardo is primarily used for storage of spares, supplies and waste on the ISS, which was until then stored in many different places within the space station. It is also the personal hygiene area for the astronauts who live in the US Orbital Segment. The Leonardo PMM was a Multi-Purpose Logistics Module (MPLM) before 2011, but was modified into its current configuration. It was formerly one of two MPLM used for bringing cargo to and from the ISS with the Space Shuttle. The module was named for Italian polymath Leonardo da Vinci.
+
+Bigelow Expandable Activity Module
+
+Progression of the expansion of BEAM
+The Bigelow Expandable Activity Module (BEAM) is an experimental expandable space station module developed by Bigelow Aerospace, under contract to NASA, for testing as a temporary module on the International Space Station (ISS) from 2016 to at least 2020. It arrived at the ISS on 10 April 2016,[151] was berthed to the station on 16 April at Tranquility Node 3, and was expanded and pressurized on 28 May 2016. In December 2021, Bigelow Aerospace conveyed ownership of the module to NASA, as a result of Bigelow's cessation of activity.[152]
+
+International Docking Adapters
+The International Docking Adapter (IDA) is a spacecraft docking system adapter developed to convert APAS-95 to the NASA Docking System (NDS). An IDA is placed on each of the ISS's two open Pressurized Mating Adapters (PMAs), both of which are connected to the Harmony module.
+
+Two International Docking Adapters are currently installed aboard the Station. Originally, IDA-1 was planned to be installed on PMA-2, located at Harmony's forward port, and IDA-2 would be installed on PMA-3 at Harmony's zenith. After IDA 1 was destroyed in a launch incident, IDA-2 was installed on PMA-2 on 19 August 2016,[153] while IDA-3 was later installed on PMA-3 on 21 August 2019.[154]
+
+Bishop Airlock Module
+
+NanoRacks Bishop airlock module installed on the ISS
+Main article: Nanoracks Bishop Airlock
+The NanoRacks Bishop Airlock Module is a commercially funded airlock module launched to the ISS on SpaceX CRS-21 on 6 December 2020.[155][156] The module was built by NanoRacks, Thales Alenia Space, and Boeing.[157] It will be used to deploy CubeSats, small satellites, and other external payloads for NASA, CASIS, and other commercial and governmental customers.[158]
+
+Nauka
+
+Nauka and Prichal docked to ISS
+Main article: Nauka (ISS module)
+Nauka (Russian: Наука, lit. 'Science'), also known as the Multipurpose Laboratory Module, Upgrade (Russian: Многоцелевой лабораторный модуль, усоверше́нствованный), is a Roscosmos-funded component of the ISS that was launched on 21 July 2021, 14:58 UTC. In the original ISS plans, Nauka was to use the location of the Docking and Stowage Module (DSM), but the DSM was later replaced by the Rassvet module and moved to Zarya's nadir port. Nauka was successfully docked to Zvezda's nadir port on 29 July 2021, 13:29 UTC, replacing the Pirs module.
+
+It had a temporary docking adapter on its nadir port for crewed and uncrewed missions until Prichal arrival, where just before its arrival it was removed by a departing Progress spacecraft.[159]
+
+Prichal
+Main article: Prichal (ISS module)
+Prichal (Russian: Причал, lit. 'pier') is a 4-tonne (8,800 lb) spherical module that serves as a docking hub for the Russian segment of the ISS. Launched in November 2021, Prichal provides additional docking ports for Soyuz and Progress spacecraft, as well as potential future modules. Prichal features six docking ports: forward, aft, port, starboard, zenith, and nadir. One of these ports, equipped with an active hybrid docking system, enabled it to dock with the Nauka module. The remaining five ports are passive hybrids, allowing for docking of Soyuz, Progress, and heavier modules, as well as future spacecraft with modified docking systems. As of 2024, the forward, aft, port and starboard docking ports remain covered. Prichal was initially intended to be an element of the now canceled Orbital Piloted Assembly and Experiment Complex.[160][161][162][163]
+
+Unpressurised elements
+
+ISS Truss Components breakdown showing Trusses and all ORUs in situ
+
+Construction of the Integrated Truss Structure over New Zealand
+The ISS has a large number of external components that do not require pressurisation. The largest of these is the Integrated Truss Structure (ITS), to which the station's main solar arrays and thermal radiators are mounted.[164] The ITS consists of ten separate segments forming a structure 108.5 metres (356 ft) long.[10]
+
+The station was intended to have several smaller external components, such as six robotic arms, three External Stowage Platforms (ESPs) and four ExPRESS Logistics Carriers (ELCs).[165][166] While these platforms allow experiments (including MISSE, the STP-H3 and the Robotic Refueling Mission) to be deployed and conducted in the vacuum of space by providing electricity and processing experimental data locally, their primary function is to store spare Orbital Replacement Units (ORUs). ORUs are parts that can be replaced when they fail or pass their design life, including pumps, storage tanks, antennas, and battery units. Such units are replaced either by astronauts during EVA or by robotic arms.[167] Several shuttle missions were dedicated to the delivery of ORUs, including STS-129,[168] STS-133[169] and STS-134.[170] As of January 2011, only one other mode of transportation of ORUs had been used – the Japanese cargo vessel HTV-2 – which delivered an FHRC and CTC-2 via its Exposed Pallet (EP).[171][needs update]
+
+There are also smaller exposure facilities mounted directly to laboratory modules; the Kibō Exposed Facility serves as an external "porch" for the Kibō complex,[172] and a facility on the European Columbus laboratory provides power and data connections for experiments such as the European Technology Exposure Facility[173][174] and the Atomic Clock Ensemble in Space.[175] A remote sensing instrument, SAGE III-ISS, was delivered to the station in February 2017 aboard CRS-10,[176] and the NICER experiment was delivered aboard CRS-11 in June 2017.[177] The largest scientific payload externally mounted to the ISS is the Alpha Magnetic Spectrometer (AMS), a particle physics experiment launched on STS-134 in May 2011, and mounted externally on the ITS. The AMS measures cosmic rays to look for evidence of dark matter and antimatter.[178][179]
+
+The commercial Bartolomeo External Payload Hosting Platform, manufactured by Airbus, was launched on 6 March 2020 aboard CRS-20 and attached to the European Columbus module. It will provide an additional 12 external payload slots, supplementing the eight on the ExPRESS Logistics Carriers, ten on Kibō, and four on Columbus. The system is designed to be robotically serviced and will require no astronaut intervention. It is named after Christopher Columbus's younger brother.[180][181][182]
+
+MLM outfittings
+
+MLM outfittings on Rassvet
+
+A wide-angle view of the new module (behind Rassvet) attached to the ROS as seen from the cupola
+In May 2010, equipment for Nauka was launched on STS-132 (as part of an agreement with NASA) and delivered by Space Shuttle Atlantis. Weighing 1.4 metric tons, the equipment was attached to the outside of Rassvet (MRM-1). It included a spare elbow joint for the European Robotic Arm (ERA) (which was launched with Nauka) and an ERA-portable workpost used during EVAs, as well as RTOd add-on heat radiator and internal hardware alongside the pressurized experiment airlock.[183]
+
+The RTOd radiator adds additional cooling capability to Nauka, which enables the module to host more scientific experiments.[183]
+
+The ERA was used to remove the RTOd radiator from Rassvet and transferred over to Nauka during VKD-56 spacewalk. Later it was activated and fully deployed on VKD-58 spacewalk.[184] This process took several months. A portable work platform was also transferred over in August 2023 during VKD-60 spacewalk, which can attach to the end of the ERA to allow cosmonauts to "ride" on the end of the arm during spacewalks.[185][186] However, even after several months of outfitting EVAs and RTOd heat radiator installation, six months later, the RTOd radiator malfunctioned before active use of Nauka (the purpose of RTOd installation is to radiate heat from Nauka experiments). The malfunction, a leak, rendered the RTOd radiator unusable for Nauka. This is the third ISS radiator leak after Soyuz MS-22 and Progress MS-21 radiator leaks. If a spare RTOd is not available, Nauka experiments will have to rely on Nauka's main launch radiator and the module could never be used to its full capacity.[187][188]
+
+Another MLM outfitting is a 4 segment external payload interface called means of attachment of large payloads (Sredstva Krepleniya Krupnogabaritnykh Obyektov, SKKO).[189] Delivered in two parts to Nauka by Progress MS-18 (LCCS part) and Progress MS-21 (SCCCS part) as part of the module activation outfitting process.[190][191][192][193] It was taken outside and installed on the ERA aft facing base point on Nauka during the VKD-55 spacewalk.[194][195][196][197]
+
+Robotic arms and cargo cranes
+
+Commander Volkov stands on Pirs with his back to the Soyuz whilst operating the manual
+Strela crane (which is holding photographer Oleg Kononenko).
+
+Dextre, like many of the station's experiments and robotic arms, can be operated from Earth, allowing tasks to be performed while the crew sleeps.
+The Integrated Truss Structure (ITS) serves as a base for the station's primary remote manipulator system, the Mobile Servicing System (MSS), which is composed of three main components:
+
+Canadarm2, the largest robotic arm on the ISS, has a mass of 1,800 kilograms (4,000 lb) and is used to: dock and manipulate spacecraft and modules on the USOS; hold crew members and equipment in place during EVAs; and move Dextre to perform tasks.[198]
+Dextre is a 1,560 kg (3,440 lb) robotic manipulator that has two arms and a rotating torso, with power tools, lights, and video for replacing orbital replacement units (ORUs) and performing other tasks requiring fine control.[199]
+The Mobile Base System (MBS) is a platform that rides on rails along the length of the station's main truss, which serves as a mobile base for Canadarm2 and Dextre, allowing the robotic arms to reach all parts of the USOS.[200]
+A grapple fixture was added to Zarya on STS-134 to enable Canadarm2 to inchworm itself onto the ROS.[170] Also installed during STS-134 was the 15 m (50 ft) Orbiter Boom Sensor System (OBSS), which had been used to inspect heat shield tiles on Space Shuttle missions and which can be used on the station to increase the reach of the MSS.[170] Staff on Earth or the ISS can operate the MSS components using remote control, performing work outside the station without the need for space walks.
+
+Japan's Remote Manipulator System, which services the Kibō Exposed Facility,[201] was launched on STS-124 and is attached to the Kibō Pressurised Module.[202] The arm is similar to the Space Shuttle arm as it is permanently attached at one end and has a latching end effector for standard grapple fixtures at the other.
+
+The European Robotic Arm, which will service the ROS, was launched alongside the Nauka module.[203] The ROS does not require spacecraft or modules to be manipulated, as all spacecraft and modules dock automatically and may be discarded the same way. Crew use the two Strela (Russian: Стрела́, lit. 'Arrow') cargo cranes during EVAs for moving crew and equipment around the ROS. Each Strela crane has a mass of 45 kg (99 lb).
+
+Former module
+
+The Pirs module attached to the ISS
+
+ISS-65 Pirs docking compartment separates from the International Space Station.
+Pirs
+Main article: Pirs (ISS module)
+Pirs (Russian: Пирс, lit. 'Pier') was launched on 14 September 2001, as ISS Assembly Mission 4R, on a Russian Soyuz-U rocket, using a modified Progress spacecraft, Progress M-SO1, as an upper stage. Pirs was undocked by Progress MS-16 on 26 July 2021, 10:56 UTC, and deorbited on the same day at 14:51 UTC to make room for the Nauka module to be attached to the space station. Prior to its departure, Pirs served as the primary Russian airlock on the station, being used to store and refurbish the Russian Orlan spacesuits.
+
+Planned components
+Axiom segment
+Main article: Axiom Station
+
+Early rendering of the Axiom Orbital Segment, made prior to assembly plan changes, with now only one module, the Payload Power Thermal Module (PPTM), being planned to dock with the ISS
+In January 2020, NASA awarded Axiom Space a contract to build a commercial module for the ISS. The contract is under the NextSTEP2 program. NASA negotiated with Axiom on a firm fixed-price contract basis to build and deliver the module, which will attach to the forward port of the space station's Harmony (Node 2) module. Although NASA only commissioned one module, Axiom planned to build an entire segment (Axiom Orbital Segment) consisting of five modules, including a node module, an orbital research and manufacturing facility, a crew habitat, and a "large-windowed Earth observatory". The Axiom segment was expected to greatly increase the capabilities and value of the space station, allowing for larger crews and private spaceflight by other organisations. Axiom planned to convert the segment into a stand-alone space station (Axiom Station) once the ISS is decommissioned, with the intention that this would act as a successor to the ISS.[204][205][206] Canadarm2 is planned to continue its operations on Axiom Station after the retirement of ISS in 2030.[207] In December 2024, Axiom Space revised their station assembly plans to require only one module to dock with the ISS before assembling Axiom Station in an independent orbit.[208] The module docked to the ISS will feature storage for established ISS hardware to be transferred to and retained at the Axiom module and later station.[209]
+
+As of December 2024, Axiom Space expects to launch one module, the Payload Power Thermal Module (PPTM), to the ISS no earlier than 2027.[208] PPTM is expected to remain at the ISS until the launch of Axiom's Habitat One (Hab-1) module about one year later, after which it will detach from the ISS to join with Hab-1.[208]
+
+US Deorbit Vehicle
+The US Deorbit Vehicle (USDV) is a NASA-provided spacecraft intended to perform a controlled de-orbit and demise of the station after the end of its operational life in 2030. In June 2024, NASA awarded SpaceX a contract to build the Deorbit Vehicle.[210] NASA plans to de-orbit ISS as soon as they have the "minimum capability" in orbit: "the USDV and at least one commercial station."[211]
+
+Cancelled components
+
+The cancelled Habitation module under construction at Michoud in 1997
+
+Rendering of the Nautilus-X Centrifuge Demonstrator docked to the ISS (side)
+Several modules developed or planned for the station were cancelled over the course of the ISS program. Reasons include budgetary constraints, the modules becoming unnecessary, and station redesigns after the 2003 Columbia disaster. The US Centrifuge Accommodations Module would have hosted science experiments in varying levels of artificial gravity.[212] The US Habitation Module would have served as the station's living quarters. Instead, the living quarters are now spread throughout the station.[213] The US Interim Control Module and ISS Propulsion Module would have replaced the functions of Zvezda in case of a launch failure.[214] Two Russian Research Modules were planned for scientific research.[215] They would have docked to a Russian Universal Docking Module.[216] The Russian Science Power Platform would have supplied power to the Russian Orbital Segment independent of the ITS solar arrays.[217]
+
+Science Power Modules 1 and 2 (Repurposed Components)
+Science Power Module 1 (SPM-1, also known as NEM-1) and Science Power Module 2 (SPM-2, also known as NEM-2) are modules that were originally planned to arrive at the ISS no earlier than 2024, and dock to the Prichal module, which is docked to the Nauka module.[163][218] In April 2021, Roscosmos announced that NEM-1 would be repurposed to function as a core module of the proposed Russian Orbital Service Station (ROS), launching no earlier than 2027[219] and docking to the free-flying Nauka module.[220][221] NEM-2 may be converted into another core "base" module, which would be launched in 2028.[222] As of December 2025, NEM-1—now referred to simply as NEM—is expected to be launched to the ISS in 2029, where it will dock with the Universal Node module replacing Prichal prior to the separation of the ROS modules around 2030.[223]
+
+XBASE
+Main article: B330
+In August 2016, Bigelow Aerospace negotiated an agreement with NASA to develop a full-size ground prototype Deep Space Habitation based on the B330 under the second phase of Next Space Technologies for Exploration Partnerships. The module was called the Expandable Bigelow Advanced Station Enhancement (XBASE), as Bigelow hoped to test the module by attaching it to the International Space Station. However, in March 2020, Bigelow laid off all 88 of its employees, and as of February 2024 the company remains dormant and is considered defunct,[224][225] making it appear unlikely that the XBASE module will ever be launched.
+
+Nautilus-X Centrifuge Demonstration
+Main article: Nautilus-X
+A proposal was put forward in 2011 for a first in-space demonstration of a sufficiently scaled centrifuge for artificial partial-g gravity effects. It was designed to become a sleep module for the ISS crew. The project was cancelled in favour of other projects due to budget constraints.[226]
+
+Onboard systems
+Life support
+Main articles: ISS ECLSS and Chemical oxygen generator
+The critical systems are the atmosphere control system, the water supply system, the food supply facilities, the sanitation and hygiene equipment, and fire detection and suppression equipment. The Russian Orbital Segment's life-support systems are contained in the Zvezda service module. Some of these systems are supplemented by equipment in the USOS. The Nauka laboratory has a complete set of life-support systems.
+
+Atmospheric control systems
+A flowchart diagram showing the components of the ISS life-support system.
+The interactions between the components of the ISS Environmental Control and Life-Support System (ECLSS)
+The atmosphere on board the ISS is similar to that of Earth.[227] Normal air pressure on the ISS is 101.3 kPa (14.69 psi), the same as at sea level on Earth.[228] While the crew would remain healthy at a lower pressure, some equipment is very pressure-sensitive.[228]
+
+Earth-like atmospheric conditions have been maintained on all Russian and Soviet spacecraft,[229] while American spacecraft used pure oxygen atmospheres at 5 psi (0.3 atm) after launch.
+
+The Elektron system aboard Zvezda and a similar system in Destiny generate oxygen aboard the station.[230] The crew has a backup option in the form of bottled oxygen and Solid Fuel Oxygen Generation (SFOG) canisters, a chemical oxygen generator system.[231] Carbon dioxide is removed from the air by the Vozdukh system in Zvezda. Other by-products of human metabolism, such as methane from the intestines and ammonia from sweat, are removed by activated charcoal filters.[231]
+
+Part of the ROS atmosphere control system is the oxygen supply. Triple-redundancy is provided by the Elektron unit, solid fuel generators, and stored oxygen. The primary supply of oxygen is the Elektron unit which produces O2 and H2 by electrolysis of water and vents H2 overboard. The 1 kW (1.3 hp) system uses approximately one litre of water per crew member per day. This water is either brought from Earth or recycled from other systems. Mir was the first spacecraft to use recycled water for oxygen production. The secondary oxygen supply is provided by burning oxygen-producing Vika cartridges (see also ISS ECLSS). Each 'candle' takes 5–20 minutes to decompose at 450–500 °C (842–932 °F), producing 600 litres (130 imp gal; 160 US gal) of O2. This unit is manually operated.[232]
+
+The US Orbital Segment (USOS) has redundant supplies of oxygen, from a pressurised storage tank on the Quest airlock module delivered in 2001, supplemented ten years later by ESA-built Advanced Closed-Loop System (ACLS) in the Tranquility module (Node 3), which produces O2 by electrolysis.[233] Hydrogen produced is combined with carbon dioxide from the cabin atmosphere and converted to water and methane.
+
+Power and thermal control
+Main articles: Electrical system of the International Space Station and External Active Thermal Control System
+
+Russian solar arrays, backlit by sunset
+
+One of the eight truss mounted pairs of USOS solar arrays
+
+ISS new roll out solar array as seen from a zoom camera on the P6 Truss
+Double-sided solar arrays provide electrical power to the ISS. These bifacial cells collect direct sunlight on one side and light reflected off from the Earth on the other, and are more efficient and operate at a lower temperature than single-sided cells commonly used on Earth.[234]
+
+The Russian segment of the station, like most spacecraft, uses 28 V low voltage DC from two rotating solar arrays mounted on Zvezda. The USOS uses 130–180 V DC from the USOS PV array. Power is stabilised and distributed at 160 V DC and converted to the user-required 124 V DC. The higher distribution voltage allows smaller, lighter conductors, at the expense of crew safety. The two station segments share power with converters.
+
+The USOS solar arrays are arranged as four wing pairs, for a total production of 75 to 90 kilowatts.[5] These arrays normally track the Sun to maximise power generation. Each array is about 375 m2 (4,036 sq ft) in area and 58 m (190 ft) long. In the complete configuration, the solar arrays track the Sun by rotating the alpha gimbal once per orbit; the beta gimbal follows slower changes in the angle of the Sun to the orbital plane. The Night Glider mode aligns the solar arrays parallel to the ground at night to reduce the significant aerodynamic drag at the station's relatively low orbital altitude.[235]
+
+The station originally used rechargeable nickel–hydrogen batteries (NiH2) for continuous power during the 45 minutes of every 90-minute orbit that it is eclipsed by the Earth. The batteries are recharged on the day side of the orbit. They had a 6.5-year lifetime (over 37,000 charge/discharge cycles) and were regularly replaced over the anticipated 20-year life of the station.[236] Starting in 2016, the nickel–hydrogen batteries were replaced by lithium-ion batteries, which are expected to last until the end of the ISS program.[237]
+
+The station's large solar panels generate a high potential voltage difference between the station and the ionosphere. This could cause arcing through insulating surfaces and sputtering of conductive surfaces as ions are accelerated by the spacecraft plasma sheath. To mitigate this, plasma contactor units create current paths between the station and the ambient space plasma.[238]
+
+
+ISS External Active Thermal Control System (EATCS) diagram
+The station's systems and experiments consume a large amount of electrical power, almost all of which is converted to heat. To keep the internal temperature within workable limits, a passive thermal control system (PTCS) is made of external surface materials, insulation such as MLI, and heat pipes. If the PTCS cannot keep up with the heat load, an External Active Thermal Control System (EATCS) maintains the temperature. The EATCS consists of an internal, non-toxic, water coolant loop used to cool and dehumidify the atmosphere, which transfers collected heat into an external liquid ammonia loop. From the heat exchangers, ammonia is pumped into external radiators that emit heat as infrared radiation, then the ammonia is cycled back to the station.[239] The EATCS provides cooling for all the US pressurised modules, including Kibō and Columbus, as well as the main power distribution electronics of the S0, S1 and P1 trusses. It can reject up to 70 kW. This is much more than the 14 kW of the Early External Active Thermal Control System (EEATCS) via the Early Ammonia Servicer (EAS), which was launched on STS-105 and installed onto the P6 Truss.[240]
+
+Communications and computers
+Main articles: Tracking and Data Relay Satellite and Luch (satellite)
+See also: ThinkPad § Use in space
+The ISS relies on various radio communication systems to provide telemetry and scientific data links between the station and mission control centers. Radio links are also used during rendezvous and docking procedures and for audio and video communication between crew members, flight controllers and family members. As a result, the ISS is equipped with internal and external communication systems used for different purposes.[241]
+
+The Russian Orbital Segment primarily uses the Lira antenna mounted on Zvezda for direct ground communication.[75][242] It also had the capability to utilize the Luch data relay satellite system,[75] which was in a state of disrepair when the station was built,[75][243][244] but was restored to operational status in 2011 and 2012 with the launch of Luch-5A and Luch-5B.[245] Additionally, the Voskhod-M system provides internal telephone communications and VHF radio links to ground control.[246]
+
+The US Orbital Segment (USOS) makes use of two separate radio links: S band (audio, telemetry, commanding – located on the P1/S1 truss) and Ku band (audio, video and data – located on the Z1 truss) systems. These transmissions are routed via the United States Tracking and Data Relay Satellite System (TDRSS) in geostationary orbit, allowing for almost continuous real-time communications with Christopher C. Kraft Jr. Mission Control Center (MCC-H) in Houston, Texas.[75][247][241] Data channels for the Canadarm2, European Columbus laboratory and Japanese Kibō modules were originally also routed via the S band and Ku band systems, with the European Data Relay System and a similar Japanese system intended to eventually complement the TDRSS in this role.[247][248]
+
+UHF radio is used by astronauts and cosmonauts conducting EVAs and other spacecraft that dock to or undock from the station.[75] Automated spacecraft are fitted with their own communications equipment; the ATV used a laser attached to the spacecraft and the Proximity Communications Equipment attached to Zvezda to accurately dock with the station.[249][250]
+
+
+An array of laptops in the US lab
+
+Laptop computers surround the Canadarm2 console.
+
+An error message displays a problem with a hard drive on a laptop aboard the ISS.
+The US Orbital Segment of the ISS is equipped with approximately 100 commercial off-the-shelf laptops running Windows or Linux.[251] These devices are modified to use the station's 28V DC power system and with additional ventilation since heat generated by the devices can stagnate in the weightless environment. NASA prefers to keep a high commonality between laptops and spare parts are kept on the station so astronauts can repair laptops when needed.[252]
+
+The laptops are divided into two groups: the Portable Computer System (PCS) and Station Support Computers (SSC).
+
+PCS laptops run Linux and are used for connecting to the station's primary Command & Control computer (C&C MDM), which runs on Debian Linux,[253] a switch made from Windows in 2013 for reliability and flexibility.[254] The primary computer supervises the critical systems that keep the station in orbit and supporting life.[251] Since the primary computer has no display or keyboards, astronauts use a PCS laptop to connect as remote terminals via a USB to 1553 adapter.[255] The primary computer experienced failures in 2001,[256] 2007,[257] and 2017. The 2017 failure required a spacewalk to replace external components.[258]
+
+SSC laptops are used for everything else on the station, including reviewing procedures, managing scientific experiments, communicating over e-mail or video chat, and for entertainment during downtime.[251] SSC laptops connect to the station's wireless LAN via Wi-Fi, which connects to the ground via the Ku band. While originally this provided speeds of 10 Mbit/s download and 3 Mbit/s upload from the station,[259] NASA upgraded the system in 2019 and increased the speeds to 600 Mbit/s.[260] ISS crew members have access to the internet.[261][262]
+
+Operations
+Expeditions
+See also: List of International Space Station expeditions
+
+Soyuz TM-31 being prepared to bring the first resident crew to the station in October 2000
+
+STS-131 and Expedition 23 crew members gather for a group portrait of 13, the maximum the station has hosted, setting the record of four women at the same time in space (2010).[263]
+Each permanent crew is given an expedition number. Expeditions run up to six months, from launch until undocking, an 'increment' covers the same time period, but includes cargo spacecraft and all activities. Expeditions 1 to 6 consisted of three-person crews. After the destruction of NASA's Space Shuttle Columbia, Expeditions 7 to 12 were reduced to two-person "caretaker" crews who could maintain the station, because a larger crew could not be fully resupplied by the small Russian Progress cargo spacecraft.[264] After the Shuttle fleet returned to flight, three person crews also returned to the ISS beginning with Expedition 13. As the Shuttle flights expanded the station, crew sizes also expanded, eventually reaching six around 2010.[265][266] With the arrival of crew on larger US commercial spacecraft beginning in 2020,[267] crew size has been increased to seven, the number for which ISS was originally designed.[268][269]
+
+Oleg Kononenko of Roscosmos holds the record for the longest time spent in space and at the ISS, accumulating nearly 1,111 days in space over the course of five long-duration missions on the ISS (Expedition 17, 30/31, 44/45, 57/58/59 and 69/70/71). He also served as commander three times (Expedition 31, 58/59 and 70/71).[270]
+
+
+Chart of the number of ISS missions longer than 90 days, until 2020
+Peggy Whitson of NASA and Axiom Space has spent the most time in space of any American, accumulating over 675 days in space during her time on Expeditions 5, 16, and 50/51/52 and Axiom Missions 2 and 4.[271][272]
+
+Private flights
+See also: Space tourism
+As of June 2023, 13 individuals have paid for their own travel to visit the ISS. In news coverage, such travellers are often referred to as "space tourists"; however, many have objected to the term, as they typically undergo professional training and conduct scientific, educational, or outreach activities while on orbit.[i][278] Accordingly, Roscosmos and NASA classify them as spaceflight participants.
+
+Initially, privately funded access to the ISS was provided exclusively by Roscosmos through seats on Soyuz spacecraft, either during crew rotations or on dedicated missions. These seats were marketed by Space Adventures at prices of about US$40 million.[279][280] NASA and the ESA initially criticised the practice, and NASA resisted training Dennis Tito, the first person to pay for an ISS stay.[j]
+
+Beginning in 2021, NASA also began authorizing commercially organized visits known as Private Astronaut Missions (PAMs). These flights are required to use a NASA-certified U.S. commercial vehicle and to include a mission commander who is a former NASA astronaut, responsible for spacecraft operations and oversight of the other spaceflight participants.[281] The first PAM, Axiom Mission 1, launched in 2022 with one Axiom commander and three private passengers,[282][283][284] followed in 2023 by Axiom Mission 2, with one private passenger and two astronauts from the Saudi Space Agency.[285][286] As of 2025, NASA offers up to two PAM opportunities per year.[287] In addition to private individuals, PAMs are frequently used by ESA and other national governments to fly astronauts for short-term missions.
+
+Fleet operations
+Various crewed and uncrewed spacecraft have supported the station's operations. Flights to the ISS have included 95 Progress,[k] 73 Soyuz, 52 SpaceX Dragon,[l] 37 Space Shuttle, 22 Cygnus, 10 HTV/HTV-X, 5 ATV, and 2 Boeing Starliner missions.[288]
+
+There are currently eight docking ports for visiting spacecraft, with four additional ports installed but not yet put into service:[289]
+
+Harmony forward (with PMA 2 & IDA 2)
+Harmony zenith (with PMA 3 & IDA 3)
+Harmony nadir (CBM port)
+Unity nadir (CBM port)
+Prichal aft[m]
+Prichal forward[m]
+Prichal nadir
+Prichal port[m]
+Prichal starboard[m]
+Poisk zenith
+Rassvet nadir
+Zvezda aft
+Forward ports are at the front of the station in its usual orientation and direction of travel. Aft is the opposite, at the rear. Nadir points toward Earth, while zenith points away from it. Port is to the left and starboard to the right when one's feet are toward Earth and one is facing forward, in the direction of travel.
+
+Cargo spacecraft that will perform an orbital re-boost of the station will typically dock at an aft, forward or nadir-facing port.
+
+Crewed
+Main article: List of human spaceflights to the International Space Station
+As of 14 February 2026, a total of 294 individuals from 26 countries have visited the ISS, including both government-sponsored astronauts and privately funded spaceflight participants. The United States accounted for 172 of these visitors, followed by Russia with 65, Japan with 11, and Canada with 9. Italy had 6 visitors, France had 5 and Germany had 4. Saudi Arabia, Sweden, and the United Arab Emirates each had 2 individuals visit the ISS. One person has traveled to the ISS from each of the following countries: Belarus, Belgium, Brazil, Denmark, Hungary, India, Israel, Kazakhstan, Malaysia, the Netherlands, Poland, South Africa, South Korea, Spain, Turkey, and the United Kingdom.[290]
+
+List of current crew members
+
+Jessica Meir, current commander
+Astronaut	Role	Agency
+Jessica Meir	Commander	NASA
+Sophie Adenot	Flight engineer	ESA
+Andrey Fedyaev	Flight engineer	Roscosmos
+Jack Hathaway	Flight engineer	NASA
+Pyotr Dubrov	Flight engineer	Roscosmos
+Anna Kikina	Flight engineer	Roscosmos
+Anil Menon	Flight engineer	NASA
+Uncrewed
+Main article: Uncrewed spaceflights to the International Space Station
+Uncrewed spaceflights are primarily used to deliver cargo to the station including crew supplies, scientific investigations, spacewalk equipment, vehicle hardware, propellant, water, and gases. Cargo resupply missions have typically used Russian Progress spacecraft, the now-retired European ATV, the Japanese HTV, and American Dragon and Cygnus spacecraft. Additionally, several Russian modules have been launched on uncrewed rockets and autonomously docked with the station.
+
+Currently docked/berthed
+
+Rendering of the ISS and visiting vehicles as of 1 December 2025. Live link at nasa.gov.
+All dates are UTC. Departure dates are the earliest possible (NET) and may change.
+
+Mission	Type	Spacecraft	Arrival	Departure	Port
+Soyuz MS-28	Russia	Crewed	Soyuz MS No. 753 Gyrfalcon	27 November 2025	26 July 2026	Rassvet nadir
+Crew-12	United States	Crewed	Crew Dragon Freedom	14 February 2026	September 2026	Harmony zenith
+Progress MS-33	Russia	Uncrewed	Progress MS No. 463	24 March 2026	September 2026	Poisk zenith
+CRS NG-24	United States	Uncrewed	Cygnus XL S.S. Steven R. Nagel	13 April 2026	October 2026	Unity nadir
+Progress MS-34	Russia	Uncrewed	Progress MS No. 464	25 April 2026	November 2026	Zvezda aft
+Scheduled missions
+All dates are UTC. Launch dates are the earliest possible (NET) and may change.
+
+Mission	Type	Spacecraft	Launch date[291]	Launch vehicle	Launch site	Launch provider	Docking/berthing port
+Soyuz MS-29	Russia	Crewed	Soyuz MS No. 759 Tigris	14 July 2026	Soyuz‑2.1a	Baikonur, Site 31/6	RKTs Progress	Prichal nadir
+Progress MS-35	Russia	Uncrewed	Progress MS No. 465	9 September 2026	Soyuz‑2.1a	Baikonur, Site 31/6	RKTs Progress	Poisk zenith
+Crew-13	United States	Crewed	Crew Dragon	September 2026	Falcon 9 Block 5	Cape Canaveral, SLC‑40	SpaceX	Harmony
+Progress MS-36	Russia	Uncrewed	Progress MS No. 466	24 November 2026	Soyuz‑2.1a	Baikonur, Site 31/6	RKTs Progress	Zvezda aft
+CRS SpX-35	United States	Uncrewed	Cargo Dragon TBA	Winter 2026	Falcon 9 Block 5	Cape Canaveral, SLC‑40	SpaceX	Harmony
+CRS NG-25	United States	Uncrewed	Cygnus XL TBA	Winter 2026	Falcon 9 Block 5	Cape Canaveral, SLC‑40	SpaceX	Unity nadir
+HTV-X2	Japan	Uncrewed	HTV-X2	TBA 2026	H3-24W	Tanegashima, LA-Y2	Mitsubishi Heavy Industries	Harmony nadir
+Starliner-1	United States	Uncrewed	Boeing Starliner Spacecraft 2	TBA 2026	Atlas V N22	Cape Canaveral, SLC-41	ULA	Harmony
+Docking and berthing of spacecraft
+See also: Docking and berthing of spacecraft
+
+The Progress M-14M resupply vehicle approaching the ISS in 2012. Nearly 100 unpiloted Progress spacecraft have delivered supplies during the lifetime of the station.
+Russian spacecraft can autonomously rendezvous and dock with the station without human intervention. Once within about 200 kilometres (120 mi) the spacecraft activates its Kurs docking navigation system, exchanging radio signals with the station's beacon to guide orbital manoeuvres. As it closes in, more accurate transceivers align the craft with the docking port and control the final approach. The crew supervises the procedure and can intervene using the TORU (Tele-robotically Operated Rendezvous Unit) system if required.[292] Automated docking has been used by the Soviet program since 1967, with Kurs introduced on Mir in 1986 and refined since. Though costly to develop, its reliability and standardised components have delivered significant long-term savings.[293]
+
+The American SpaceX Dragon 2 cargo and crewed spacecraft can autonomously rendezvous and dock with the station without human intervention. However, on crewed Dragon missions, the astronauts have the capability to intervene and fly the vehicle manually.[294]
+
+
+Japan's Kounotori 4 berthing
+Other automated cargo spacecraft typically use a semi-automated process when arriving and departing from the station. These spacecraft are instructed to approach and park near the station. Once the crew on board the station is ready, the spacecraft is commanded to come close to the station, so that it can be grappled by an astronaut using the Mobile Servicing System robotic arm. The final mating of the spacecraft to the station is achieved using the robotic arm (a process known as berthing). Spacecraft using this semi-automated process include the American Cygnus and the Japanese HTV-X. The now-retired American SpaceX Dragon 1, European ATV and Japanese HTV also used this process.
+
+Launch and docking windows
+Prior to a spacecraft's docking to the ISS, navigation and attitude control (GNC) is handed over to the ground control of the spacecraft's country of origin. GNC is set to allow the station to drift in space, rather than fire its thrusters or turn using gyroscopes. The solar panels of the station are turned edge-on to the incoming spacecraft, so residue from its thrusters does not damage the cells. Before its retirement, Shuttle launches were often given priority over Soyuz, with occasional priority given to Soyuz arrivals carrying crew and time-critical cargoes, such as biological experiment materials.[295]
+
+Repairs
+Main article: Maintenance of the International Space Station
+
+Spare parts are called ORUs; some are externally stored on pallets called ELCs and ESPs.
+Two black and orange solar arrays, shown uneven and with a large tear visible. A crew member in a spacesuit, attached to the end of a robotic arm, holds a latticework between two solar sails.
+While anchored on the end of the Orbiter Boom Sensor System during STS-120, astronaut Scott Parazynski performs makeshift repairs to a US solar array that was damaged during unfolding
+
+Mike Hopkins during a spacewalk
+Orbital Replacement Units (ORUs) are spare parts that can be readily replaced when a unit either passes its design life or fails. Examples of ORUs are pumps, storage tanks, controller boxes, antennas, and battery units. Some units can be replaced using robotic arms. Most are stored outside the station, either on small pallets called ExPRESS Logistics Carriers (ELCs) or share larger platforms called External Stowage Platforms (ESPs) which also hold science experiments. Both kinds of pallets provide electricity for many parts that could be damaged by the cold of space and require heating. The larger logistics carriers also have local area network (LAN) connections for telemetry to connect experiments. A heavy emphasis on stocking the USOS with ORU's occurred around 2011, before the end of the NASA shuttle program, as its commercial replacements, Cygnus and Dragon, carry one tenth to one quarter the payload.
+
+Unexpected problems and failures have impacted the station's assembly time-line and work schedules leading to periods of reduced capabilities and, in some cases, could have forced abandonment of the station for safety reasons. Serious problems include an air leak from the USOS in 2004,[296] the venting of fumes from an Elektron oxygen generator in 2006,[297] and the failure of the computers in the ROS in 2007 during STS-117 that left the station without thruster, Elektron, Vozdukh and other environmental control system operations. In the latter case, the root cause was found to be condensation inside electrical connectors leading to a short circuit.[298]
+
+During STS-120 in 2007 and following the relocation of the P6 truss and solar arrays, it was noted during unfurling that the solar array had torn and was not deploying properly.[299] An EVA was carried out by Scott Parazynski, assisted by Douglas Wheelock. Extra precautions were taken to reduce the risk of electric shock, as the repairs were carried out with the solar array exposed to sunlight.[300] The issues with the array were followed in the same year by problems with the starboard Solar Alpha Rotary Joint (SARJ), which rotates the arrays on the starboard side of the station. Excessive vibration and high-current spikes in the array drive motor were noted, resulting in a decision to substantially curtail motion of the starboard SARJ until the cause was understood. Inspections during EVAs on STS-120 and STS-123 showed extensive contamination from metallic shavings and debris in the large drive gear and confirmed damage to the large metallic bearing surfaces, so the joint was locked to prevent further damage.[301][302] Repairs to the joints were carried out during STS-126 with lubrication and the replacement of 11 out of 12 trundle bearings on the joint.[303][304]
+
+In September 2008, damage to the S1 radiator was first noticed in Soyuz imagery. The problem was initially not thought to be serious.[305] The imagery showed that the surface of one sub-panel had peeled back from the underlying central structure, possibly because of micro-meteoroid or debris impact. On 15 May 2009, the damaged radiator panel's ammonia tubing was mechanically shut off from the rest of the cooling system by the computer-controlled closure of a valve. The same valve was then used to vent the ammonia from the damaged panel, eliminating the possibility of an ammonia leak.[305] It is also known that a Service Module thruster cover struck the S1 radiator after being jettisoned during an EVA in 2008, but its effect, if any, has not been determined.
+
+In the early hours of 1 August 2010, a failure in cooling Loop A (starboard side), one of two external cooling loops, left the station with only half of its normal cooling capacity and zero redundancy in some systems.[306][307][308] The problem appeared to be in the ammonia pump module that circulates the ammonia cooling fluid. Several subsystems, including two of the four CMGs, were shut down.
+
+Planned operations on the ISS were interrupted through a series of EVAs to address the cooling system issue. A first EVA on 7 August 2010, to replace the failed pump module, was not fully completed because of an ammonia leak in one of four quick-disconnects. A second EVA on 11 August removed the failed pump module.[309][310] A third EVA was required to restore Loop A to normal functionality.[311][312]
+
+The USOS's cooling system is largely built by the US company Boeing,[313] which is also the manufacturer of the failed pump.[306]
+
+The four Main Bus Switching Units (MBSUs, located in the S0 truss), control the routing of power from the four solar array wings to the rest of the ISS. Each MBSU has two power channels that feed 160V DC from the arrays to two DC-to-DC power converters (DDCUs) that supply the 124V power used in the station. In late 2011, MBSU-1 ceased responding to commands or sending data confirming its health. While still routing power correctly, it was scheduled to be swapped out at the next available EVA. A spare MBSU was already on board, but a 30 August 2012 EVA failed to be completed when a bolt being tightened to finish installation of the spare unit jammed before the electrical connection was secured.[314] The loss of MBSU-1 limited the station to 75% of its normal power capacity, requiring minor limitations in normal operations until the problem could be addressed.
+
+On 5 September 2012, in a second six-hour EVA, astronauts Sunita Williams and Akihiko Hoshide successfully replaced MBSU-1 and restored the ISS to 100% power.[315]
+
+On 24 December 2013, astronauts installed a new ammonia pump for the station's cooling system. The faulty cooling system had failed earlier in the month, halting many of the station's science experiments. Astronauts had to brave a "mini blizzard" of ammonia while installing the new pump. It was only the second Christmas Eve spacewalk in NASA history.[316]
+
+On 5 June 2026, the crew aboard the ISS were told by NASA to take shelter inside the docked SpaceX Crew Dragon "Freedom" spacecraft due to a "worsening air leak" on the Russian module. Ultimately, after a brief period, NASA allowed the astronauts to return to the ISS as Roscosmos paused structural repair efforts, pending further measurements and data.[317]
+
+Mission control centers
+Main article: International Space Station program § Mission control centers
+The components of the ISS are operated and monitored by their respective space agencies at mission control centers across the globe, primarily the Christopher C. Kraft Jr. Mission Control Center in Houston and the RKA Mission Control Center (TsUP) in Moscow, with support from Tsukuba Space Center in Japan, Payload Operations and Integration Center in Huntsville, Alabama, U.S., Columbus Control Center in Munich, Germany and Mobile Servicing System Control at the Canadian Space Agency's headquarters in Saint-Hubert, Quebec.
+
+Orbit, debris and visibility
+
+Altitude and orbital inclination
+
+Animation of ISS orbit from 14 September 2018 to 14 November 2018. Earth is not shown.
+
+Graph showing the changing altitude of the ISS from November 1998 until November 2018
+The ISS is currently maintained in a nearly circular orbit with an eccentricity of 0.0002267[318][needs update] and at an inclination of 51.6 degrees to Earth's equator.[319] This orbit was selected because it is the lowest inclination that can be directly reached by Russian Soyuz and Progress spacecraft launched from Baikonur Cosmodrome at 46° N latitude without overflying China or dropping spent rocket stages in inhabited areas.[320][321] As a result, it makes more polar latitudes accessible and observable, for example the Chinese Space Station orbits more equatorial with an inclination of 41.47°. The ISS travels prograde (with Earth's rotation, west to east) at an average speed of 28,000 kilometres per hour (17,000 mph), and completes 15.5 orbits per day (93 minutes per orbit).[6][322]
+
+The station orbits in Low Earth Orbit (LEO) at a minimum mean altitude of 370 km (230 mi) and a maximum of 460 km (290 mi),[323] in the center of the thermosphere. The altitude was in the past allowed to fall around the time of each NASA Space Shuttle flight to permit heavier loads to be transferred to the station. After the retirement of the shuttle, the nominal orbit of the space station was raised in altitude (from about 350 km to about 400 km).[324][325] Other, more frequent supply spacecraft do not require this adjustment as they are substantially higher performance vehicles.[39][326]
+
+Atmospheric drag reduces the altitude by about 2 km a month on average. To reduce drag the ISS puts its solar arrays while in the dark of Earth's night side edge on toward the flight direction into Night Glider mode.[235] For station keeping, to bring the station back to a higher altitude, a so-called reboost is performed, which takes approximately two orbits (three hours) to be completed.[326] Maintaining ISS altitude uses about 7.5 tonnes of chemical fuel per annum[327] at an annual cost of about $210 million.[328]
+
+Orbital boosting can be performed by the station's two main engines on the Zvezda service module, or Russian or European spacecraft docked to Zvezda's aft port. The Automated Transfer Vehicle is constructed with the possibility of adding a second docking port to its aft end, allowing other craft to dock and boost the station.
+
+
+Orbits of the ISS, shown in April 2013
+The Russian Orbital Segment contains the Data Management System, which handles Guidance, Navigation and Control (ROS GNC) for the entire station.[329] Initially, Zarya, the first module of the station, controlled the station until a short time after the Russian service module Zvezda docked and was transferred control. Zvezda contains the ESA built DMS-R Data Management System.[330] Using two fault-tolerant computers (FTC), Zvezda computes the station's position and orbital trajectory using redundant Earth horizon sensors, Solar horizon sensors as well as Sun and star trackers. The FTCs each contain three identical processing units working in parallel and provide advanced fault-masking by majority voting.
+
+Orientation
+Zvezda uses gyroscopes (reaction wheels) and thrusters to turn itself. Gyroscopes do not require propellant; instead they use electricity to 'store' momentum in flywheels by turning in the opposite direction to the station's movement. The USOS has its own computer-controlled gyroscopes to handle its extra mass. When gyroscopes 'saturate', thrusters are used to cancel out the stored momentum. In February 2005, during Expedition 10, an incorrect command was sent to the station's computer, using about 14 kilograms of propellant before the fault was noticed and fixed. When attitude control computers in the ROS and USOS fail to communicate properly, this can result in a rare 'force fight' where the ROS GNC computer must ignore the USOS counterpart, which itself has no thrusters.[331][332][333]
+
+Docked spacecraft can also be used to maintain station attitude, such as for troubleshooting or during the installation of the S3/S4 truss, which provides electrical power and data interfaces for the station's electronics.[334]
+
+Orbital debris threats
+Main article: Space debris
+The low altitudes at which the ISS orbits are also home to a variety of space debris,[335] including spent rocket stages, defunct satellites, explosion fragments (including materials from anti-satellite weapon tests), paint flakes, slag from solid rocket motors, and coolant released by US-A nuclear-powered satellites. These objects, in addition to natural micrometeoroids,[336] are a significant threat. Objects large enough to destroy the station can be tracked, and therefore are not as dangerous as smaller debris.[337][338] Objects too small to be detected by optical and radar instruments, from approximately 1 cm down to microscopic size, number in the trillions. Despite their small size, some of these objects are a threat because of their kinetic energy and direction in relation to the station. Spacewalking crew in spacesuits are also at risk of suit damage and consequent exposure to vacuum.[339]
+
+Ballistic panels, also called micrometeorite shielding, are incorporated into the station to protect pressurised sections and critical systems. The type and thickness of these panels depend on their predicted exposure to damage. The station's shields and structure have different designs on the ROS and the USOS. On the USOS, Whipple Shields are used. The US segment modules consist of an inner layer made from 1.5–5.0 cm-thick (0.59–1.97 in) aluminium, a 10 cm-thick (3.9 in) intermediate layers of Kevlar and Nextel (a ceramic fabric),[340] and an outer layer of stainless steel, which causes objects to shatter into a cloud before hitting the hull, thereby spreading the energy of impact. On the ROS, a carbon fibre reinforced polymer honeycomb screen is spaced from the hull, an aluminium honeycomb screen is spaced from that, with a screen-vacuum thermal insulation covering, and glass cloth over the top.[341]
+
+Space debris is tracked remotely from the ground, and the station crew can be notified.[342] If necessary, thrusters on the Russian Orbital Segment can alter the station's orbital altitude, avoiding the debris. These Debris Avoidance Manoeuvres (DAMs) are not uncommon, taking place if computational models show the debris will approach within a certain threat distance. Ten DAMs had been performed by the end of 2009.[343][344][345] Usually, an increase in orbital velocity of the order of 1 m/s is used to raise the orbit by one or two kilometres. If necessary, the altitude can also be lowered, although such a manoeuvre wastes propellant.[344][346] If a threat from orbital debris is identified too late for a DAM to be safely conducted, the station crew close all the hatches aboard the station and retreat into their spacecraft in order to be able to evacuate in the event the station was seriously damaged by the debris. Partial station evacuations have occurred on 13 March 2009, 28 June 2011, 24 March 2012, 16 June 2015,[347] November 2021,[348] and 27 June 2024.[349]
+
+The November 2021 evacuation was caused by a Russian anti-satellite weapon test.[350][351] NASA administrator Bill Nelson said it was unthinkable that Russia would endanger the lives of everyone on ISS, including their own cosmonauts.[352]
+
+A 7-gram object (shown in center) shot at 7 km/s (23,000 ft/s), the orbital velocity of the ISS, made this 15 cm (5.9 in) crater in a solid block of aluminium.
+A 7-gram object (shown in center) shot at 7 km/s (23,000 ft/s), the orbital velocity of the ISS, made this 15 cm (5.9 in) crater in a solid block of aluminium.
+ 
+Radar-trackable objects, including debris, with distinct ring of geostationary satellites
+Radar-trackable objects, including debris, with distinct ring of geostationary satellites
+ 
+Example of risk management: A NASA model showing areas at high risk from impact for the International Space Station
+Example of risk management: A NASA model showing areas at high risk from impact for the International Space Station
+Visibility from Earth
+Further information: Satellite watching and Satellite flare
+
+The ISS visible as a skytrack line drawn in the sky nearly overhead shortly after sunset by a long exposure photo
+The ISS is visible in the sky to the naked eye as a visibly moving, bright white dot, when crossing the sky and being illuminated by the Sun, during twilight, the hours after sunset and before sunrise, when the station remains sunlit, outside of Earth's shadow, but the ground and sky are dark.[353] It crosses the skies at latitudes between the polar regions.[354] Depending on the path it takes across the sky, the time it takes the station to move across the horizon or from one to the other may be short or up to 10 minutes, while likely being only visible part of that time because of it moving into or out of Earth's shadow. It then returns around every 90 minutes, with the time of the day that it crosses the sky shifting over the course of some weeks, and therefore before returning to twilight and visible illumination.
+
+Because of the size of its reflective surface area, the ISS is the brightest artificial object in the sky (excluding other satellite flares), with an approximate maximum magnitude of −4 when in sunlight and overhead (similar to Venus), and a maximum angular size of 63 arcseconds.[355]
+
+Tools are provided by a number of websites such as Heavens-Above (see Live viewing below) as well as smartphone applications that use orbital data and the observer's longitude and latitude to indicate when the ISS will be visible (weather permitting), where the station will appear to rise, the altitude above the horizon it will reach and the duration of the pass before the station disappears either by setting below the horizon or entering into Earth's shadow.[356][357][358][359]
+
+In November 2012 NASA launched its "Spot the Station" service, which sends people text and email alerts when the station is due to fly above their town.[360] The station is visible from 95% of the inhabited land on Earth, but is not visible from extreme northern or southern latitudes.[320]
+
+Under specific conditions, the ISS can be observed at night on five consecutive orbits. Those conditions are 1) a mid-latitude observer location, 2) near the time of the solstice with 3) the ISS passing in the direction of the pole from the observer near midnight local time. The three photos show the first, middle and last of the five passes on 5–6 June 2014.
+
+Astrophotography
+
+The ISS and HTV photographed from Earth by Ralf Vandebergh
+Using a telescope-mounted camera to photograph the station is a popular hobby for astronomers,[361] while using a mounted camera to photograph the Earth and stars is a popular hobby for crew.[362] The use of a telescope or binoculars allows viewing of the ISS during daylight hours.[363]
+
+
+Composite of six photos of the ISS transiting the gibbous Moon
+Transits of the ISS in front of the Sun, particularly during an eclipse (and so the Earth, Sun, Moon, and ISS are all positioned approximately in a single line) are of particular interest for amateur astronomers.[364][365]
+
+Environment, safety and crew health
+
+Pavel Vinogradov looks out of a Poisk hatch window at Alexander Misurkin on EVA.
+Environment
+Microgravity
+Gravity at the altitude of the ISS is approximately 90% as strong as on Earth's surface, but objects in orbit are in continuous freefall, resulting in a state of weightlessness known as microgravity.[366] This perceived weightlessness is disturbed by five effects:[367]
+
+Drag from the residual atmosphere.
+Vibration from the movements of mechanical systems and the crew.
+Actuation of the on-board attitude control moment gyroscopes.
+Thruster firings for attitude or orbital changes.
+Gravity-gradient effects, also known as tidal effects. Items at different locations within the ISS would, if not attached to the station, follow slightly different orbits. Being mechanically connected, these items experience small forces that keep the station moving as a rigid body.
+Radiation
+See also: Coronal mass ejection
+Duration: 34 seconds.0:34
+Video of the Aurora Australis, taken by the crew of Expedition 28 on an ascending pass from south of Madagascar to just north of Australia over the Indian Ocean
+The ISS is partially protected from the space environment by Earth's magnetic field. From an average distance of about 70,000 km (43,000 mi) from the Earth's surface, depending on Solar activity, the magnetosphere begins to deflect solar wind around Earth and the space station. Solar flares are still a hazard to the crew, who may receive only a few minutes warning. In 2005, during the initial "proton storm" of an X-3 class solar flare, the crew of Expedition 10 took shelter in a more heavily shielded part of the ROS designed for this purpose.[368][369]
+
+Subatomic charged particles, primarily protons from cosmic rays and solar wind, are normally absorbed by Earth's atmosphere. When they interact in sufficient quantity, their effect is visible to the naked eye in a phenomenon called an aurora. Outside Earth's atmosphere, ISS crews are exposed to approximately one millisievert each day (about a year's worth of natural exposure on Earth), resulting in a higher risk of cancer. Radiation can penetrate living tissue and damage the DNA and chromosomes of lymphocytes; being central to the immune system, any damage to these cells could contribute to the lower immunity experienced by astronauts. Radiation has also been linked to a higher incidence of cataracts in astronauts. Protective shielding and medications may lower the risks to an acceptable level.[59]
+
+Radiation levels on the ISS are between 12 and 28.8 milli rads per day,[370] about five times greater than those experienced by airline passengers and crew, as Earth's electromagnetic field provides almost the same level of protection against solar and other types of radiation in low Earth orbit as in the stratosphere. For example, on a 12-hour flight, an airline passenger would experience 0.1 millisieverts of radiation, or a rate of 0.2 millisieverts per day; this is one fifth the rate experienced by an astronaut in LEO. Additionally, airline passengers experience this level of radiation for a few hours of flight, while the ISS crew are exposed for their whole stay on board the station.[371]
+
+Microbiological environmental hazards
+See also: Microbiological environmental hazards on the Mir space station
+Hazardous molds that can foul air and water filters may develop aboard space stations. They can produce acids that degrade metal, glass, and rubber. They can also be harmful to the crew's health. Microbiological hazards have led to a development of the LOCAD-PTS (a portable test system) which identifies common bacteria and molds faster than standard methods of culturing, which may require a sample to be sent back to Earth.[372] Researchers in 2018 reported, after detecting the presence of five Enterobacter bugandensis bacterial strains on the ISS (none of which are pathogenic to humans), that microorganisms on the ISS should be carefully monitored to continue assuring a medically healthy environment for astronauts.[373][374]
+
+Contamination on space stations can be prevented by reduced humidity, and by using paint that contains mold-killing chemicals, as well as the use of antiseptic solutions. All materials used in the ISS are tested for resistance against fungi.[375] Since 2016, a series of ESA-sponsored experiments have been conducted to test the anti-bacterial properties of various materials, with the goal of developing "smart surfaces" that mitigate bacterial growth in multiple ways, using the best method for a particular circumstance. Dubbed "Microbial Aerosol Tethering on Innovative Surfaces" (MATISS), the program involves deployment of small plaques containing an array of glass squares covered with different test coatings. They remain on the station for six months before being returned to earth for analysis.[376] The most recent and final experiment of the series was launched on 5 June 2023 aboard the SpaceX CRS-28 cargo mission to ISS, comprising four plaques. Whereas previous experiments in the series were limited to analysis by light microsocopy, this experiment uses quartz glass made of pure silica, which will allow spectrographic analysis. Two of the plaques were returned after eight months and the remaining two after 16 months.[377]
+
+In April 2019, NASA reported that a comprehensive study had been conducted into the microorganisms and fungi present on the ISS. The experiment was performed over a period of 14 months on three different flight missions, and involved taking samples from 8 predefined locations inside the station, then returning them to Earth for analysis. In prior experiments, analysis was limited to culture-based methods, thus overlooking microbes which cannot be grown in culture. The present study used molecular-based methods in addition to culturing, resulting in a more complete catalog. The results may be useful in improving the health and safety conditions for astronauts, as well as better understanding other closed-in environments on Earth such as clean rooms used by the pharmaceutical and medical industries.[378][379]
+
+Noise
+Space flight is not inherently quiet, with noise levels exceeding acoustic standards as far back as the Apollo missions.[380][381] For this reason, NASA and the International Space Station international partners have developed noise control and hearing loss prevention goals as part of the health program for crew members. Specifically, these goals have been the primary focus of the ISS Multilateral Medical Operations Panel (MMOP) Acoustics Subgroup since the first days of ISS assembly and operations.[382][383] The effort includes contributions from acoustical engineers, audiologists, industrial hygienists, and physicians who comprise the subgroup's membership from NASA, Roscosmos, the European Space Agency (ESA), the Japanese Aerospace Exploration Agency (JAXA), and the Canadian Space Agency (CSA).
+
+When compared to terrestrial environments, the noise levels experienced by astronauts and cosmonauts on the ISS may seem insignificant and typically occur at levels that would not be of major concern to the Occupational Safety and Health Administration – rarely reaching 85 dBA. But crew members are exposed to these levels 24 hours a day, seven days a week, with current missions averaging six months in duration. These levels of noise also impose risks to crew health and performance in the form of sleep interference and communication, as well as reduced alarm audibility.
+
+Over the 19 plus year history of the ISS, significant efforts have been put forth to limit and reduce noise levels on the ISS. During design and pre-flight activities, members of the Acoustic Subgroup have written acoustic limits and verification requirements, consulted to design and choose the quietest available payloads, and then conducted acoustic verification tests prior to launch.[382]: 5.7.3  During spaceflights, the Acoustics Subgroup has assessed each ISS module's in flight sound levels, produced by a large number of vehicle and science experiment noise sources, to assure compliance with strict acoustic standards. The acoustic environment on ISS changed when additional modules were added during its construction, and as additional spacecraft arrive at the ISS. The Acoustics Subgroup has responded to this dynamic operations schedule by successfully designing and employing acoustic covers, absorptive materials, noise barriers, and vibration isolators to reduce noise levels. Moreover, when pumps, fans, and ventilation systems age and show increased noise levels, this Acoustics Subgroup has guided ISS managers to replace the older, noisier instruments with quiet fan and pump technologies, significantly reducing ambient noise levels.
+
+NASA has adopted most-conservative damage risk criteria (based on recommendations from the National Institute for Occupational Safety and Health and the World Health Organization), in order to protect all crew members. The MMOP Acoustics Subgroup has adjusted its approach to managing noise risks in this unique environment by applying, or modifying, terrestrial approaches for hearing loss prevention to set these conservative limits. One innovative approach has been NASA's Noise Exposure Estimation Tool (NEET), in which noise exposures are calculated in a task-based approach to determine the need for hearing protection devices (HPDs). Guidance for use of HPDs, either mandatory use or recommended, is then documented in the Noise Hazard Inventory, and posted for crew reference during their missions. The Acoustics Subgroup also tracks spacecraft noise exceedances, applies engineering controls, and recommends hearing protective devices to reduce crew noise exposures. Finally, hearing thresholds are monitored on-orbit, during missions.
+
+There have been no persistent mission-related hearing threshold shifts among US Orbital Segment crewmembers (JAXA, CSA, ESA, NASA) during what is approaching 20 years of ISS mission operations, or nearly 175,000 work hours. In 2020, the MMOP Acoustics Subgroup received the Safe-In-Sound Award for Innovation for their combined efforts to mitigate any health effects of noise.[384]
+
+Fire and toxic gases
+An onboard fire or a toxic gas leak are other potential hazards. Ammonia is used in the external radiators of the station and could potentially leak into the pressurised modules.[385]
+
+Overall health effects
+Main article: Effect of spaceflight on the human body
+On 12 April 2019, NASA reported medical results from the Astronaut Twin Study. Astronaut Scott Kelly spent a year in space on the ISS, while his identical twin Mark Kelly spent the year on Earth. Several long-lasting changes were observed, including those related to alterations in DNA and cognition, when one twin was compared with the other.[386][387]
+
+In November 2019, researchers reported that astronauts experienced serious blood flow and clot problems while on board the ISS, based on a six-month study of 11 healthy astronauts. The results may influence long-term spaceflight, including a mission to the planet Mars, according to the researchers.[388][389]
+
+Stress
+There is considerable evidence that psychosocial stressors are among the most important impediments to optimal crew morale and performance.[390] Cosmonaut Valery Ryumin wrote in his journal during a particularly difficult period on board the Salyut 6 space station: "All the conditions necessary for murder are met if you shut two men in a cabin measuring 18 feet by 20 [5.5 m × 6 m] and leave them together for two months."
+
+NASA's interest in psychological stress caused by space travel, initially studied when their crewed missions began, was rekindled when astronauts joined cosmonauts on the Russian space station Mir. Common sources of stress in early US missions included maintaining high performance under public scrutiny and isolation from peers and family. The latter is still often a cause of stress on the ISS, such as when the mother of NASA astronaut Daniel Tani died in a car accident, and when Michael Fincke was forced to miss the birth of his second child.
+
+A study of the longest spaceflight concluded that the first three weeks are a critical period where attention is adversely affected because of the demand to adjust to the extreme change of environment.[391] ISS crew flights typically last about five to six months.
+
+The ISS working environment includes further stress caused by living and working in cramped conditions with people from very different cultures who speak a different language. First-generation space stations had crews who spoke a single language; second- and third-generation stations have crew from many cultures who speak many languages. Astronauts must speak English and Russian, and knowing additional languages is even better.[392]
+
+Due to the lack of gravity, confusion often occurs. Even though there is no up and down in space, some crew members feel like they are oriented upside down. They may also have difficulty measuring distances. This can cause problems like getting lost inside the space station, pulling switches in the wrong direction or misjudging the speed of an approaching vehicle during docking.[393]
+
+Medical
+A man running on a treadmill, smiling at the camera, with bungee cords stretching down from his waistband to the sides of the treadmill
+Astronaut Frank De Winne, attached to the TVIS treadmill with bungee cords aboard the ISS
+The physiological effects of long-term weightlessness include muscle atrophy, deterioration of the skeleton (osteopenia), fluid redistribution, a slowing of the cardiovascular system, decreased production of red blood cells, balance disorders, and a weakening of the immune system. Lesser symptoms include loss of body mass, and puffiness of the face.[59]
+
+Sleep is regularly disturbed on the ISS because of mission demands, such as incoming or departing spacecraft. Sound levels in the station are unavoidably high. The atmosphere is unable to thermosiphon naturally, so fans are required at all times to process the air which would stagnate in the freefall (zero-G) environment.
+
+To prevent some of the adverse effects on the body, the station is equipped with: two TVIS treadmills (including the COLBERT); the ARED (Advanced Resistive Exercise Device), which enables various weightlifting exercises that add muscle without raising (or compensating for) the astronauts' reduced bone density;[394] and a stationary bicycle. Each astronaut spends at least two hours per day exercising on the equipment.[395][396] Astronauts use bungee cords to strap themselves to the treadmill.[397][398]
+
+Life aboard
+Living quarters
+
+Cosmonaut Nikolai Budarin at work inside the Zvezda service module crew quarters
+The living and working space aboard the International Space Station (ISS) is larger than a six-bedroom house, equipped with seven private sleeping quarters, three bathrooms, two dining rooms, a gym, and a panoramic 360-degree-view bay window.[399]
+
+The station provides dedicated crew quarters for long-term crew members. Two are located in Zvezda, one in Nauka, and four in Harmony.[400][401][402][403] These soundproof, person-sized booths offer privacy, ventilation, and basic amenities such as a sleeping bag, a reading lamp, and storage for personal items.[395][396][404] The quarters in Zvezda include a small window but have less ventilation and soundproofing.[405]
+
+Visiting crew members use tethered sleeping bags attached to available wall space or inside their spacecraft. While it is possible to sleep floating freely, this is generally avoided to prevent collisions with sensitive equipment.[406] Proper ventilation is critical, as astronauts risk oxygen deprivation if exhaled carbon dioxide accumulates in a bubble around their heads.[395]
+
+The station's lighting system is adjustable, allowing for dimming, switching off, and color temperature changes to support crew activities and rest.[407][408]
+
+Crew activities
+
+Engineer Gregory Chamitoff looking out of a window
+The ISS operates on Coordinated Universal Time (UTC).[409] A typical day aboard the ISS begins at 06:00 with wake-up, post-sleep routines, and a morning inspection of the station. After breakfast, the crew holds a daily planning conference with Mission Control, starting work around 08:10. Morning tasks include scheduled exercise, scientific experiments, maintenance, or operational duties. Following a one-hour lunch break at 13:05, the crew resumes their afternoon schedule of work and exercise. Pre-sleep activities, including dinner and a crew conference, begin at 19:30, with the scheduled sleep period starting at 21:30.[410]
+
+The crew works approximately 10 hours on weekdays and 5 hours on Saturdays, with the remaining time allocated for relaxation or catching up on tasks. Free time often involves enjoying personal hobbies, communicating with family, or gazing out at Earth through the station's windows.[410] The crew can watch TV aboard the station.[411]
+
+When the Space Shuttle was operating, the ISS crew aligned with the shuttle crew's Mission Elapsed Time, a flexible schedule based on the shuttle's launch.[412][413][414]
+
+To simulate night conditions, the station's windows are covered during designated sleep periods, as the ISS experiences 16 sunrises and sunsets daily due to its orbital speed.
+
+Reflection and material culture
+Reflection of individual and crew characteristics are found particularly in the decoration of the station and expressions in general, such as religion.[415] The latter has produced a certain material economy between the station and Russia in particular.[416]
+
+The micro-society of the station, as well as wider society, and possibly the emergence of distinct station cultures,[417] is being studied by analyzing many aspects, from art to dust accumulation, as well as archaeologically how material of the ISS has been discarded.[418]
+
+Food
+See also: Space food and Plants in space
+
+Main dining desk in Unity
+Food aboard the International Space Station (ISS) is preserved and packaged to withstand long storage times, minimize waste, and prevent contamination of station systems. Because microgravity dulls taste, meals are often seasoned more heavily than on Earth.[395] Crews particularly look forward to resupply missions, which deliver perishable items such as fresh fruit and vegetables. To reduce the risk of crumbs and spills damaging equipment, foods are prepared in specialized packaging, liquid condiments are preferred over powdered ones, and containers are secured with Velcro or magnets. Drinks are delivered as powders to be mixed with water, while soups and beverages are sipped from plastic bags with straws.[396][404] Solid foods are eaten with utensils attached to trays by magnets, and any stray food must be collected to prevent it from clogging air filters and other systems.[404]
+
+The first galley was installed in Zvezda, equipped with an electro-resistive can warmer and a water dispenser for both hot and ambient water. Many Russian meals are still packaged in cans, which are eaten directly, while others are provided in retort pouches rehydrated with the water dispenser.
+
+
+The Expedition 67 crew during a group dinner in Unity
+A second galley was later added to Unity to support the station's larger crew. It contains two briefcase-shaped food warmers, a refrigerator (added in 2008), and a water dispenser.[396] Most food in the U.S. Orbital Segment is packaged in retort pouches, which are rehydrated if necessary and heated or chilled in a food warmer or refrigerator as desired.
+
+While crews occasionally gather for group meals in Unity, especially during holidays or special occasions, they more often eat in small groups because of differing schedules. Russian cosmonauts also retain the option of dining separately in Zvezda, where the can warmer is located. With the growing diversity of NASA's astronaut corps and the large number of international astronauts who have flown to the ISS, the variety of food available has expanded significantly. Efforts are made to provide meals that reflect astronauts' cultural backgrounds and personal preferences, and food is often shared among crew members.[419]
+
+Fresh vegetables are grown on ISS
+Experiments have also been conducted aboard the ISS to grow fresh vegetables in orbit.[420] These studies aim to supplement astronauts' diets with additional nutrients, provide psychological benefits, and advance space agricultural techniques needed for long-duration missions to the Moon and Mars.[420] As of 2023, crops grown include three types of lettuce, Chinese cabbage, mizuna mustard, and red Russian kale.[420] Some of the plants are harvested and eaten by the crew, while others were returned to Earth for analysis. In the future, NASA plans to grow tomatoes and peppers, and eventually berries, beans, and other nutrient-rich foods. Such crops could offer not only improved nutrition, but also potential protection against space radiation for crew members who consume them.[420]
+
+Personal hygiene
+
+The space toilet in the Zvezda module in the Russian segment
+
+The main toilet in the US Segment inside the Tranquility module
+The ISS is equipped with three Russian-designed toilets, located in Zvezda, Tranquility and Nauka.[396][421] Inside these "Waste and Hygiene Compartments" the occupant fastens themselves to the toilet seat, which is equipped with spring-loaded restraining bars to ensure a proper seal.[395] A lever activates a powerful fan while opening a suction port at the bottom of the toilet bowl, and the airstream carries waste away. Solid waste is stored in individual bags placed in an aluminium container, which is later transferred to cargo spacecraft that will burn up on reentry.[396][422] Liquid waste is collected through a hose with anatomically shaped funnel adapters so that both men and women can use the same system. The urine is diverted to the Water Recovery System, where it is processed into drinking water.[404]
+
+Showers were first introduced on space stations in the early 1970s aboard Skylab and Salyut 3.[423]: 139  However, crews complained about the complexity of showering, and by the time of Salyut 6 in the early 1980s, it had been reduced to a monthly activity.[424] The ISS, like later Russian stations after, has no shower; instead, astronauts clean themselves with wet wipes or with a water jet and using soap dispensed from a toothpaste-like tube. Rinseless shampoo and edible toothpaste are also provided to conserve water.[406][425]
+
+End of mission
+
+Many ISS resupply spacecraft have already undergone atmospheric re-entry, such as Jules Verne ATV.
+The ISS was originally intended for a 15-year mission, but the mission has been repeatedly extended due to its success and support.[426][427] As a result, the oldest modules of the ISS have been in orbit for more than 25 years.
+
+The US planned in 2009 to deorbit the ISS in 2016.[427] But on 30 September 2015, Boeing's contract with NASA as prime contractor for the ISS was extended to 30 September 2020. Part of Boeing's services under the contract related to extending the station's primary structural hardware past 2020 to the end of 2028.[428] In July 2018, the Space Frontier Act of 2018 was intended to extend operations of the ISS to 2030. This bill was unanimously approved in the Senate, but failed to pass in the U.S. House.[429][430] In September 2018, the Leading Human Spaceflight Act was introduced with the intent to extend operations of the ISS to 2030, and was confirmed in December 2018.[431][432][433] Congress later passed similar provisions in its CHIPS and Science Act, signed into law by U.S. President Joe Biden on 9 August 2022.[434][435]
+
+NASA has suggested extending ISS operations beyond 2030 if Commercial LEO Destinations providers prove insufficient to accommodate NASA's needs.[436] In February 2026, during a vote to approve the NASA Reauthorization Act of 2026, members of the United States House Committee on Science, Space, and Technology introduced an amendment requiring NASA to explore the feasibility of relocating the ISS to a safe orbital harbor following its end-of-life so that it can be preserved for potential re-use, as an alternative to destructive atmospheric re-entry, with the amendment submitted by George T. Whitesides with bipartisan support from Nick Begich III, Brian Babin and Don Beyer.[437]
+
+In a January 2026 plan, Axiom Station, while a segment of the ISS, would pick up and use established science hardware and the Canadarm2 from the ISS.[209][207]
+
+Russia meanwhile has stated that it plans to pull out of the ISS program after 2025.[438] However, Russian modules will provide orbital station-keeping until 2028.[439] Recommendations by the U.S.-Russian Joint Commission identified the thrusters of the Russian ISS segment as a deorbit backup.[440] In late 2025 Russia has under budget constraints reconsidered their future space station plans to again include modules from the ISS.[441]
+
+End of mission considerations
+The reliability of the station has decreased over its longer than designed operation.[439] Astronauts have been having to spend half of their time on station maintenance,[441] and air leaks, as well as mold, have increasingly called the safety of the station into doubt.[440] Furthermore station-keeping needs funds, which have been suggested to be used elsewhere, while its preservation, as an institution or landmark, has also been raised.[427][437]
+
+An unmaintained station would pose a space debris and re-entry hazard. According to the Outer Space Treaty, the parties are legally responsible for all spacecraft or modules they launch.[442]
+
+Post mission
+NASA considered originally several possible options for the station's fate after its mission: natural orbital decay with random reentry (as with Skylab), boosting the station to a higher altitude (which would delay reentry), and a controlled de-orbit targeting a remote ocean area.[443]
+
+De-orbiting plans
+NASA determined that random reentry carried an unacceptable risk of producing hazardous space debris that could hit people or property and re-boosting the station would be costly and could also create hazards.
+
+Prior to 2010, plans had contemplated using a slightly modified Progress spacecraft to de-orbit the ISS. However, NASA concluded Progress would not be adequate for the job, and decided on a spacecraft specifically designed for the task.[444]
+
+International Space Station is located in Pacific OceanInternational Space Station
+Destination of the deorbiting ISS: the spacecraft cemetery (roughly centered on "Point Nemo", the oceanic pole of inaccessibility) in the Pacific Ocean
+In January 2022, NASA announced a planned date of January 2031 to de-orbit the ISS using the "U.S. Deorbit Vehicle" and direct any remnants into a remote area of the South Pacific Ocean that has come to be known as the spacecraft cemetery.[445] NASA plans to launch the deorbit vehicle in 2030, docking at the Harmony forward port.[446] The deorbit vehicle will remain attached, dormant, for about a year as the station's orbit naturally decays to 220 km (140 mi). The spacecraft would then conduct one or more orientation burns to lower the perigee to 150 km (93 mi), followed by a final deorbiting burn.[447][448]
+
+NASA began planning for the deorbit vehicle after becoming wary of Russia pulling out of the ISS abruptly, leaving the other partners with few good options for a controlled reentry.[449] In June 2024, NASA selected SpaceX to develop the U.S. Deorbit Vehicle, a contract potentially worth $843 million. The vehicle will consist of an existing Cargo Dragon spacecraft which will be paired with a significantly lengthened trunk module which will be equipped with 46 Draco thrusters (instead of the normal 16) and will carry 30,000 kg (66,000 lb) of propellant, nearly six times the normal load. NASA is still working to secure all the necessary funding to build, launch and operate the deorbit vehicle.[25][449]
+
+On 20 February 2025, Elon Musk, CEO of SpaceX and Senior Advisor to President Trump, suggested in a tweet that the International Space Station be de-orbited "two years from now" as Musk believes the station has "served its purpose" and has "very little incremental utility". Despite this, no official decisions on moving up the de-orbiting date have been made yet by the president.[450][451]
+
+Follow up plans
+The follow-up to NASA's program/strategy is the Commercial LEO Destinations Program, meant to allow private industry to build and maintain their own stations, and NASA procuring access as a customer, starting in 2028.[452] Similarly, the ESA has been seeking new private space stations to provide orbital services, as well as retrieve materials, from the ISS.[453][454] Axiom Station is planned to begin as a single module temporarily hosted at the ISS in 2027.[208] Additionally, there have been suggestions in the commercial space industry that the ISS could be converted to commercial operations after it is retired by government entities,[455] including turning it into a space hotel.[427]
+
+Russia previously has planned to use its orbital segment for the construction of its OPSEK station after the ISS is decommissioned. The modules under consideration for removal from the current ISS included the Multipurpose Laboratory Module (Nauka; MLM), launched in July 2021, and the other new Russian modules that are proposed to be attached to Nauka. These newly launched modules would still be well within their useful lives in 2024.[456] At the end of 2011, the Exploration Gateway Platform concept also proposed using leftover USOS hardware and Zvezda 2 as a refuelling depot and service station located at one of the Earth–Moon Lagrange points. However, the entire USOS was not designed for disassembly and will be discarded.[457]
+
+In 2022, companies such as CisLunar suggested using the ISS as a platform to develop orbital salvage capacities. They propose to repurpose components from the station, or at least to use space debris for its raw materials, or fuel,[458] instead of plunging it into the ocean.[438]
+
+In July 2024, NASA stated that it had not seen any viable proposals for reuse of the ISS or parts of it.[436]
+
+Cost
+The ISS has been described as the most expensive single item ever constructed.[459] As of 2010, the total cost was US$150 billion. This includes NASA's budget of $58.7 billion ($89.73 billion in 2021 dollars) for the station from 1985 to 2015, Russia's $12 billion, Europe's $5 billion, Japan's $5 billion, Canada's $2 billion, and the cost of 36 shuttle flights to build the station, estimated at $1.4 billion each, or $50.4 billion in total. Assuming 20,000 man-days of use from 2000 to 2015 by two- to six-person crews, each man-day would cost $7.5 million, less than half the inflation-adjusted $19.6 million ($5.5 million before inflation) per man-day of Skylab.[460] NASA spends about US$3 billion per year on operational costs.[461]
+
+In culture
+The ISS has become an international symbol of human capabilities, particularly human cooperation and science,[462] defining a cooperative international approach and period, instead of a looming commercialized and militarized interplanetary world.[463]
+
+Outreach
+The station has hosted and been used for many public campaigns and engagement.
+
+The decades long operation documentation has been made accessible with an interactive website called ISS in Real Time.[464]
+
+Film
+Beside numerous documentaries such as the IMAX documentaries Space Station 3D from 2002,[465] or A Beautiful Planet from 2016,[466] and films like Apogee of Fear (2012)[467] and Yolki 5 (2016)[468][469] the ISS is the subject of feature films such as The Day After Tomorrow (2004),[470] Love (2011),[471] together with the Chinese station Tiangong 1 in Gravity (2013),[472] Life (2017),[473] and I.S.S. (2023).[474]
+
+In 2022, the movie The Challenge (Doctor's House Call) was filmed aboard the ISS, and was notable for being the first feature film in which both professional actors and director worked together in space.[475]
+
+Literature
+Neal Stephenson's 2015 novel Seveneves is set largely on the ISS for the first and second parts of the novel. The ISS is depicted largely as it was when the novel was written, but with the addition of a large captured asteroid attached to the station.
+
+The 2023 novel Orbital by English writer Samantha Harvey is set on the ISS. It won the 2024 Booker Prize.[476][477]
+
+Ceridwen Dovey's Only the Astronauts, a 2024 collection of short stories in which the narrator in each story is an inanimate object in space, includes the International Space Station.[478]
+
+Video games
+The ISS is blown up during the Call of Duty: Modern Warfare 2 mission "Second Sun", in which the character Captain Price launches an ICBM into the earth's atmosphere; the resulting shockwave destroys the station.[479]
+
+The ISS is present in Far Cry New Dawn as an expedition site, having fallen to earth during a nuclear war.[480]

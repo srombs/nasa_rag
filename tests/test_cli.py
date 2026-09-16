@@ -20,9 +20,10 @@ import semantic_search
 import tokenizer
 import vector_store
 from eval import (
+    run_bm25_retrieval_evaluation,
     run_faiss_retrieval_evaluation,
-    run_faiss_top_k_evaluation,
     run_retrieval_evaluation,
+    run_retrieval_top_k_evaluation,
 )
 from models import (
     BM25SearchResult,
@@ -151,6 +152,7 @@ def test_faiss_evaluation_compares_normalized_chunk_references(
 
     assert metrics.hit_at_k == 0.5
     assert metrics.recall_at_k == 0.5
+    assert metrics.hit_fraction == "1/2"
     output = capsys.readouterr().out
     assert "Expected chunks: [iss.txt, chunk 1]" in output
     assert "[FAISS] Retrieving top 1 for 2 answerable cases." in output
@@ -180,18 +182,251 @@ def test_faiss_top_k_evaluation_reuses_the_maximum_rankings(monkeypatch) -> None
         return {"retrieval_case": ["[iss.txt, chunk 1]", "[iss.txt, chunk 2]"]}
 
     monkeypatch.setattr(
-        run_faiss_top_k_evaluation, "retrieve_faiss_references", fake_retrieve
+        run_retrieval_top_k_evaluation, "retrieve_faiss_references", fake_retrieve
     )
 
-    results = run_faiss_top_k_evaluation.run_top_k_evaluation(
+    results = run_retrieval_top_k_evaluation.run_top_k_evaluation(
         cases, retriever=object(), top_k_values=[1, 2]
     )
 
     assert calls == [2]
     assert [result.top_k for result in results] == [1, 2]
     assert results[0].metrics.hit_at_k == 1.0
+    assert results[0].metrics.hit_fraction == "1/1"
     assert results[0].metrics.recall_at_k == 0.5
     assert results[1].metrics.recall_at_k == 1.0
+
+
+def test_combined_top_k_retrieval_rewrites_each_question_once(monkeypatch) -> None:
+    cases = [
+        {
+            "id": "retrieval_case",
+            "question": "Find the ISS fact.",
+            "expected_answer": "ISS fact.",
+            "relevant_chunks": ["[iss.txt, chunk 1]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        }
+    ]
+
+    class SharedQueryRetriever:
+        def __init__(self) -> None:
+            self.rewrite_calls = []
+
+        def rewrite_query(self, query):
+            self.rewrite_calls.append(query)
+            return "ISS research"
+
+    retriever_instance = SharedQueryRetriever()
+    faiss_search_queries = []
+    bm25_search_queries = []
+
+    def fake_faiss_search(_query, _retriever, top_k, search_query=None):
+        faiss_search_queries.append(search_query)
+        return [DocumentChunk("iss.txt", 1, "ISS fact", [1.0])][:top_k]
+
+    def fake_bm25_search(_query, _retriever, top_k, search_query=None):
+        bm25_search_queries.append(search_query)
+        return [
+            BM25SearchResult(
+                score=1.0,
+                chunk=DocumentChunk("iss.txt", 1, "ISS fact", [1.0]),
+            )
+        ][:top_k]
+
+    monkeypatch.setattr(
+        run_retrieval_top_k_evaluation.semantic_search,
+        "run_embedded_search",
+        fake_faiss_search,
+    )
+    monkeypatch.setattr(
+        run_retrieval_top_k_evaluation.semantic_search,
+        "run_bm25_search",
+        fake_bm25_search,
+    )
+
+    faiss_references, bm25_references = (
+        run_retrieval_top_k_evaluation.retrieve_both_references(
+            cases, retriever_instance, top_k=1
+        )
+    )
+
+    assert retriever_instance.rewrite_calls == ["Find the ISS fact."]
+    assert faiss_search_queries == ["ISS research"]
+    assert bm25_search_queries == ["ISS research"]
+    assert faiss_references == {"retrieval_case": ["[iss.txt, chunk 1]"]}
+    assert bm25_references == {"retrieval_case": ["[iss.txt, chunk 1]"]}
+
+
+def test_rrf_reference_fusion_rewards_references_found_by_both_methods() -> None:
+    results = run_retrieval_top_k_evaluation.fuse_rrf_references(
+        ["[iss.txt, chunk 1]", "[iss.txt, chunk 2]"],
+        ["[iss.txt, chunk 2]", "[hubble.txt, chunk 1]"],
+        top_k=3,
+        rrf_k=60,
+    )
+
+    assert results == [
+        "[iss.txt, chunk 2]",
+        "[iss.txt, chunk 1]",
+        "[hubble.txt, chunk 1]",
+    ]
+
+
+def test_rrf_miss_output_includes_only_cases_without_a_matching_chunk(capsys) -> None:
+    cases = [
+        {
+            "id": "hit",
+            "question": "Find ISS.",
+            "expected_answer": "ISS.",
+            "relevant_chunks": ["[iss.txt, chunk 1]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        },
+        {
+            "id": "miss",
+            "question": "Find Hubble.",
+            "expected_answer": "Hubble.",
+            "relevant_chunks": ["[hubble.txt, chunk 2]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        },
+    ]
+
+    run_retrieval_top_k_evaluation.print_retrieval_misses(
+        cases,
+        {
+            "hit": ["[iss.txt, chunk 1]"],
+            "miss": ["[iss.txt, chunk 1]"],
+        },
+        {
+            "hit": ["[iss.txt, chunk 1]"],
+            "miss": ["[iss.txt, chunk 1]", "[hubble.txt, chunk 2]"],
+        },
+        {
+            "hit": ["[iss.txt, chunk 1]"],
+            "miss": ["[hubble.txt, chunk 2]", "[iss.txt, chunk 1]"],
+        },
+        top_k=1,
+        search_name="RRF",
+    )
+
+    output = capsys.readouterr().out
+    assert "[RRF] Misses at K=1: 1" in output
+    assert "ID: miss" in output
+    assert "Question: Find Hubble." in output
+    assert "RRF rank 1 | FAISS rank 1 | BM25 rank 2 | [iss.txt, chunk 1]" in output
+    assert "FAISS rank 2 | BM25 rank 1 | [hubble.txt, chunk 2]" in output
+    assert "ID: hit" not in output
+
+
+def test_reranker_evaluation_uses_original_questions_and_rrf_candidates(capsys) -> None:
+    case = {
+        "id": "reranker_case",
+        "question": "Which chunk answers the question?",
+        "expected_answer": "The second chunk.",
+        "relevant_chunks": ["[iss.txt, chunk 1]"],
+        "difficulty": "easy",
+        "category": "factual",
+        "expected_source_filter": None,
+    }
+    first_chunk = DocumentChunk("iss.txt", 0, "First", [1.0])
+    second_chunk = DocumentChunk("iss.txt", 1, "Second", [1.0])
+
+    class FakeRerankerRetriever:
+        document_chunks = [first_chunk, second_chunk]
+
+        def rerank_rrf_results(self, question, chunks):
+            assert question == case["question"]
+            assert chunks == [first_chunk, second_chunk]
+            return [
+                RerankResult(second_chunk, 0.9, "Direct answer."),
+                RerankResult(first_chunk, 0.1, "Less relevant."),
+            ]
+
+    reranked_references, reranked_results = (
+        run_retrieval_top_k_evaluation.rerank_rrf_references(
+        [case],
+        FakeRerankerRetriever(),
+        {"reranker_case": ["[iss.txt, chunk 0]", "[iss.txt, chunk 1]"]},
+        top_k=2,
+        )
+    )
+
+    assert reranked_references == {
+        "reranker_case": ["[iss.txt, chunk 1]", "[iss.txt, chunk 0]"]
+    }
+    assert reranked_results["reranker_case"][0].score == 0.9
+    assert "[RERANKER] Reranking top 2 RRF candidates" in capsys.readouterr().out
+
+
+def test_reranker_miss_output_explains_when_rrf_found_the_expected_chunk(capsys) -> None:
+    case = {
+        "id": "reranker_miss",
+        "question": "Which chunk answers the question?",
+        "expected_answer": "The second chunk.",
+        "relevant_chunks": ["[iss.txt, chunk 1]"],
+        "difficulty": "easy",
+        "category": "factual",
+        "expected_source_filter": None,
+    }
+    first_chunk = DocumentChunk("iss.txt", 0, "First", [1.0])
+    second_chunk = DocumentChunk("iss.txt", 1, "Second", [1.0])
+
+    run_retrieval_top_k_evaluation.print_reranker_misses(
+        [case],
+        {"reranker_miss": ["[iss.txt, chunk 0]", "[iss.txt, chunk 1]"]},
+        {
+            "reranker_miss": [
+                RerankResult(first_chunk, 0.95, "Incorrectly preferred."),
+                RerankResult(second_chunk, 0.80, "Expected chunk."),
+            ]
+        },
+        rrf_hit_k=10,
+    )
+
+    output = capsys.readouterr().out
+    assert "[RERANKER] Misses at Hit@1 where RRF Hit@10 succeeds: 1" in output
+    assert "1 | [iss.txt, chunk 0]" in output
+    assert "1 | score 0.95 | Incorrectly preferred. | [iss.txt, chunk 0]" in output
+    assert "[iss.txt, chunk 1]: RRF rank 2 -> Rerank rank 2" in output
+
+
+def test_bm25_evaluation_compares_bm25_chunk_references(monkeypatch, capsys) -> None:
+    cases = [
+        {
+            "id": "bm25_case",
+            "question": "Find the ISS fact.",
+            "expected_answer": "ISS fact.",
+            "relevant_chunks": ["[iss.txt, chunk 1]"],
+            "difficulty": "easy",
+            "category": "factual",
+            "expected_source_filter": None,
+        }
+    ]
+    bm25_results = [
+        BM25SearchResult(
+            score=3.0,
+            chunk=DocumentChunk("iss.txt", 1, "ISS fact", [1.0]),
+        )
+    ]
+
+    monkeypatch.setattr(
+        run_bm25_retrieval_evaluation.semantic_search,
+        "run_bm25_search",
+        lambda _question, _retriever, top_k: bm25_results[:top_k],
+    )
+
+    metrics = run_bm25_retrieval_evaluation.evaluate_bm25_retrieval(
+        cases, retriever=object(), top_k=1
+    )
+
+    assert metrics.hit_at_k == 1.0
+    assert metrics.recall_at_k == 1.0
+    assert "[BM25] Retrieving top 1 for 1 answerable cases." in capsys.readouterr().out
 
 
 def test_chunk_text_creates_overlapping_word_chunks() -> None:

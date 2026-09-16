@@ -29,6 +29,13 @@ class RetrievalMetrics:
 
     hit_at_k: float
     recall_at_k: float
+    hit_count: int
+    answerable_case_count: int
+
+    @property
+    def hit_fraction(self) -> str:
+        """Return the hit numerator and denominator for terminal reporting."""
+        return f"{self.hit_count}/{self.answerable_case_count}"
 
 
 RetrievedReferences = dict[str, list[str]]
@@ -108,17 +115,10 @@ def evaluate_faiss_retrieval(
     print_summary: bool = True,
     retrieved_references_by_case: Mapping[str, list[str]] | None = None,
 ) -> RetrievalMetrics:
-    """Return aggregate chunk Hit@K and macro Recall@K.
-
-    Cases with no expected chunks are reported as skipped because FAISS always
-    returns ranked chunks and cannot establish that a question is unanswerable.
-    """
+    """Retrieve with FAISS and return aggregate chunk Hit@K and Recall@K."""
     if top_k <= 0:
         raise ValueError("top_k must be greater than zero.")
 
-    answerable_cases = [case for case in cases if case["relevant_chunks"]]
-    if not answerable_cases:
-        raise ValueError("At least one case with relevant chunks is required.")
     if retrieved_references_by_case is None:
         if retriever is None:
             raise ValueError("A retriever is required when rankings are not supplied.")
@@ -126,7 +126,35 @@ def evaluate_faiss_retrieval(
             cases, retriever, top_k
         )
 
-    hit_total = 0.0
+    return evaluate_retrieved_references(
+        cases,
+        retrieved_references_by_case,
+        top_k=top_k,
+        verbose=verbose,
+        print_summary=print_summary,
+    )
+
+
+def evaluate_retrieved_references(
+    cases: Sequence[RetrievalEvaluationCase],
+    retrieved_references_by_case: Mapping[str, list[str]],
+    top_k: int,
+    verbose: bool = True,
+    print_summary: bool = True,
+) -> RetrievalMetrics:
+    """Evaluate supplied rankings with chunk Hit@K and macro Recall@K.
+
+    Cases with no expected chunks are skipped because ranked retrieval alone
+    cannot establish that a question is unanswerable.
+    """
+    if top_k <= 0:
+        raise ValueError("top_k must be greater than zero.")
+
+    answerable_cases = [case for case in cases if case["relevant_chunks"]]
+    if not answerable_cases:
+        raise ValueError("At least one case with relevant chunks is required.")
+
+    hit_count = 0
     recall_total = 0.0
     for case in cases:
         expected_references = {
@@ -152,7 +180,7 @@ def evaluate_faiss_retrieval(
         recall = recall_at_k(
             retrieved_references, expected_references_list, top_k
         )
-        hit_total += hit
+        hit_count += int(hit)
         recall_total += recall
 
         if verbose:
@@ -169,11 +197,13 @@ def evaluate_faiss_retrieval(
             print(f"Result: {'HIT' if hit else 'MISS'}")
 
     metrics = RetrievalMetrics(
-        hit_at_k=hit_total / len(answerable_cases),
+        hit_at_k=hit_count / len(answerable_cases),
         recall_at_k=recall_total / len(answerable_cases),
+        hit_count=hit_count,
+        answerable_case_count=len(answerable_cases),
     )
     if print_summary:
-        print(f"\nChunk Hit@{top_k}: {hit_total:.0f}/{len(answerable_cases)}")
+        print(f"\nChunk Hit@{top_k}: {metrics.hit_fraction}")
         print(f"Mean Chunk Recall@{top_k}: {metrics.recall_at_k:.1%}")
     return metrics
 

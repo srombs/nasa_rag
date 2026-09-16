@@ -107,13 +107,14 @@ class Retriever:
         query: str,
         top_k: int,
         source_file_filter: str | None = None,
+        search_query: str | None = None,
     ) -> list[DocumentChunk]:
-        """Rewrite, embed, and search FAISS with an optional source file filter."""
+        """Embed and search FAISS with an optional pre-rewritten query."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
-            rewritten_query = self.query_rewriter.rewrite(query)
+            rewritten_query = search_query or self.rewrite_query(query)
             return self.faiss_retriever.search(
                 embed_query(rewritten_query),
                 top_k,
@@ -123,6 +124,18 @@ class Retriever:
             raise
         except Exception as error:
             raise RetrievalError("Unable to search the FAISS index.") from error
+
+    def rewrite_query(self, query: str) -> str:
+        """Rewrite one user query for reuse by one or more retrieval methods."""
+        if not query:
+            raise ValueError("Query text cannot be empty.")
+
+        try:
+            return self.query_rewriter.rewrite(query)
+        except ValueError:
+            raise
+        except Exception as error:
+            raise RetrievalError("Unable to rewrite the retrieval query.") from error
 
     def search_keywords(self, query: str, top_k: int) -> list[DocumentChunk]:
         """Rank loaded chunks by normalized keyword overlap with a query."""
@@ -154,13 +167,14 @@ class Retriever:
         query: str,
         top_k: int,
         source_file_filter: str | None = None,
+        search_query: str | None = None,
     ) -> list[BM25SearchResult]:
-        """Rewrite a query and return BM25 results from an optional source file."""
+        """Return BM25 results with an optional pre-rewritten query."""
         if not query:
             raise ValueError("Query text cannot be empty.")
 
         try:
-            rewritten_query = self.query_rewriter.rewrite(query)
+            rewritten_query = search_query or self.rewrite_query(query)
             return self.bm25_retriever.search(
                 tokenize_text(rewritten_query),
                 top_k,

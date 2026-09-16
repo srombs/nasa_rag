@@ -169,11 +169,16 @@ def run_embedded_search(
     retriever: Retriever,
     top_k: int = TOP_K,
     source_file_filter: str | None = None,
+    search_query: str | None = None,
 ) -> list[DocumentChunk]:
-    """Run one query through FAISS with an optional source file filter."""
-    return retriever.search(
-        query, top_k=top_k, source_file_filter=source_file_filter
-    )
+    """Run one query through FAISS with an optional pre-rewritten query."""
+    search_arguments = {
+        "top_k": top_k,
+        "source_file_filter": source_file_filter,
+    }
+    if search_query is not None:
+        search_arguments["search_query"] = search_query
+    return retriever.search(query, **search_arguments)
 
 
 def run_keyword_search(
@@ -188,11 +193,16 @@ def run_bm25_search(
     retriever: Retriever,
     top_k: int = TOP_K,
     source_file_filter: str | None = None,
+    search_query: str | None = None,
 ) -> list[BM25SearchResult]:
-    """Run one query through BM25, optionally restricted to one source file."""
-    return retriever.search_bm25(
-        query, top_k=top_k, source_file_filter=source_file_filter
-    )
+    """Run one query through BM25 with an optional pre-rewritten query."""
+    search_arguments = {
+        "top_k": top_k,
+        "source_file_filter": source_file_filter,
+    }
+    if search_query is not None:
+        search_arguments["search_query"] = search_query
+    return retriever.search_bm25(query, **search_arguments)
 
 
 def run_both_searches(

@@ -58,11 +58,22 @@ Run FAISS retrieval against those expected chunk references with:
 uv run python eval/run_faiss_retrieval_evaluation.py
 ```
 
-Compare multiple FAISS top-K values while retrieving only once per question:
+Compare multiple retrieval methods and top-K values while retrieving only once
+per question for each method:
 
 ```bash
-uv run python eval/run_faiss_top_k_evaluation.py --top-k-values 1 3 5 10 30
+uv run python eval/run_retrieval_top_k_evaluation.py --top-k-values 1 3 5 10 30
 ```
+
+That runner evaluates FAISS, BM25, and RRF by default. RRF fuses the top 30
+FAISS and BM25 candidates with `rrf_k=60`, then evaluates K values `1`, `3`,
+`5`, and `10`. Use `--search-method faiss`, `bm25`, `both`, or `rrf` to run a
+subset. In combined mode, it rewrites each question once and supplies the same
+rewritten query to both base methods.
+
+Add `--enable-reranker` to also evaluate the model reranker over the top 10
+RRF candidates. The reranker uses the original question and makes one model
+call for each RRF candidate.
 
 The evaluator compares canonical `[source.txt, chunk N]` references and
 reports chunk Hit@K plus macro-average chunk Recall@K. Cases with no relevant
