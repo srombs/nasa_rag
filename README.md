@@ -161,6 +161,7 @@ pytest
 ruff check .
 ```
 
+```
 Base eval v1 - Chunk size 100, overlap 20.
 
 FAISS results
@@ -192,3 +193,4 @@ top_k | hit_at_k        | mean_recall_at_k
     3 | 19/23 (82.6%) | 53.8%
     5 | 19/23 (82.6%) | 57.2%
    10 | 19/23 (82.6%) | 58.3%
+```
