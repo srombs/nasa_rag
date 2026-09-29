@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-EVALUATION_PATH = Path(__file__).with_name("eval_v1.json")
+EVALUATION_PATH = Path(__file__).with_name("eval_100_20.json")
 
 
 class RetrievalEvaluationCase(TypedDict):
@@ -22,16 +22,47 @@ class RetrievalEvaluationCase(TypedDict):
 
 def load_evaluation_cases(
     path: str | Path = EVALUATION_PATH,
+    chunk_size: int | None = None,
+    overlap_size: int | None = None,
 ) -> list[RetrievalEvaluationCase]:
-    """Load and validate the retrieval cases stored in ``eval_v1.json``."""
+    """Load cases and validate their chunking metadata against a run."""
     evaluation_path = Path(path)
     try:
-        cases = json.loads(evaluation_path.read_text(encoding="utf-8"))
+        dataset = json.loads(evaluation_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise ValueError(
             f"Invalid retrieval evaluation JSON: {evaluation_path}"
         ) from error
 
+    if not isinstance(dataset, dict) or set(dataset) != {"metadata", "cases"}:
+        raise ValueError("Retrieval evaluation data needs metadata and cases.")
+    metadata = dataset["metadata"]
+    if not isinstance(metadata, dict) or set(metadata) != {
+        "chunk_size",
+        "overlap_size",
+    }:
+        raise ValueError("Retrieval evaluation metadata is invalid.")
+    labeled_chunk_size = metadata["chunk_size"]
+    labeled_overlap_size = metadata["overlap_size"]
+    if (
+        type(labeled_chunk_size) is not int
+        or type(labeled_overlap_size) is not int
+        or labeled_chunk_size <= 0
+        or not 0 <= labeled_overlap_size < labeled_chunk_size
+    ):
+        raise ValueError("Retrieval evaluation chunking metadata is invalid.")
+    if (chunk_size is None) != (overlap_size is None):
+        raise ValueError("Provide both chunk_size and overlap_size for validation.")
+    if chunk_size is not None and (
+        chunk_size != labeled_chunk_size or overlap_size != labeled_overlap_size
+    ):
+        raise ValueError(
+            f"Evaluation labels require chunk_size={labeled_chunk_size} and "
+            f"overlap_size={labeled_overlap_size}; got chunk_size={chunk_size} "
+            f"and overlap_size={overlap_size}."
+        )
+
+    cases = dataset["cases"]
     if not isinstance(cases, list):
         raise ValueError("Retrieval evaluation cases must be a JSON list.")
 

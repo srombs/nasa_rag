@@ -36,11 +36,15 @@ are printed.
 Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
 generate an answer from their combined context.
 
-Inspect the answer-level retrieval cases in `eval/eval_v1.json` with:
+Inspect the answer-level retrieval cases in `eval/eval_100_20.json` with:
 
 ```bash
 uv run python eval/run_retrieval_evaluation.py
 ```
+
+The dataset metadata records the `100`-word chunk size and `20`-word overlap
+used to label its chunk references. Scoring runners reject different chunk
+settings because those references would point to different passages.
 
 Run FAISS retrieval against those expected chunk references with:
 
@@ -120,7 +124,7 @@ ruff check .
 ```
 
 ```
-Base eval v1 - Chunk size 100, overlap 20.
+Base eval 100/20 - Chunk size 100, overlap 20.
 
 FAISS results
 top_k | hit_at_k        | mean_recall_at_k

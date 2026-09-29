@@ -83,7 +83,7 @@ def evaluate_bm25_retrieval(
 def main() -> None:
     """Load the shared retriever and evaluate BM25 chunk retrieval."""
     parser = argparse.ArgumentParser(
-        description="Evaluate BM25 retrieval against eval_v1 chunk references."
+        description="Evaluate BM25 retrieval against eval_100_20 chunk references."
     )
     parser.add_argument(
         "--evaluation-file",
@@ -114,7 +114,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    cases = load_evaluation_cases(args.evaluation_file)
+    cases = load_evaluation_cases(
+        args.evaluation_file, args.chunk_size, args.overlap_size
+    )
     retriever = semantic_search.load_retriever(args.chunk_size, args.overlap_size)
     evaluate_bm25_retrieval(cases, retriever, top_k=args.top_k)
 

@@ -1,4 +1,9 @@
-[
+{
+  "metadata": {
+    "chunk_size": 100,
+    "overlap_size": 20
+  },
+  "cases": [
   {
     "id": "factual_001",
     "question": "What mission launched the Hubble Space Telescope, and which Space Shuttle orbiter carried it?",
@@ -311,4 +316,5 @@
     "category": "unanswerable",
     "expected_source_filter": null
   }
-]
+  ]
+}

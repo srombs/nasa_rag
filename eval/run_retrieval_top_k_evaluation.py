@@ -551,7 +551,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    cases = load_evaluation_cases(args.evaluation_file)
+    cases = load_evaluation_cases(
+        args.evaluation_file, args.chunk_size, args.overlap_size
+    )
     retriever = semantic_search.load_retriever(args.chunk_size, args.overlap_size)
     if args.enable_reranker and args.search_method not in ("all", "rrf"):
         parser.error("--enable-reranker requires --search-method rrf or all.")

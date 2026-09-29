@@ -40,7 +40,7 @@ def test_version() -> None:
 
 
 def test_retrieval_evaluation_loads_answer_level_cases(tmp_path) -> None:
-    evaluation_path = tmp_path / "eval_v1.json"
+    evaluation_path = tmp_path / "eval_100_20.json"
     cases = [
         {
             "id": "factual_001",
@@ -52,15 +52,42 @@ def test_retrieval_evaluation_loads_answer_level_cases(tmp_path) -> None:
             "expected_source_filter": None,
         }
     ]
-    evaluation_path.write_text(json.dumps(cases), encoding="utf-8")
+    evaluation_path.write_text(
+        json.dumps({"metadata": {"chunk_size": 100, "overlap_size": 20}, "cases": cases}),
+        encoding="utf-8",
+    )
 
-    assert run_retrieval_evaluation.load_evaluation_cases(evaluation_path) == cases
+    assert run_retrieval_evaluation.load_evaluation_cases(
+        evaluation_path, chunk_size=100, overlap_size=20
+    ) == cases
+
+
+def test_retrieval_evaluation_rejects_mismatched_chunking(tmp_path) -> None:
+    evaluation_path = tmp_path / "eval_100_20.json"
+    evaluation_path.write_text(
+        json.dumps({"metadata": {"chunk_size": 100, "overlap_size": 20}, "cases": []}),
+        encoding="utf-8",
+    )
+
+    try:
+        run_retrieval_evaluation.load_evaluation_cases(
+            evaluation_path, chunk_size=200, overlap_size=50
+        )
+    except ValueError as error:
+        assert "labels require chunk_size=100 and overlap_size=20" in str(error)
+    else:
+        raise AssertionError("Expected mismatched chunking to fail.")
 
 
 def test_retrieval_evaluation_rejects_cases_with_missing_fields(tmp_path) -> None:
-    evaluation_path = tmp_path / "eval_v1.json"
+    evaluation_path = tmp_path / "eval_100_20.json"
     evaluation_path.write_text(
-        json.dumps([{"id": "factual_001", "question": "Missing fields."}]),
+        json.dumps(
+            {
+                "metadata": {"chunk_size": 100, "overlap_size": 20},
+                "cases": [{"id": "factual_001", "question": "Missing fields."}],
+            }
+        ),
         encoding="utf-8",
     )
 
