@@ -36,12 +36,6 @@ are printed.
 Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
 generate an answer from their combined context.
 
-Run the question evaluation loop with:
-
-```bash
-uv run python eval/run_evaluation.py
-```
-
 Inspect the answer-level retrieval cases in `eval/eval_v1.json` with:
 
 ```bash
@@ -107,19 +101,6 @@ ranking of RRF candidates.
 using its built-in search-query rewrite instructions, and returns the rewritten
 search query. FAISS, BM25, and RRF use that rewritten query; the model
 reranker receives the original user query and each RRF chunk.
-
-The evaluation reports source-level `Recall@30`: a question is a hit when any
-of its expected source files appears among its 30 retrieved chunks.
-
-Run all combinations of `Recall@1` through `Recall@5` for chunk/overlap
-settings `50/10`, `100/20`, and `200/50` with:
-
-```bash
-uv run python eval/run_grid_evaluation.py
-```
-
-The grid run prints only failed questions with their expected source and
-retrieved chunks, followed by the recall summary table.
 
 ## Quick start
 
