@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-EVALUATION_PATH = Path(__file__).with_name("eval_100_20.json")
+EVALUATION_PATH = Path(__file__).resolve().parent / "datasets" / "eval_100_20.json"
 
 
 class RetrievalEvaluationCase(TypedDict):

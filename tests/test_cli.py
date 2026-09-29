@@ -945,7 +945,7 @@ def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -
 
     monkeypatch.setattr(file_loader, "embed_documents", fake_embed_documents)
 
-    cache_path = tmp_path / "cache" / file_loader.CACHE_FILE_NAME
+    cache_path = tmp_path / "cache" / file_loader.document_cache_file_name(2, 0)
     chunks = file_loader.load_and_embed_directory(
         tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
     )
@@ -1002,7 +1002,7 @@ def test_load_and_chunk_directory_caches_unembedded_chunks(tmp_path) -> None:
     (tmp_path / "b.txt").write_text("four five", encoding="utf-8")
     (tmp_path / "a.txt").write_text("one two three", encoding="utf-8")
 
-    cache_path = tmp_path / "cache" / file_loader.NO_EMBED_CACHE_FILE_NAME
+    cache_path = tmp_path / "cache" / file_loader.no_embed_cache_file_name(2, 0)
     chunks = file_loader.load_and_chunk_directory(
         tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
     )
@@ -1013,6 +1013,7 @@ def test_load_and_chunk_directory_caches_unembedded_chunks(tmp_path) -> None:
         CorpusChunk("b.txt", 0, "four five"),
     ]
     assert json.loads(cache_path.read_text(encoding="utf-8")) == {
+        "metadata": {"chunk_size": 2, "overlap_size": 0},
         "documents": {
             "a.txt": [
                 {"source": "a.txt", "chunk_index": 0, "text": "one two"},
@@ -1029,9 +1030,41 @@ def test_load_and_chunk_directory_caches_unembedded_chunks(tmp_path) -> None:
     ) == chunks
 
 
+def test_load_and_chunk_directory_rejects_mismatched_cache_settings(tmp_path) -> None:
+    (tmp_path / "a.txt").write_text("one two three", encoding="utf-8")
+    cache_path = tmp_path / "cache" / file_loader.no_embed_cache_file_name(2, 0)
+    file_loader.load_and_chunk_directory(
+        tmp_path, chunk_size=2, overlap_size=0, cache_path=cache_path
+    )
+
+    try:
+        file_loader.load_and_chunk_directory(
+            tmp_path, chunk_size=3, overlap_size=1, cache_path=cache_path
+        )
+    except ValueError as error:
+        assert "uses chunk_size=2 and overlap_size=0" in str(error)
+    else:
+        raise AssertionError("Expected mismatched cache settings to fail.")
+
+
+def test_load_and_chunk_directory_uses_corpus_cache_directory(tmp_path) -> None:
+    data_directory = tmp_path / "data"
+    data_directory.mkdir()
+    (data_directory / "a.txt").write_text("one two three", encoding="utf-8")
+
+    file_loader.load_and_chunk_directory(data_directory, chunk_size=2, overlap_size=0)
+
+    cache_path = tmp_path / "cache" / "corpus" / "document_cache_2_0_no_embed.json"
+    assert cache_path.exists()
+    assert json.loads(cache_path.read_text(encoding="utf-8"))["metadata"] == {
+        "chunk_size": 2,
+        "overlap_size": 0,
+    }
+
+
 def test_no_embed_cache_file_name_includes_the_no_embed_suffix() -> None:
     assert chunk_corpus.no_embed_cache_file_name(100, 20) == (
-        "document_cache_no_embed.json"
+        "document_cache_100_20_no_embed.json"
     )
     assert chunk_corpus.no_embed_cache_file_name(200, 50) == (
         "document_cache_200_50_no_embed.json"

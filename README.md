@@ -11,15 +11,19 @@ file separately, and retains its filename on every `DocumentChunk` result.
 
 The ingestion responsibilities are split into `file_loader.py`, `chunkers.py`,
 and `embedder.py`; the shared `DocumentChunk` object is defined in `models.py`.
-Embeddings are cached as `cache/document_cache.json`, keyed by source filename,
-so a previously loaded file is not embedded again.
+Embeddings are cached as `cache/embeds/document_cache_100_20.json` by default,
+keyed by source filename, so a previously loaded file is not embedded again.
+Run `uv run python chunk_corpus.py` to create a chunk-only cache without API
+calls. The default file is `cache/corpus/document_cache_100_20_no_embed.json`; its
+metadata records the chunk size and overlap, and other settings produce
+separate files named for their values.
 Embedding requests are logged at `INFO` level with the source filename and
 number of chunks sent.
 `embed_texts` returns embeddings as a NumPy `float32` matrix for FAISS use.
 The CLI creates an exact inner-product FAISS index from the document matrix.
 Query embeddings are also converted to one-row, L2-normalized matrices.
-The FAISS index is persisted in `cache/document.index` and reused when it
-matches the current document matrix.
+The default FAISS index is persisted in `cache/faiss/document_100_20.index` and
+reused when it matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
 top 30 matching chunks by default.
 `Retriever` owns document loading and delegates vector indexing and search
@@ -36,15 +40,17 @@ are printed.
 Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
 generate an answer from their combined context.
 
-Inspect the answer-level retrieval cases in `eval/eval_100_20.json` with:
+Inspect the answer-level retrieval cases in `eval/datasets/eval_100_20.json` with:
 
 ```bash
 uv run python eval/run_retrieval_evaluation.py
 ```
 
-The dataset metadata records the `100`-word chunk size and `20`-word overlap
-used to label its chunk references. Scoring runners reject different chunk
-settings because those references would point to different passages.
+Each dataset in `eval/datasets/` records the chunk size and overlap used to
+label its chunk references. Scoring runners reject settings that do not match
+the selected dataset. For example, use `--evaluation-file
+eval/datasets/eval_200_50.json --chunk-size 200 --overlap-size 50` to score
+the `200/50` dataset.
 
 Run FAISS retrieval against those expected chunk references with:
 

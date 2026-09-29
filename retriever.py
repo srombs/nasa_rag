@@ -6,7 +6,7 @@ from pathlib import Path
 from bm25_retriever import BM25Retriever
 from embedder import embed_query
 from faiss_retriever import FaissRetriever
-from file_loader import CACHE_FILE_NAME, load_and_embed_directory
+from file_loader import document_cache_file_name, load_and_embed_directory
 from models import (
     BM25SearchResult,
     DocumentChunk,
@@ -44,22 +44,14 @@ class Retriever:
             else self.data_directory.parent / "cache"
         )
         self.document_chunks: list[DocumentChunk] = []
-        self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
+        self.faiss_retriever = FaissRetriever(
+            self.cache_directory
+            / "faiss"
+            / f"document_{self.chunk_size}_{self.overlap_size}.index"
+        )
         self.bm25_retriever = BM25Retriever()
         self.query_rewriter = QueryRewriter()
         self.reranker = Reranker()
-
-    def _cache_path(self, file_name: str) -> Path:
-        """Return a cache path unique to non-default chunking settings."""
-        if (
-            self.chunk_size == DEFAULT_CHUNK_SIZE
-            and self.overlap_size == DEFAULT_OVERLAP_SIZE
-        ):
-            return self.cache_directory / file_name
-
-        cache_file = Path(file_name)
-        suffix = f"_{self.chunk_size}_{self.overlap_size}"
-        return self.cache_directory / f"{cache_file.stem}{suffix}{cache_file.suffix}"
 
     def load(self) -> None:
         """Load documents and prepare FAISS and BM25 retrieval."""
@@ -68,7 +60,9 @@ class Retriever:
                 self.data_directory,
                 chunk_size=self.chunk_size,
                 overlap_size=self.overlap_size,
-                cache_path=self._cache_path(CACHE_FILE_NAME),
+                cache_path=self.cache_directory
+                / "embeds"
+                / document_cache_file_name(self.chunk_size, self.overlap_size),
             )
             if not self.document_chunks:
                 raise ValueError("No document chunks were loaded.")

@@ -7,8 +7,14 @@ from chunkers import chunk_text
 from embedder import embed_documents
 from models import CorpusChunk, DocumentChunk
 
-CACHE_FILE_NAME = "document_cache.json"
-NO_EMBED_CACHE_FILE_NAME = "document_cache_no_embed.json"
+def document_cache_file_name(chunk_size: int, overlap_size: int) -> str:
+    """Name an embedded cache by its chunking settings."""
+    return f"document_cache_{chunk_size}_{overlap_size}.json"
+
+
+def no_embed_cache_file_name(chunk_size: int, overlap_size: int) -> str:
+    """Name an unembedded cache by its chunking settings."""
+    return f"document_cache_{chunk_size}_{overlap_size}_no_embed.json"
 
 
 def read_file(path: str | Path) -> str:
@@ -82,7 +88,9 @@ def save_document_cache(
     )
 
 
-def load_no_embed_document_cache(path: str | Path) -> dict[str, list[CorpusChunk]]:
+def load_no_embed_document_cache(
+    path: str | Path, chunk_size: int, overlap_size: int
+) -> dict[str, list[CorpusChunk]]:
     """Load chunk-only documents from a JSON cache, keyed by source file name."""
     cache_path = Path(path)
     if not cache_path.exists():
@@ -90,12 +98,27 @@ def load_no_embed_document_cache(path: str | Path) -> dict[str, list[CorpusChunk
 
     try:
         cache_data = json.loads(cache_path.read_text(encoding="utf-8"))
+        metadata = cache_data["metadata"]
         cached_documents = cache_data["documents"]
     except (json.JSONDecodeError, KeyError) as error:
         raise ValueError(f"Invalid chunk-only cache: {cache_path}") from error
 
-    if not isinstance(cached_documents, dict):
+    if (
+        not isinstance(metadata, dict)
+        or type(metadata.get("chunk_size")) is not int
+        or type(metadata.get("overlap_size")) is not int
+        or not isinstance(cached_documents, dict)
+    ):
         raise ValueError(f"Invalid chunk-only cache: {cache_path}")
+    if (metadata["chunk_size"], metadata["overlap_size"]) != (
+        chunk_size,
+        overlap_size,
+    ):
+        raise ValueError(
+            f"Chunk-only cache {cache_path} uses chunk_size={metadata['chunk_size']} "
+            f"and overlap_size={metadata['overlap_size']}; requested "
+            f"chunk_size={chunk_size} and overlap_size={overlap_size}."
+        )
 
     document_cache: dict[str, list[CorpusChunk]] = {}
     for source, records in cached_documents.items():
@@ -112,11 +135,15 @@ def load_no_embed_document_cache(path: str | Path) -> dict[str, list[CorpusChunk
 
 
 def save_no_embed_document_cache(
-    path: str | Path, document_cache: dict[str, list[CorpusChunk]]
+    path: str | Path,
+    document_cache: dict[str, list[CorpusChunk]],
+    chunk_size: int,
+    overlap_size: int,
 ) -> None:
     """Persist chunk-only documents without embedding vectors."""
     cache_path = Path(path)
     cache_data = {
+        "metadata": {"chunk_size": chunk_size, "overlap_size": overlap_size},
         "documents": {
             source: [chunk.to_cache_record() for chunk in chunks]
             for source, chunks in document_cache.items()
@@ -139,11 +166,13 @@ def load_and_embed_directory(
     if not directory_path.is_dir():
         raise NotADirectoryError(f"Text data directory not found: {directory_path}")
 
-    resolved_cache_path = (
-        Path(cache_path)
-        if cache_path is not None
-        else directory_path.parent / "cache" / CACHE_FILE_NAME
+    default_cache_path = (
+        directory_path.parent
+        / "cache"
+        / "embeds"
+        / document_cache_file_name(chunk_size, overlap_size)
     )
+    resolved_cache_path = Path(cache_path) if cache_path is not None else default_cache_path
     document_cache = load_document_cache(resolved_cache_path)
     document_chunks: list[DocumentChunk] = []
     for file_path in sorted(directory_path.glob("*.txt")):
@@ -168,12 +197,16 @@ def load_and_chunk_directory(
     if not directory_path.is_dir():
         raise NotADirectoryError(f"Text data directory not found: {directory_path}")
 
-    resolved_cache_path = (
-        Path(cache_path)
-        if cache_path is not None
-        else directory_path.parent / "cache" / NO_EMBED_CACHE_FILE_NAME
+    default_cache_path = (
+        directory_path.parent
+        / "cache"
+        / "corpus"
+        / no_embed_cache_file_name(chunk_size, overlap_size)
     )
-    document_cache = load_no_embed_document_cache(resolved_cache_path)
+    resolved_cache_path = Path(cache_path) if cache_path is not None else default_cache_path
+    document_cache = load_no_embed_document_cache(
+        resolved_cache_path, chunk_size, overlap_size
+    )
     document_chunks: list[CorpusChunk] = []
     for file_path in sorted(directory_path.glob("*.txt")):
         cached_chunks = document_cache.get(file_path.name)
@@ -182,5 +215,7 @@ def load_and_chunk_directory(
             document_cache[file_path.name] = cached_chunks
         document_chunks.extend(cached_chunks)
 
-    save_no_embed_document_cache(resolved_cache_path, document_cache)
+    save_no_embed_document_cache(
+        resolved_cache_path, document_cache, chunk_size, overlap_size
+    )
     return document_chunks

@@ -3,18 +3,8 @@
 import argparse
 from pathlib import Path
 
-from file_loader import NO_EMBED_CACHE_FILE_NAME, load_and_chunk_directory
+from file_loader import load_and_chunk_directory, no_embed_cache_file_name
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE
-
-
-def no_embed_cache_file_name(chunk_size: int, overlap_size: int) -> str:
-    """Return the chunk-only cache name for the requested chunk configuration."""
-    if (
-        chunk_size == DEFAULT_CHUNK_SIZE
-        and overlap_size == DEFAULT_OVERLAP_SIZE
-    ):
-        return NO_EMBED_CACHE_FILE_NAME
-    return f"document_cache_{chunk_size}_{overlap_size}_no_embed.json"
 
 
 def main() -> None:
@@ -37,7 +27,7 @@ def main() -> None:
     args = parser.parse_args()
 
     data_directory = Path(__file__).with_name("data")
-    cache_path = data_directory.parent / "cache" / no_embed_cache_file_name(
+    cache_path = data_directory.parent / "cache" / "corpus" / no_embed_cache_file_name(
         args.chunk_size, args.overlap_size
     )
     chunks = load_and_chunk_directory(
