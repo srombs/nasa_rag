@@ -31,7 +31,6 @@ from models import (
     DocumentChunk,
     RerankResult,
     RetrievalPlan,
-    TokenizedChunk,
 )
 from nasa_rag import __version__
 
@@ -453,20 +452,6 @@ def test_chunk_text_rejects_invalid_chunk_settings() -> None:
         raise AssertionError("Expected invalid chunk settings to be rejected.")
 
 
-def test_tokenize_chunks_creates_a_token_set_for_each_chunk() -> None:
-    chunks = [
-        DocumentChunk("iss.txt", 248, "ISS crews study Mars, Mars!", [1.0]),
-        DocumentChunk("hubble.txt", 3, "Hubble observes galaxies.", [1.0]),
-    ]
-
-    tokenized_chunks = tokenizer.tokenize_chunks(chunks)
-
-    assert tokenized_chunks == [
-        TokenizedChunk("iss.txt", 248, {"iss", "crews", "study", "mars"}),
-        TokenizedChunk("hubble.txt", 3, {"hubble", "observes", "galaxies"}),
-    ]
-
-
 def test_tokenize_text_returns_all_words_and_preserves_duplicates() -> None:
     assert tokenizer.tokenize_text("What is the power of the ISS, ISS?") == [
         "what",
@@ -478,23 +463,6 @@ def test_tokenize_text_returns_all_words_and_preserves_duplicates() -> None:
         "iss",
         "iss",
     ]
-
-
-def test_tokenize_text_excluding_stop_words_preserves_duplicates() -> None:
-    assert tokenizer.tokenize_text_excluding_stop_words(
-        "What is the power of the ISS, ISS?"
-    ) == [
-        "power",
-        "iss",
-        "iss",
-    ]
-
-
-def test_tokenize_text_set_removes_duplicate_non_stop_words() -> None:
-    assert tokenizer.tokenize_text_set("The ISS is in orbit, orbit!") == {
-        "iss",
-        "orbit",
-    }
 
 
 def test_bm25_retriever_tokenizes_every_document_chunk_word() -> None:
@@ -579,21 +547,7 @@ def test_faiss_source_filter_doubles_the_candidate_count(tmp_path) -> None:
     assert results == [chunks[1], chunks[3]]
 
 
-def test_score_tokenized_chunks_ranks_normalized_keyword_overlap() -> None:
-    chunks = [
-        TokenizedChunk("iss.txt", 0, {"iss", "crew", "research"}),
-        TokenizedChunk("hubble.txt", 1, {"hubble", "telescope"}),
-    ]
-
-    scores = tokenizer.score_tokenized_chunks(
-        tokenizer.tokenize_text_set("ISS research telescope"), chunks
-    )
-
-    assert scores == [(chunks[0], 2 / 3), (chunks[1], 1 / 3)]
-    assert tokenizer.keyword_score(set(), chunks[0].tokens) == 0.0
-
-
-def test_retriever_loads_document_tokens_and_faiss(monkeypatch, tmp_path) -> None:
+def test_retriever_loads_faiss_and_bm25(monkeypatch, tmp_path) -> None:
     chunks = [
         DocumentChunk("iss.txt", 248, "ISS crews study Mars.", [1.0, 0.0]),
         DocumentChunk("hubble.txt", 3, "Hubble observes galaxies.", [0.0, 1.0]),
@@ -608,34 +562,9 @@ def test_retriever_loads_document_tokens_and_faiss(monkeypatch, tmp_path) -> Non
     generic_retriever.load()
 
     assert generic_retriever.document_chunks == chunks
-    assert generic_retriever.tokenized_chunks == [
-        TokenizedChunk("iss.txt", 248, {"iss", "crews", "study", "mars"}),
-        TokenizedChunk("hubble.txt", 3, {"hubble", "observes", "galaxies"}),
-    ]
     assert generic_retriever.faiss_retriever.index is not None
     assert generic_retriever.faiss_retriever.index.ntotal == len(chunks)
     assert generic_retriever.bm25_retriever.index is not None
-
-
-def test_retriever_search_keywords_returns_matching_document_chunks(
-    monkeypatch, tmp_path
-) -> None:
-    chunks = [
-        DocumentChunk("iss.txt", 0, "ISS crew research.", [1.0, 0.0]),
-        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [0.0, 1.0]),
-    ]
-    monkeypatch.setattr(
-        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
-    )
-    generic_retriever = retriever.Retriever(
-        tmp_path, cache_directory=tmp_path / "cache"
-    )
-    generic_retriever.load()
-
-    results = generic_retriever.search_keywords("ISS research", top_k=1)
-
-    assert results == [chunks[0]]
-    assert results[0].similarity == 1.0
 
 
 def test_retriever_rejects_a_source_file_filter_that_is_not_loaded(tmp_path) -> None:
@@ -1091,22 +1020,6 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
     assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0]\n"
-
-
-def test_run_keyword_search_delegates_to_the_retriever() -> None:
-    class KeywordRetriever:
-        def search_keywords(self, query, top_k):
-            assert query == "ISS research"
-            assert top_k == 2
-            return [DocumentChunk("iss.txt", 0, "ISS research.", [1.0])]
-
-    results = semantic_search.run_keyword_search(
-        "ISS research", KeywordRetriever(), top_k=2
-    )
-
-    assert [(result.source, result.chunk_index) for result in results] == [
-        ("iss.txt", 0)
-    ]
 
 
 def test_run_bm25_search_delegates_to_the_retriever() -> None:

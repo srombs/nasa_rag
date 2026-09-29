@@ -169,13 +169,6 @@ def run_embedded_search(
     return retriever.search(query, **search_arguments)
 
 
-def run_keyword_search(
-    query: str, retriever: Retriever, top_k: int = TOP_K
-) -> list[DocumentChunk]:
-    """Run one query through the token-overlap retriever."""
-    return retriever.search_keywords(query, top_k=top_k)
-
-
 def run_bm25_search(
     query: str,
     retriever: Retriever,
@@ -258,11 +251,6 @@ def main() -> None:
     )
     search_mode = parser.add_mutually_exclusive_group()
     search_mode.add_argument(
-        "--keyword-search",
-        action="store_true",
-        help="Rank chunks by keyword overlap instead of embedding similarity.",
-    )
-    search_mode.add_argument(
         "--bm25-search",
         action="store_true",
         help="Rank chunks with BM25 scores without embedding the query.",
@@ -277,8 +265,6 @@ def main() -> None:
         help="Print FAISS, BM25, and reciprocal-rank-fusion rankings.",
     )
     args = parser.parse_args()
-    if args.source_file and args.keyword_search:
-        parser.error("--source-file is not supported with keyword search.")
 
     retriever = load_retriever(args.chunk_size, args.overlap_size)
     if args.both_searches:
@@ -319,10 +305,7 @@ def main() -> None:
         ranked_chunks = [result.chunk for result in rerank_results]
     else:
         print(f"Question: {args.query}")
-    if not args.both_searches and args.keyword_search:
-        ranked_chunks = run_keyword_search(args.query, retriever, top_k=args.top_k)
-        print_ranked_chunks(ranked_chunks, top_k=args.top_k)
-    elif not args.both_searches and args.bm25_search:
+    if not args.both_searches and args.bm25_search:
         bm25_results = run_bm25_search(
             args.query,
             retriever,

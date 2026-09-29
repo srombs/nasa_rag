@@ -22,13 +22,9 @@ The FAISS index is persisted in `cache/document.index` and reused when it
 matches the current document matrix.
 The CLI searches the index with the normalized query matrix and returns the
 top 30 matching chunks by default.
-`Retriever` owns document loading and tokenization, then delegates vector
-indexing and search to its `FaissRetriever`, and raw token indexing to its
-`BM25Retriever`, which uses `tokenize_text` and includes every word.
-`tokenizer.tokenize_chunks`
-creates standalone `TokenizedChunk` objects containing a source, chunk index,
-and normalized token set. `Retriever.search_keywords(query, top_k)` ranks
-those chunks by the fraction of unique query tokens found in each chunk.
+`Retriever` owns document loading and delegates vector indexing and search
+to its `FaissRetriever`, and raw token indexing to its `BM25Retriever`, which
+uses `tokenize_text` and includes every word.
 `generator.build_context(results)` formats retrieved chunks for
 `generator.generate_answer(context, question)`, which produces a
 context-grounded answer using the OpenAI Responses API and `gpt-5.6-luna`.
@@ -83,13 +79,6 @@ always returns ranked chunks.
 Both search commands accept `--chunk-size`, `--overlap-size`, and `--top-k`
 (defaults: `100`, `20`, and `30`). Non-default chunk settings use their own
 document and FAISS cache files under `cache/`.
-
-Run keyword-overlap retrieval (without an embedding request for the query)
-with:
-
-```bash
-uv run python semantic_search.py "What powers the ISS?" --keyword-search --top-k 3
-```
 
 Run BM25 retrieval (without an embedding request for the query) with:
 

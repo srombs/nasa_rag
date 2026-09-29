@@ -1,4 +1,4 @@
-"""Generic retrieval orchestration for documents, tokens, and FAISS."""
+"""Generic retrieval orchestration for documents, FAISS, and BM25."""
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -11,16 +11,10 @@ from models import (
     BM25SearchResult,
     DocumentChunk,
     RerankResult,
-    TokenizedChunk,
 )
 from query_rewriter import QueryRewriter
 from reranker import Reranker
-from tokenizer import (
-    score_tokenized_chunks,
-    tokenize_chunks,
-    tokenize_text,
-    tokenize_text_set,
-)
+from tokenizer import tokenize_text
 from vector_store import VectorStoreError
 
 DEFAULT_CHUNK_SIZE = 100
@@ -32,7 +26,7 @@ class RetrievalError(RuntimeError):
 
 
 class Retriever:
-    """Load documents and prepare token, FAISS, and BM25 retrieval."""
+    """Load documents and prepare FAISS and BM25 retrieval."""
 
     def __init__(
         self,
@@ -50,7 +44,6 @@ class Retriever:
             else self.data_directory.parent / "cache"
         )
         self.document_chunks: list[DocumentChunk] = []
-        self.tokenized_chunks: list[TokenizedChunk] = []
         self.faiss_retriever = FaissRetriever(self._cache_path("document.index"))
         self.bm25_retriever = BM25Retriever()
         self.query_rewriter = QueryRewriter()
@@ -69,7 +62,7 @@ class Retriever:
         return self.cache_directory / f"{cache_file.stem}{suffix}{cache_file.suffix}"
 
     def load(self) -> None:
-        """Load documents, tokenize text, and prepare FAISS and BM25 retrieval."""
+        """Load documents and prepare FAISS and BM25 retrieval."""
         try:
             self.document_chunks = load_and_embed_directory(
                 self.data_directory,
@@ -79,7 +72,6 @@ class Retriever:
             )
             if not self.document_chunks:
                 raise ValueError("No document chunks were loaded.")
-            self.tokenized_chunks = tokenize_chunks(self.document_chunks)
             self.faiss_retriever.load(self.document_chunks)
             self.bm25_retriever.load(self.document_chunks)
         except (ValueError, VectorStoreError):
@@ -135,31 +127,6 @@ class Retriever:
             raise
         except Exception as error:
             raise RetrievalError("Unable to rewrite the retrieval query.") from error
-
-    def search_keywords(self, query: str, top_k: int) -> list[DocumentChunk]:
-        """Rank loaded chunks by normalized keyword overlap with a query."""
-        if not query:
-            raise ValueError("Query text cannot be empty.")
-        if top_k <= 0:
-            raise ValueError("top_k must be greater than zero.")
-        if top_k > len(self.tokenized_chunks):
-            raise ValueError("top_k cannot exceed the number of loaded chunks.")
-
-        tokenized_query = tokenize_text_set(query)
-        ranked_tokens = score_tokenized_chunks(
-            tokenized_query, self.tokenized_chunks
-        )
-        chunk_by_reference = {
-            (chunk.source, chunk.chunk_index): chunk for chunk in self.document_chunks
-        }
-        ranked_chunks = []
-        for tokenized_chunk, score in ranked_tokens[:top_k]:
-            chunk = chunk_by_reference[
-                (tokenized_chunk.source, tokenized_chunk.chunk_index)
-            ]
-            chunk.similarity = score
-            ranked_chunks.append(chunk)
-        return ranked_chunks
 
     def search_bm25(
         self,

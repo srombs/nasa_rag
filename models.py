@@ -83,15 +83,6 @@ class CorpusChunk:
 
 
 @dataclass
-class TokenizedChunk:
-    """A document chunk's source metadata and normalized token set."""
-
-    source: str
-    chunk_index: int
-    tokens: set[str]
-
-
-@dataclass
 class BM25SearchResult:
     """A document chunk and its BM25 relevance score."""
 
