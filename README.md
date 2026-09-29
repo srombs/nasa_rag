@@ -108,18 +108,6 @@ uv run python semantic_search.py "What powers the ISS?" --both-searches --top-k 
 This prints the requested FAISS and BM25 result counts, then the top 10 RRF
 results by default, followed by model-reranked RRF results.
 
-Run weighted hybrid retrieval (FAISS `0.7`, keywords `0.3` by default) with:
-
-```bash
-uv run python semantic_search.py "What powers the ISS?" --hybrid-search --top-k 3
-```
-
-Customize the formula `semantic_weight * semantic_score + keyword_weight *
-keyword_score` with `--semantic-weight` and `--keyword-weight`.
-Hybrid results retain the `DocumentChunk` plus `semantic_score`, `keyword_score`,
-and `hybrid_score` in a `HybridSearchResult` object.
-Hybrid CLI mode prints the FAISS ranking first, followed by the hybrid ranking;
-both use the same embedded query.
 `Retriever.search_rrf(query, top_k, rrf_k=60)` fuses FAISS and BM25 rankings
 with `1 / (rrf_k + rank)` and stores the combined value in `chunk.rrf_score`.
 It also stores each source rank in `chunk.faiss_rank` and `chunk.bm25_rank`.

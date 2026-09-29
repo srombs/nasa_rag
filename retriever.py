@@ -10,7 +10,6 @@ from file_loader import CACHE_FILE_NAME, load_and_embed_directory
 from models import (
     BM25SearchResult,
     DocumentChunk,
-    HybridSearchResult,
     RerankResult,
     TokenizedChunk,
 )
@@ -317,73 +316,3 @@ class Retriever:
             reverse=True,
         )[:rrf_top_k]
         return faiss_results[:top_k], bm25_results[:top_k], rrf_results
-
-    def search_hybrid(
-        self,
-        query: str,
-        top_k: int,
-        semantic_weight: float = 0.7,
-        keyword_weight: float = 0.3,
-    ) -> list[HybridSearchResult]:
-        """Rank chunks using weighted semantic and keyword-overlap scores."""
-        _, hybrid_results = self.search_semantic_and_hybrid(
-            query,
-            top_k=top_k,
-            semantic_weight=semantic_weight,
-            keyword_weight=keyword_weight,
-        )
-        return hybrid_results
-
-    def search_semantic_and_hybrid(
-        self,
-        query: str,
-        top_k: int,
-        semantic_weight: float = 0.7,
-        keyword_weight: float = 0.3,
-    ) -> tuple[list[DocumentChunk], list[HybridSearchResult]]:
-        """Return FAISS and hybrid rankings using one embedded query."""
-        if not query:
-            raise ValueError("Query text cannot be empty.")
-        if top_k <= 0:
-            raise ValueError("top_k must be greater than zero.")
-        if top_k > len(self.document_chunks):
-            raise ValueError("top_k cannot exceed the number of loaded chunks.")
-        if semantic_weight < 0 or keyword_weight < 0:
-            raise ValueError("Hybrid search weights cannot be negative.")
-
-        rewritten_query = self.query_rewriter.rewrite(query)
-        semantic_results = self.faiss_retriever.search(
-            embed_query(rewritten_query), top_k=len(self.document_chunks)
-        )
-        semantic_scores = {
-            (chunk.source, chunk.chunk_index): chunk.similarity
-            for chunk in semantic_results
-        }
-        keyword_scores = {
-            (chunk.source, chunk.chunk_index): score
-            for chunk, score in score_tokenized_chunks(
-                tokenize_text_set(query), self.tokenized_chunks
-            )
-        }
-        hybrid_results = []
-        for chunk in self.document_chunks:
-            reference = (chunk.source, chunk.chunk_index)
-            semantic_score = semantic_scores[reference]
-            keyword_score = keyword_scores[reference]
-            hybrid_score = (
-                semantic_weight * semantic_score + keyword_weight * keyword_score
-            )
-            hybrid_results.append(
-                HybridSearchResult(
-                    document_chunk=chunk,
-                    semantic_score=semantic_score,
-                    keyword_score=keyword_score,
-                    hybrid_score=hybrid_score,
-                )
-            )
-
-        return semantic_results[:top_k], sorted(
-            hybrid_results,
-            key=lambda result: result.hybrid_score,
-            reverse=True,
-        )[:top_k]

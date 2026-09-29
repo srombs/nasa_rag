@@ -92,16 +92,6 @@ class TokenizedChunk:
 
 
 @dataclass
-class HybridSearchResult:
-    """A document chunk and each score used to rank it in hybrid search."""
-
-    document_chunk: DocumentChunk
-    semantic_score: float
-    keyword_score: float
-    hybrid_score: float
-
-
-@dataclass
 class BM25SearchResult:
     """A document chunk and its BM25 relevance score."""
 

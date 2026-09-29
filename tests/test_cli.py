@@ -29,7 +29,6 @@ from models import (
     BM25SearchResult,
     CorpusChunk,
     DocumentChunk,
-    HybridSearchResult,
     RerankResult,
     RetrievalPlan,
     TokenizedChunk,
@@ -973,35 +972,6 @@ def test_retriever_reranks_after_building_rrf_results(monkeypatch, tmp_path) -> 
     )
 
 
-def test_retriever_search_hybrid_combines_semantic_and_keyword_scores(
-    monkeypatch, tmp_path
-) -> None:
-    chunks = [
-        DocumentChunk("iss.txt", 0, "ISS crew research.", [1.0, 0.0]),
-        DocumentChunk("hubble.txt", 1, "Hubble telescope.", [0.0, 1.0]),
-    ]
-    monkeypatch.setattr(
-        retriever, "load_and_embed_directory", lambda *_args, **_kwargs: chunks
-    )
-    monkeypatch.setattr(retriever, "embed_query", lambda _query: [1.0, 0.0])
-    generic_retriever = retriever.Retriever(
-        tmp_path, cache_directory=tmp_path / "cache"
-    )
-    generic_retriever.load()
-    monkeypatch.setattr(generic_retriever.query_rewriter, "rewrite", lambda query: query)
-
-    semantic_results, results = generic_retriever.search_semantic_and_hybrid(
-        "ISS telescope", top_k=2, semantic_weight=0.7, keyword_weight=0.3
-    )
-
-    assert semantic_results == chunks
-    assert [result.document_chunk for result in results] == chunks
-    assert results[0].semantic_score == 1.0
-    assert results[0].keyword_score == 0.5
-    assert results[0].hybrid_score == 0.85
-    assert results[1].hybrid_score == 0.15
-
-
 def test_load_and_embed_directory_caches_each_text_file(monkeypatch, tmp_path) -> None:
     (tmp_path / "b.txt").write_text("four five", encoding="utf-8")
     (tmp_path / "a.txt").write_text("one two three", encoding="utf-8")
@@ -1295,78 +1265,6 @@ def test_both_searches_prints_the_retrieval_plan_and_reranked_results(
     assert output.index("FAISS results:") < output.index("BM25 results:")
     assert output.index("BM25 results:") < output.index("RRF results:")
     assert output.index("RRF results:") < output.index("Reranked results:")
-
-
-def test_run_hybrid_search_delegates_weights_to_the_retriever() -> None:
-    class HybridRetriever:
-        def search_hybrid(self, query, top_k, semantic_weight, keyword_weight):
-            assert (query, top_k) == ("ISS research", 2)
-            assert (semantic_weight, keyword_weight) == (0.8, 0.2)
-            return [
-                HybridSearchResult(
-                    DocumentChunk("iss.txt", 0, "hybrid", [1.0]),
-                    semantic_score=1.0,
-                    keyword_score=1.0,
-                    hybrid_score=1.0,
-                )
-            ]
-
-    results = semantic_search.run_hybrid_search(
-        "ISS research",
-        HybridRetriever(),
-        top_k=2,
-        semantic_weight=0.8,
-        keyword_weight=0.2,
-    )
-
-    assert results[0].document_chunk.text == "hybrid"
-
-
-def test_run_semantic_and_hybrid_search_delegates_to_the_retriever() -> None:
-    semantic_result = DocumentChunk("iss.txt", 0, "semantic", [1.0])
-    hybrid_result = HybridSearchResult(
-        DocumentChunk("iss.txt", 0, "hybrid", [1.0]),
-        semantic_score=1.0,
-        keyword_score=1.0,
-        hybrid_score=1.0,
-    )
-
-    class HybridRetriever:
-        def search_semantic_and_hybrid(
-            self, query, top_k, semantic_weight, keyword_weight
-        ):
-            assert (query, top_k) == ("ISS research", 2)
-            assert (semantic_weight, keyword_weight) == (0.8, 0.2)
-            return [semantic_result], [hybrid_result]
-
-    semantic_results, hybrid_results = semantic_search.run_semantic_and_hybrid_search(
-        "ISS research",
-        HybridRetriever(),
-        top_k=2,
-        semantic_weight=0.8,
-        keyword_weight=0.2,
-    )
-
-    assert semantic_results == [semantic_result]
-    assert hybrid_results == [hybrid_result]
-
-
-def test_print_hybrid_results_includes_all_scores(capsys) -> None:
-    results = [
-        HybridSearchResult(
-            DocumentChunk("iss.txt", 0, "ISS research.", [1.0]),
-            semantic_score=0.8,
-            keyword_score=0.5,
-            hybrid_score=0.71,
-        )
-    ]
-
-    semantic_search.print_hybrid_results(results)
-
-    assert capsys.readouterr().out == (
-        "hybrid 0.7100 | semantic 0.8000 | keyword 0.5000 | "
-        "[iss.txt, chunk 0]\n"
-    )
 
 
 def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:
