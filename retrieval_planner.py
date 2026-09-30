@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any
 
+from model_costs import call_model
 from models import RetrievalPlan
 
 RETRIEVAL_PLANNER_MODEL = "gpt-5.6-luna"
@@ -65,8 +66,11 @@ class RetrievalPlanner:
             query,
         )
         try:
-            response = self._get_client().responses.create(
-                model=RETRIEVAL_PLANNER_MODEL,
+            response = call_model(
+                "retrieval_plan",
+                "responses",
+                RETRIEVAL_PLANNER_MODEL,
+                self._get_client().responses.create,
                 instructions=RETRIEVAL_PLANNER_INSTRUCTIONS,
                 input=query,
                 text={"format": RETRIEVAL_PLANNER_RESPONSE_FORMAT},

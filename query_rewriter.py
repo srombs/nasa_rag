@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from model_costs import call_model
 
 QUERY_REWRITE_MODEL = "gpt-5.6-luna"
 QUERY_REWRITE_INSTRUCTIONS = """Rewrite the user's question into a concise search query
@@ -40,8 +41,11 @@ class QueryRewriter:
             query,
         )
         try:
-            response = self._get_client().responses.create(
-                model=QUERY_REWRITE_MODEL,
+            response = call_model(
+                "query_rewrite",
+                "responses",
+                QUERY_REWRITE_MODEL,
+                self._get_client().responses.create,
                 instructions=self.instructions,
                 input=query,
             )

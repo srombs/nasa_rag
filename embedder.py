@@ -1,12 +1,12 @@
 """OpenAI embedding operations."""
 
-from collections.abc import Sequence
 import logging
+from collections.abc import Sequence
 
 import numpy as np
 
+from model_costs import call_model
 from models import DocumentChunk
-
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 LOGGER = logging.getLogger(__name__)
@@ -33,8 +33,11 @@ def embed_texts(
             len(input_texts),
             source_label,
         )
-        response = OpenAI().embeddings.create(
-            model=EMBEDDING_MODEL,
+        response = call_model(
+            "document_embedding",
+            "embeddings",
+            EMBEDDING_MODEL,
+            OpenAI().embeddings.create,
             input=input_texts,
         )
         embeddings = [
@@ -66,8 +69,11 @@ def embed_query(query: str) -> list[float]:
     try:
         from openai import OpenAI
 
-        response = OpenAI().embeddings.create(
-            model=EMBEDDING_MODEL,
+        response = call_model(
+            "query_embedding",
+            "embeddings",
+            EMBEDDING_MODEL,
+            OpenAI().embeddings.create,
             input=query,
         )
         return response.data[0].embedding

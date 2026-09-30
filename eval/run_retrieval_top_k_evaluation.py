@@ -23,6 +23,7 @@ from eval.run_retrieval_evaluation import (  # noqa: E402
     RetrievalEvaluationCase,
     load_evaluation_cases,
 )
+from model_costs import report_run_costs  # noqa: E402
 from models import DocumentChunk, RerankResult  # noqa: E402
 
 DEFAULT_TOP_K_VALUES = (1, 3, 5, 10, 30)
@@ -458,6 +459,7 @@ def print_top_k_results(
         )
 
 
+@report_run_costs("top_k_evaluation")
 def main() -> None:
     """Load retrieval once and evaluate a configurable set of top-K values."""
     parser = argparse.ArgumentParser(

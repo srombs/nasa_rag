@@ -1238,6 +1238,7 @@ def test_both_searches_prints_the_retrieval_plan_and_reranked_results(
     assert output.index("FAISS results:") < output.index("BM25 results:")
     assert output.index("BM25 results:") < output.index("RRF results:")
     assert output.index("RRF results:") < output.index("Reranked results:")
+    assert output.index("Reranked results:") < output.index("Model costs (search;")
 
 
 def test_embed_texts_returns_a_float32_matrix(monkeypatch) -> None:

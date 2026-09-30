@@ -1,11 +1,11 @@
 """Answer generation grounded in retrieved document context."""
 
-from collections.abc import Sequence
 import logging
 import re
+from collections.abc import Sequence
 
+from model_costs import call_model
 from models import DocumentChunk
-
 
 GENERATION_MODEL = "gpt-5.6-luna"
 GENERATION_INSTRUCTIONS = """You are a question-answering system grounded in retrieved documents.
@@ -88,8 +88,11 @@ def generate_answer(context: str, question: str) -> str:
     try:
         from openai import OpenAI
 
-        response = OpenAI().responses.create(
-            model=GENERATION_MODEL,
+        response = call_model(
+            "answer_generation",
+            "responses",
+            GENERATION_MODEL,
+            OpenAI().responses.create,
             instructions=GENERATION_INSTRUCTIONS,
             input=input_text,
         )

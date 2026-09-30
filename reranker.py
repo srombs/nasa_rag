@@ -5,6 +5,7 @@ import logging
 from collections.abc import Sequence
 from typing import Any
 
+from model_costs import call_model
 from models import DocumentChunk, RerankResult
 
 RERANK_MODEL = "gpt-5.6-luna"
@@ -87,8 +88,11 @@ class Reranker:
             chunk.chunk_index,
         )
         try:
-            response = self._get_client().responses.create(
-                model=RERANK_MODEL,
+            response = call_model(
+                "rerank",
+                "responses",
+                RERANK_MODEL,
+                self._get_client().responses.create,
                 instructions=RERANK_INSTRUCTIONS,
                 input=input_text,
                 text={"format": RERANK_RESPONSE_FORMAT},

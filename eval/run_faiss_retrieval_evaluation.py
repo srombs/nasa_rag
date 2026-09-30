@@ -16,6 +16,7 @@ from eval.run_retrieval_evaluation import (  # noqa: E402
     RetrievalEvaluationCase,
     load_evaluation_cases,
 )
+from model_costs import report_run_costs  # noqa: E402
 from models import DocumentChunk  # noqa: E402
 
 CHUNK_REFERENCE_PATTERN = re.compile(
@@ -208,6 +209,7 @@ def evaluate_retrieved_references(
     return metrics
 
 
+@report_run_costs("faiss_evaluation")
 def main() -> None:
     """Load the shared retriever and evaluate FAISS chunk retrieval."""
     parser = argparse.ArgumentParser(

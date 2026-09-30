@@ -14,6 +14,7 @@ from generator import (
     generate_answer,
     validate_answer_citations,
 )
+from model_costs import report_run_costs
 from models import BM25SearchResult, DocumentChunk, RerankResult
 from retrieval_planner import RetrievalPlanner
 from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
@@ -216,6 +217,7 @@ def generate_rag_answer(question: str, results: Sequence[DocumentChunk]) -> str:
     return validate_answer_citations(answer, build_chunk_references(results))
 
 
+@report_run_costs("search")
 def main() -> None:
     """Run a semantic search from the command line."""
     logging.basicConfig(

@@ -40,6 +40,16 @@ are printed.
 Add `--generate-answer` to `semantic_search.py` to retrieve chunks and then
 generate an answer from their combined context.
 
+Every OpenAI embedding and Responses request writes a usage and estimated-cost
+record to `logs/model_costs.jsonl`. The log includes a run ID, operation, model,
+token counts, and the rates used; it never stores the prompt or model output.
+The search CLI and scoring evaluation runners print a cost summary at the end,
+including the retrieval calls made before answer generation. A missing usage
+response or failed request is marked as unknown cost rather than free. Cached
+document embeddings make no new request and add no cost to that run. Set
+`NASA_RAG_COST_LOG_PATH` to write the JSONL log elsewhere. Rates are dated in
+`model_costs.py` and estimates may differ from actual OpenAI billing.
+
 Inspect the answer-level retrieval cases in `eval/datasets/eval_100_20.json` with:
 
 ```bash

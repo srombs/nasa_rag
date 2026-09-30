@@ -20,6 +20,7 @@ from eval.run_retrieval_evaluation import (  # noqa: E402
     RetrievalEvaluationCase,
     load_evaluation_cases,
 )
+from model_costs import report_run_costs  # noqa: E402
 
 
 def retrieve_bm25_references(
@@ -80,6 +81,7 @@ def evaluate_bm25_retrieval(
     )
 
 
+@report_run_costs("bm25_evaluation")
 def main() -> None:
     """Load the shared retriever and evaluate BM25 chunk retrieval."""
     parser = argparse.ArgumentParser(
