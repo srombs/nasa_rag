@@ -195,11 +195,17 @@ def report_run_costs(name: str) -> Callable[[F], F]:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             run = CostRun(name)
             token = _CURRENT_RUN.set(run)
+            show_summary = True
             try:
                 return function(*args, **kwargs)
+            except SystemExit as error:
+                if error.code in (None, 0) and run.calls == 0:
+                    show_summary = False
+                raise
             finally:
                 _CURRENT_RUN.reset(token)
-                print_cost_summary(run)
+                if show_summary:
+                    print_cost_summary(run)
 
         return wrapper  # type: ignore[return-value]
 

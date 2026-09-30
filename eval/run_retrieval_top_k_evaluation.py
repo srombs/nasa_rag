@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -98,6 +98,7 @@ def run_all_top_k_evaluation(
     rrf_candidate_top_k: int = DEFAULT_RRF_CANDIDATE_TOP_K,
     reranker_top_k_values: Sequence[int] | None = None,
     reranker_candidate_top_k: int = DEFAULT_RERANKER_CANDIDATE_TOP_K,
+    search_queries_by_case: Mapping[str, str] | None = None,
 ) -> tuple[
     list[TopKEvaluationResult],
     list[TopKEvaluationResult],
@@ -126,7 +127,10 @@ def run_all_top_k_evaluation(
         raise ValueError("rrf_candidate_top_k must cover every requested top_k.")
 
     faiss_references, bm25_references = retrieve_both_references(
-        cases, retriever, top_k=rrf_candidate_top_k
+        cases,
+        retriever,
+        top_k=rrf_candidate_top_k,
+        search_queries_by_case=search_queries_by_case,
     )
     rrf_references = {
         case_id: fuse_rrf_references(
@@ -359,15 +363,23 @@ def print_retrieval_misses(
 
 
 def retrieve_both_references(
-    cases: Sequence[RetrievalEvaluationCase], retriever: object, top_k: int
+    cases: Sequence[RetrievalEvaluationCase],
+    retriever: object,
+    top_k: int,
+    search_queries_by_case: Mapping[str, str] | None = None,
 ) -> tuple[RetrievedReferences, RetrievedReferences]:
-    """Rewrite once per question, then retrieve FAISS and BM25 rankings."""
+    """Retrieve FAISS and BM25 with one shared search query per question."""
     if top_k <= 0:
         raise ValueError("top_k must be greater than zero.")
 
     answerable_cases = [case for case in cases if case["relevant_chunks"]]
+    action = (
+        "Rewriting once, then retrieving"
+        if search_queries_by_case is None
+        else "Retrieving"
+    )
     print(
-        f"[RETRIEVAL] Rewriting once, then retrieving top {top_k} with FAISS "
+        f"[RETRIEVAL] {action} top {top_k} with FAISS "
         f"and BM25 for {len(answerable_cases)} answerable cases."
     )
     faiss_references = {}
@@ -377,7 +389,11 @@ def retrieve_both_references(
             f"[RETRIEVAL] {position}/{len(answerable_cases)} | "
             f"{case['id']} | {case['question']}"
         )
-        search_query = retriever.rewrite_query(case["question"])
+        search_query = (
+            retriever.rewrite_query(case["question"])
+            if search_queries_by_case is None
+            else search_queries_by_case[case["id"]]
+        )
         faiss_references[case["id"]] = [
             chunk_reference(chunk)
             for chunk in semantic_search.run_embedded_search(

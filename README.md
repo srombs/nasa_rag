@@ -85,6 +85,19 @@ Add `--enable-reranker` to also evaluate the model reranker over the top 10
 RRF candidates. The reranker uses the original question and makes one model
 call for each RRF candidate.
 
+Compare all labeled chunk sizes in `eval/datasets/` in one run with:
+
+```bash
+uv run python eval/run_chunk_size_comparison.py
+```
+
+The runner validates that each dataset has the same questions and answerability,
+rewrites each answerable question once for every chunk size, then compares
+FAISS, BM25, and RRF Hit@K and mean Recall@K side by side. It loads the matching
+corpus and FAISS caches for each chunk size. Add `--enable-reranker` to include
+reranking; this makes one model call per candidate for each chunk size. The
+final model-cost summary covers the complete comparison run.
+
 The evaluator compares canonical `[source.txt, chunk N]` references and
 reports chunk Hit@K plus macro-average chunk Recall@K. Cases with no relevant
 chunks are displayed as skipped and do not affect either metric, because FAISS
