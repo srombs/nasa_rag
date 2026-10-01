@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import generator
-import model_costs
+from nasa_rag import model_costs
+from nasa_rag.generation import generator
 
 
 def _records(monkeypatch, tmp_path):

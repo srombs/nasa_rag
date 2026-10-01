@@ -4,8 +4,8 @@ from collections.abc import Sequence
 
 from rank_bm25 import BM25Okapi
 
-from models import BM25SearchResult, DocumentChunk
-from tokenizer import tokenize_text
+from ..models import BM25SearchResult, DocumentChunk
+from .tokenizer import tokenize_text
 
 
 class BM25Retriever:

@@ -1,14 +1,13 @@
 """FAISS vector-index construction for document embeddings."""
 
-from collections.abc import Sequence
 import logging
+from collections.abc import Sequence
 from pathlib import Path
 
 import faiss
 import numpy as np
 
-from models import DocumentChunk
-
+from ..models import DocumentChunk
 
 LOGGER = logging.getLogger(__name__)
 

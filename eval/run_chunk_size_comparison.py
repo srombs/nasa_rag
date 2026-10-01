@@ -10,7 +10,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import semantic_search  # noqa: E402
 from eval.run_retrieval_evaluation import (  # noqa: E402
     RetrievalEvaluationCase,
     load_evaluation_cases,
@@ -25,8 +24,9 @@ from eval.run_retrieval_top_k_evaluation import (  # noqa: E402
     TopKEvaluationResult,
     run_all_top_k_evaluation,
 )
-from model_costs import report_run_costs  # noqa: E402
-from query_rewriter import QueryRewriter  # noqa: E402
+from nasa_rag import search as semantic_search  # noqa: E402
+from nasa_rag.model_costs import report_run_costs  # noqa: E402
+from nasa_rag.retrieval.query_rewriter import QueryRewriter  # noqa: E402
 
 DATASET_DIRECTORY = Path(__file__).resolve().parent / "datasets"
 DATASET_NAME = re.compile(r"eval_(?P<chunk_size>\d+)_(?P<overlap_size>\d+)\.json")

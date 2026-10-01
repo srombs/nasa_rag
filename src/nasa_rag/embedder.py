@@ -5,8 +5,8 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from model_costs import call_model
-from models import DocumentChunk
+from .model_costs import call_model
+from .models import DocumentChunk
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 LOGGER = logging.getLogger(__name__)

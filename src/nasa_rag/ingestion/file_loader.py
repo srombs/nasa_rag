@@ -3,9 +3,10 @@
 import json
 from pathlib import Path
 
-from chunkers import chunk_text
-from embedder import embed_documents
-from models import CorpusChunk, DocumentChunk
+from ..embedder import embed_documents
+from ..models import CorpusChunk, DocumentChunk
+from .chunkers import chunk_text
+
 
 def document_cache_file_name(chunk_size: int, overlap_size: int) -> str:
     """Name an embedded cache by its chunking settings."""

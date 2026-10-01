@@ -3,19 +3,19 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from bm25_retriever import BM25Retriever
-from embedder import embed_query
-from faiss_retriever import FaissRetriever
-from file_loader import document_cache_file_name, load_and_embed_directory
-from models import (
+from ..embedder import embed_query
+from ..ingestion.file_loader import document_cache_file_name, load_and_embed_directory
+from ..models import (
     BM25SearchResult,
     DocumentChunk,
     RerankResult,
 )
-from query_rewriter import QueryRewriter
-from reranker import Reranker
-from tokenizer import tokenize_text
-from vector_store import VectorStoreError
+from .bm25_retriever import BM25Retriever
+from .faiss_retriever import FaissRetriever
+from .query_rewriter import QueryRewriter
+from .reranker import Reranker
+from .tokenizer import tokenize_text
+from .vector_store import VectorStoreError
 
 DEFAULT_CHUNK_SIZE = 100
 DEFAULT_OVERLAP_SIZE = 20

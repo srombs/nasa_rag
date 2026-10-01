@@ -17,11 +17,15 @@ available and accepts the same flags. Installed outside the source checkout,
 the command stores caches in `~/.cache/nasa_rag` and cost logs in
 `~/.local/state/nasa_rag/model_costs.jsonl`.
 
-The search script reads every `.txt` file in `data/`, chunks and embeds each
+The search CLI reads every `.txt` file in `data/`, chunks and embeds each
 file separately, and retains its filename on every `DocumentChunk` result.
 
-The ingestion responsibilities are split into `file_loader.py`, `chunkers.py`,
-and `embedder.py`; the shared `DocumentChunk` object is defined in `models.py`.
+Application code lives under `src/nasa_rag/`: `ingestion/` loads and chunks
+documents, `retrieval/` implements the search methods, and `generation/`
+creates grounded answers. Shared models, embeddings, cost logging, and search
+orchestration sit directly in `src/nasa_rag/`. The root `semantic_search.py` and
+`chunk_corpus.py` files remain as direct-run wrappers. Evaluation runners and
+their labeled datasets remain under `eval/`.
 Embeddings are cached as `cache/embeds/document_cache_100_20.json` by default,
 keyed by source filename, so a previously loaded file is not embedded again.
 Run `uv run python chunk_corpus.py` to create a chunk-only cache without API
@@ -59,7 +63,7 @@ including the retrieval calls made before answer generation. A missing usage
 response or failed request is marked as unknown cost rather than free. Cached
 document embeddings make no new request and add no cost to that run. Set
 `NASA_RAG_COST_LOG_PATH` to write the JSONL log elsewhere. Rates are dated in
-`model_costs.py` and estimates may differ from actual OpenAI billing.
+`src/nasa_rag/model_costs.py` and estimates may differ from actual OpenAI billing.
 
 Inspect the answer-level retrieval cases in `eval/datasets/eval_100_20.json` with:
 

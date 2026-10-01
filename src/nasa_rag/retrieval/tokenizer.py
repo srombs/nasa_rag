@@ -2,7 +2,6 @@
 
 import re
 
-
 TOKEN_PATTERN = re.compile(r"\b\w+\b")
 
 

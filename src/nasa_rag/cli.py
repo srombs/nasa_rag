@@ -1,6 +1,6 @@
 """Installed command-line entry point for the NASA search application."""
 
-from semantic_search import main as search_main
+from .search import main as search_main
 
 
 def main() -> None:

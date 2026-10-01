@@ -4,8 +4,8 @@ import logging
 import re
 from collections.abc import Sequence
 
-from model_costs import call_model
-from models import DocumentChunk
+from ..model_costs import call_model
+from ..models import DocumentChunk
 
 GENERATION_MODEL = "gpt-5.6-luna"
 GENERATION_INSTRUCTIONS = """You are a question-answering system grounded in retrieved documents.

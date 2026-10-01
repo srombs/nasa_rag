@@ -14,13 +14,10 @@ from pathlib import Path
 from typing import Any, TypeVar
 from uuid import uuid4
 
+from .paths import cost_log_path
+
 LOGGER = logging.getLogger(__name__)
-MODULE_DIRECTORY = Path(__file__).resolve().parent
-DEFAULT_LOG_PATH = (
-    MODULE_DIRECTORY / "logs" / "model_costs.jsonl"
-    if (MODULE_DIRECTORY / "pyproject.toml").is_file()
-    else Path.home() / ".local" / "state" / "nasa_rag" / "model_costs.jsonl"
-)
+DEFAULT_LOG_PATH = cost_log_path()
 LOG_PATH_ENV = "NASA_RAG_COST_LOG_PATH"
 PRICE_DATE = "2026-09-29"
 MILLION = Decimal(1_000_000)

@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from model_costs import call_model
+from ..model_costs import call_model
 
 QUERY_REWRITE_MODEL = "gpt-5.6-luna"
 QUERY_REWRITE_INSTRUCTIONS = """Rewrite the user's question into a concise search query

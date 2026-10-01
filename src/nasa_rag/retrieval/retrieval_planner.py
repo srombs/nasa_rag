@@ -4,8 +4,8 @@ import json
 import logging
 from typing import Any
 
-from model_costs import call_model
-from models import RetrievalPlan
+from ..model_costs import call_model
+from ..models import RetrievalPlan
 
 RETRIEVAL_PLANNER_MODEL = "gpt-5.6-luna"
 RETRIEVAL_PLANNER_INSTRUCTIONS = """You create retrieval plans for a document

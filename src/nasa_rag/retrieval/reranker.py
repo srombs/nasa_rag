@@ -5,8 +5,8 @@ import logging
 from collections.abc import Sequence
 from typing import Any
 
-from model_costs import call_model
-from models import DocumentChunk, RerankResult
+from ..model_costs import call_model
+from ..models import DocumentChunk, RerankResult
 
 RERANK_MODEL = "gpt-5.6-luna"
 RERANK_INSTRUCTIONS = """You are evaluating whether a passage contains evidence

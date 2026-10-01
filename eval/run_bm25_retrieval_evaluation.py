@@ -8,7 +8,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import semantic_search  # noqa: E402
 from eval.run_faiss_retrieval_evaluation import (  # noqa: E402
     RetrievalMetrics,
     RetrievedReferences,
@@ -20,7 +19,8 @@ from eval.run_retrieval_evaluation import (  # noqa: E402
     RetrievalEvaluationCase,
     load_evaluation_cases,
 )
-from model_costs import report_run_costs  # noqa: E402
+from nasa_rag import search as semantic_search  # noqa: E402
+from nasa_rag.model_costs import report_run_costs  # noqa: E402
 
 
 def retrieve_bm25_references(

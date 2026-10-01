@@ -24,29 +24,13 @@ dev = ["pytest>=8.0", "ruff>=0.6"]
 nasa-rag = "nasa_rag.cli:main"
 
 [tool.hatch.build]
-dev-mode-dirs = [".", "src"]
+dev-mode-dirs = ["src"]
 
 [tool.hatch.build.targets.wheel]
-only-include = [
-  "src/nasa_rag",
-  "data",
-  "semantic_search.py",
-  "bm25_retriever.py",
-  "chunkers.py",
-  "embedder.py",
-  "faiss_retriever.py",
-  "file_loader.py",
-  "generator.py",
-  "model_costs.py",
-  "models.py",
-  "query_rewriter.py",
-  "reranker.py",
-  "retrieval_planner.py",
-  "retriever.py",
-  "tokenizer.py",
-  "vector_store.py",
-]
-sources = ["src"]
+packages = ["src/nasa_rag"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"data" = "nasa_rag/data"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

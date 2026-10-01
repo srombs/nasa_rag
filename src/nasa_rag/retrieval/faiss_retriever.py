@@ -6,8 +6,8 @@ from pathlib import Path
 import faiss
 import numpy as np
 
-from models import DocumentChunk
-from vector_store import create_query_matrix, load_or_create_index, validate_index
+from ..models import DocumentChunk
+from .vector_store import create_query_matrix, load_or_create_index, validate_index
 
 
 class FaissRetriever:

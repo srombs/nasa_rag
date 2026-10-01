@@ -10,14 +10,14 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import semantic_search  # noqa: E402
 from eval.run_retrieval_evaluation import (  # noqa: E402
     EVALUATION_PATH,
     RetrievalEvaluationCase,
     load_evaluation_cases,
 )
-from model_costs import report_run_costs  # noqa: E402
-from models import DocumentChunk  # noqa: E402
+from nasa_rag import search as semantic_search  # noqa: E402
+from nasa_rag.model_costs import report_run_costs  # noqa: E402
+from nasa_rag.models import DocumentChunk  # noqa: E402
 
 CHUNK_REFERENCE_PATTERN = re.compile(
     r"^\[\s*(?P<source>[^,\]]+)\s*,\s*chunk\s+(?P<chunk_index>\d+)\s*\]$"
