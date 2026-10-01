@@ -33,10 +33,20 @@ from models import (
     RetrievalPlan,
 )
 from nasa_rag import __version__
+from nasa_rag import cli as package_cli
 
 
 def test_version() -> None:
     assert __version__ == "0.1.0"
+
+
+def test_installed_command_delegates_to_search_cli(monkeypatch) -> None:
+    called = []
+    monkeypatch.setattr(package_cli, "search_main", lambda: called.append(True))
+
+    package_cli.main()
+
+    assert called == [True]
 
 
 def test_retrieval_evaluation_loads_answer_level_cases(tmp_path) -> None:
@@ -1080,6 +1090,23 @@ def test_print_ranked_chunks_uses_top_k(capsys) -> None:
     semantic_search.print_ranked_chunks(chunks, top_k=1)
 
     assert capsys.readouterr().out == "0.9000 | [a.txt, chunk 0]\n"
+
+
+def test_search_uses_the_current_document_retriever(monkeypatch, capsys) -> None:
+    loaded_retriever = object()
+    chunk = DocumentChunk("iss.txt", 2, "ISS power", [1.0], similarity=0.9)
+    monkeypatch.setattr(semantic_search, "load_retriever", lambda: loaded_retriever)
+
+    def fake_search(query, retriever_instance, top_k):
+        assert query == "What powers the ISS?"
+        assert retriever_instance is loaded_retriever
+        assert top_k == semantic_search.TOP_RESULTS
+        return [chunk]
+
+    monkeypatch.setattr(semantic_search, "run_embedded_search", fake_search)
+
+    assert semantic_search.search("What powers the ISS?") == [("ISS power", 0.9)]
+    assert capsys.readouterr().out == "0.9000 | [iss.txt, chunk 2]\n"
 
 
 def test_run_bm25_search_delegates_to_the_retriever() -> None:

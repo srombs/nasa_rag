@@ -1,12 +1,11 @@
-"""Command-line entry point for nasa-rag."""
+"""Installed command-line entry point for the NASA search application."""
 
-
-from semantic_search import search
+from semantic_search import main as search_main
 
 
 def main() -> None:
-    """Run the nasa-rag command-line application."""
-    print("nasa-rag is ready. Build your NASA data pipeline in src/nasa_rag/.")
+    """Run the same search CLI as ``python semantic_search.py``."""
+    search_main()
 
 if __name__ == "__main__":
     main()

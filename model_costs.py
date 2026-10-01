@@ -15,7 +15,12 @@ from typing import Any, TypeVar
 from uuid import uuid4
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_LOG_PATH = Path(__file__).resolve().parent / "logs" / "model_costs.jsonl"
+MODULE_DIRECTORY = Path(__file__).resolve().parent
+DEFAULT_LOG_PATH = (
+    MODULE_DIRECTORY / "logs" / "model_costs.jsonl"
+    if (MODULE_DIRECTORY / "pyproject.toml").is_file()
+    else Path.home() / ".local" / "state" / "nasa_rag" / "model_costs.jsonl"
+)
 LOG_PATH_ENV = "NASA_RAG_COST_LOG_PATH"
 PRICE_DATE = "2026-09-29"
 MILLION = Decimal(1_000_000)

@@ -1,12 +1,10 @@
-"""Starter documents for semantic search experiments."""
+"""Search the NASA document corpus from the command line or Python."""
 
 import argparse
 import logging
 from collections.abc import Sequence
-from math import sqrt
 from pathlib import Path
 
-from embedder import embed_documents, embed_query
 from generator import (
     build_chunk_references,
     build_context,
@@ -22,56 +20,6 @@ from retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
 TOP_RESULTS = 10
 TOP_K = 30
 RRF_TOP_K = 10
-
-
-# documents = [
-#     "Perseverance landed in Jezero Crater on Mars in February 2021.",
-#     "The James Webb Space Telescope observes the universe primarily in infrared light.",
-#     "Apollo 11 landed the first humans on the Moon in July 1969.",
-#     "Cassini studied Saturn, its rings, and its moons before ending its mission in 2017.",
-#     "The Curiosity rover landed in Gale Crater on Mars in August 2012.",
-#     "The Hubble Space Telescope observes stars, galaxies, and other astronomical objects from orbit around Earth.",
-#     "Voyager 1 launched in 1977 and became the first human-made spacecraft to enter interstellar space.",
-#     "The Ingenuity helicopter performed the first powered controlled flight on another planet while operating on Mars.",
-#     "The Artemis program aims to return humans to the Moon and establish a foundation for future missions to Mars.",
-#     "The Parker Solar Probe studies the Sun's outer atmosphere and has traveled closer to the Sun than any previous spacecraft."
-# ]
-
-documents = [
-    "Perseverance landed in Jezero Crater.",
-    "The Mars 2020 rover touched down inside an ancient Martian lake bed.",
-    "Jezero is a crater on Mars.",
-    "Apollo astronauts landed on the Moon.",
-    "NASA landed a spacecraft."
-]
-
-
-def cosine_similarity(vector_a: Sequence[float], vector_b: Sequence[float]) -> float:
-    """Calculate cosine similarity between two equally sized vectors."""
-    if len(vector_a) != len(vector_b):
-        raise ValueError("Vectors must have the same number of dimensions.")
-
-    dot_product = sum(a * b for a, b in zip(vector_a, vector_b, strict=True))
-    magnitude_a = sqrt(sum(value * value for value in vector_a))
-    magnitude_b = sqrt(sum(value * value for value in vector_b))
-    if magnitude_a == 0 or magnitude_b == 0:
-        raise ValueError("Cosine similarity is undefined for a zero vector.")
-    return dot_product / (magnitude_a * magnitude_b)
-
-
-def score_document_chunks(
-    query_embedding: Sequence[float], document_chunks: Sequence[DocumentChunk]
-) -> list[DocumentChunk]:
-    """Store each chunk's similarity to the query and return ranked chunks."""
-    for document_chunk in document_chunks:
-        document_chunk.similarity = cosine_similarity(
-            query_embedding, document_chunk.embed
-        )
-    return sorted(
-        document_chunks,
-        key=lambda chunk: chunk.similarity if chunk.similarity is not None else -1.0,
-        reverse=True,
-    )
 
 
 def print_ranked_chunks(
@@ -113,29 +61,9 @@ def print_rerank_results(results: Sequence[RerankResult]) -> None:
         )
 
 
-def compare_query_to_documents(
-    query_embedding: Sequence[float],
-    document_embeddings: Sequence[Sequence[float]],
-    document_texts: Sequence[str] = documents,
-) -> list[tuple[str, float]]:
-    """Score every document, then print the three best matches."""
-    if len(document_embeddings) != len(document_texts):
-        raise ValueError("Each document must have exactly one embedding.")
-
-    results = [
-        (document, cosine_similarity(query_embedding, embedding))
-        for document, embedding in zip(document_texts, document_embeddings, strict=True)
-    ]
-    results.sort(key=lambda result: result[1], reverse=True)
-    for document, score in results[:TOP_RESULTS]:
-        print(f"{score:.4f}  {document}")
-    return results
-
-
 def search(query: str) -> list[tuple[str, float]]:
-    """Embed a query, score it against the documents, and print the results."""
-    document_chunks = embed_documents(documents, source="sample_documents")
-    ranked_chunks = score_document_chunks(embed_query(query), document_chunks)
+    """Search the NASA corpus and return text with its FAISS score."""
+    ranked_chunks = run_embedded_search(query, load_retriever(), top_k=TOP_RESULTS)
     print_ranked_chunks(ranked_chunks)
     return [(chunk.text, chunk.similarity) for chunk in ranked_chunks]
 
@@ -145,9 +73,18 @@ def load_retriever(
     overlap_size: int = DEFAULT_OVERLAP_SIZE,
 ) -> Retriever:
     """Load the document retriever used by command-line and evaluation searches."""
-    data_directory = Path(__file__).with_name("data")
+    module_directory = Path(__file__).resolve().parent
+    data_directory = module_directory / "data"
+    cache_directory = (
+        None
+        if (module_directory / "pyproject.toml").is_file()
+        else Path.home() / ".cache" / "nasa_rag"
+    )
     retriever = Retriever(
-        data_directory, chunk_size=chunk_size, overlap_size=overlap_size
+        data_directory,
+        chunk_size=chunk_size,
+        overlap_size=overlap_size,
+        cache_directory=cache_directory,
     )
     retriever.load()
     return retriever

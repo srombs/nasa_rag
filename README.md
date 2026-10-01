@@ -5,6 +5,17 @@ A Python foundation for a retrieval-augmented generation project using NASA data
 Install the project dependencies with `uv sync`, then run the examples below
 with `uv run python ...`. This ensures optional retrieval dependencies such as
 `rank-bm25` are available; the system `python3` interpreter may not have them.
+For the same search CLI with a shorter command, run:
+
+```bash
+uv run nasa-rag "What powers the ISS?" --top-k 3
+uv run nasa-rag "What powers the ISS?" --generate-answer
+```
+
+`uv run python semantic_search.py "What powers the ISS?" --top-k 3` remains
+available and accepts the same flags. Installed outside the source checkout,
+the command stores caches in `~/.cache/nasa_rag` and cost logs in
+`~/.local/state/nasa_rag/model_costs.jsonl`.
 
 The search script reads every `.txt` file in `data/`, chunks and embeds each
 file separately, and retains its filename on every `DocumentChunk` result.
