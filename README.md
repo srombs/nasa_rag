@@ -200,3 +200,9 @@ top_k | hit_at_k        | mean_recall_at_k
     5 | 19/23 (82.6%) | 57.2%
    10 | 19/23 (82.6%) | 58.3%
 ```
+
+## FastAPI service planning
+
+The proposed web API is documented in [the FastAPI service implementation scope](docs/fastapi-service-plan.md). This is a planning draft; the API is not implemented yet.
+
+The approved breakdown is recorded in [the local FastAPI demo tickets](.scratch/fastapi-demo/README.md), ordered **01 → 02 → 03**. Creating these tickets does not start implementation.
