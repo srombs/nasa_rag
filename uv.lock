@@ -318,7 +318,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
-    { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.30" },
+    { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.31" },
 ]
 provides-extras = ["dev", "web"]
 
