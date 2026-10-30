@@ -148,8 +148,11 @@ HTTP library logs. Original RAG/CLI modules are unchanged; logger configuration
 is restored when the app shuts down. Keep `--no-access-log` to avoid a second
 Uvicorn access log containing raw request URLs.
 
-Ticket 03 covers completed runtime verification and RAM measurements. Live
-execution, portfolio/proxy integration, and deployment remain separate work.
+See [runtime verification and measured RAM evidence](web-runtime-verification.md)
+for a repeatable offline server/profile command, persisted-cache restart checks,
+the provisional local memory report, and a RAM-only Railway cost estimate.
+Real model benchmarks, portfolio/proxy integration, and deployment require
+separate authorization.
 
 Run the repeatable mocked HTTP demonstration and the existing suite without
 model calls:

@@ -6,7 +6,7 @@ Source plan: [FastAPI service plan](../../docs/fastapi-service-plan.md).
 | --- | --- | --- |
 | [01: Ask NASA questions through a locally runnable API](issues/01-ask-questions-through-api.md) | None | resolved |
 | [02: Bound demo requests and report operational failures](issues/02-bound-demo-requests.md) | 01 | resolved |
-| [03: Verify the completed demo runtime and measure its RAM](issues/03-verify-runtime-and-memory.md) | 02 (which depends on 01) | ready-for-agent |
+| [03: Verify the completed demo runtime and measure its RAM](issues/03-verify-runtime-and-memory.md) | 02 (which depends on 01) | resolved |
 
 Work in order: **01 → 02 → 03**. Each ticket includes its own acceptance criteria and verification. These ticket files are planning artifacts; implementation, live model requests, and deployment require a separate user instruction.
 
@@ -20,4 +20,10 @@ Work in order: **01 → 02 → 03**. Each ticket includes its own acceptance cri
 - Ticket 02 is resolved: the API bounds submissions and HTTP waiting, preserves
   its processing slot through disconnects/timeouts, and provides safe errors and
   request logs. See its [implementation and verification](issues/02-bound-demo-requests.md#answer).
-  Ticket 03 remains open and is now unblocked.
+  Ticket 03 was unblocked by this work.
+- Ticket 03 is resolved: persisted-cache restarts and offline HTTP smoke checks
+  pass, with actual local worker RSS and a provisional Railway RAM-only estimate.
+  See its [verification record](issues/03-verify-runtime-and-memory.md#answer) and
+  [runtime procedure and memory evidence](../../docs/web-runtime-verification.md).
+  Real-provider, Linux/container, and deployed observations remain pending
+  separate authorization; no deployment was performed.

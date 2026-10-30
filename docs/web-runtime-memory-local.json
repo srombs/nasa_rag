@@ -1,0 +1,191 @@
+{
+  "recorded_at_utc": "2026-10-30T05:17:38.037972+00:00",
+  "observation": "local/provisional",
+  "provider_mode": "mocked_http",
+  "pipeline": "unchanged full hybrid API with request controls",
+  "question": "What mission launched Hubble?",
+  "cache": {
+    "chunks": 737,
+    "dimensions": 1536,
+    "embedding_provenance": "operator-supplied; unverified",
+    "files": {
+      "embeds/document_cache_100_20.json": {
+        "sha256": "67e532fe84abad3cfc09e4a6ef64ed1e725efe208a0de3140e13d583597cd8c2",
+        "mtime_ns": 1793231769404912801
+      },
+      "faiss/document_100_20.index": {
+        "sha256": "bec9bee1a8c008fe4caaddf7be20df76b2ea0ed9335407ca0669b60cd873ded8",
+        "mtime_ns": 1788812832947738909
+      }
+    },
+    "sources": {
+      "hubble.txt": "de2397bbeaa84a0a4098766b02c347dc69bb5ebe9dc7650ac8f464aa2026fa6c",
+      "iss.txt": "ed3cdac0ea2a542d350bb97e342cde0165e054bbee43f28c40a9c72bcbc04338",
+      "nasa_overview.txt": "55b07a355e1ecbe4f8e5d8c05f1525d6866d131fae747ed3e873947933c69520",
+      "space_shuttle.txt": "126ae2a25aa150aa349a71fac867f7a68b0be116654ff4be1ba4995dc498d053"
+    }
+  },
+  "environment": {
+    "platform": "macOS-26.5.2-x86_64-i386-64bit-Mach-O",
+    "python": "3.13.7",
+    "packages": {
+      "nasa-rag": "0.1.0",
+      "numpy": "2.5.3",
+      "faiss-cpu": "1.15.0",
+      "openai": "3.13.0",
+      "fastapi": "0.162.0",
+      "uvicorn": "0.54.0",
+      "httpx": "0.28.1",
+      "psutil": "7.2.2",
+      "rank-bm25": "0.2.2"
+    }
+  },
+  "settings": {
+    "workers": 1,
+    "chunk_size": 100,
+    "overlap_size": 20,
+    "top_k": 30,
+    "rrf_top_k": 10,
+    "rrf_k": 60,
+    "response_timeout_seconds": "120",
+    "trusted_proxies": "",
+    "bind": "127.0.0.1:ephemeral",
+    "sample_interval_seconds": 0.01,
+    "idle_seconds": 2.0,
+    "cache_state": "warm persisted copy"
+  },
+  "measurement_notes": [
+    "Only worker RSS is sampled; profiler/test runner RSS is excluded.",
+    "Phase peaks are sampled lower bounds; OS peaks are lifetime maxima.",
+    "cgroup values may include the profiler and other processes.",
+    "cgroup lifetime peaks may predate this run and are never reset.",
+    "Mock HTTP omits real network/TLS, latency, and output variability.",
+    "Deployed service memory and billing remain pending."
+  ],
+  "runs": [
+    {
+      "pid": 35808,
+      "cache_reused": true,
+      "startup_model_requests": 0,
+      "health_model_requests": 0,
+      "question_model_requests": 13,
+      "provider_requests": {
+        "retrieval_plan": 1,
+        "query_embedding": 1,
+        "rerank_result": 10,
+        "answer": 1
+      },
+      "question_status": 200,
+      "startup_seconds": 3.1405427449935814,
+      "question_seconds": 1.2918137430096976,
+      "memory": {
+        "startup": {
+          "rss_peak_bytes": 270987264,
+          "rss_mean_bytes": 127700138.06360424,
+          "rss_min_bytes": 151552,
+          "samples": 283,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "idle": {
+          "rss_peak_bytes": 270987264,
+          "rss_mean_bytes": 270987264.0,
+          "rss_min_bytes": 270987264,
+          "samples": 181,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "question": {
+          "rss_peak_bytes": 294359040,
+          "rss_mean_bytes": 284271767.37391305,
+          "rss_min_bytes": 271048704,
+          "samples": 115,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "post_question_idle": {
+          "rss_peak_bytes": 294359040,
+          "rss_mean_bytes": 294359040.0,
+          "rss_min_bytes": 294359040,
+          "samples": 177,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        }
+      },
+      "startup_os_peak_rss_bytes": 270962688,
+      "question_os_lifetime_peak_rss_bytes": 294359040,
+      "os_peak_rss_bytes": 294363136,
+      "cgroup_directory": null
+    },
+    {
+      "pid": 35812,
+      "cache_reused": true,
+      "startup_model_requests": 0,
+      "health_model_requests": 0,
+      "question_model_requests": 13,
+      "provider_requests": {
+        "retrieval_plan": 1,
+        "query_embedding": 1,
+        "rerank_result": 10,
+        "answer": 1
+      },
+      "question_status": 200,
+      "startup_seconds": 3.4627719499985687,
+      "question_seconds": 1.1528378680086462,
+      "memory": {
+        "startup": {
+          "rss_peak_bytes": 271106048,
+          "rss_mean_bytes": 124423148.18064517,
+          "rss_min_bytes": 335872,
+          "samples": 310,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "idle": {
+          "rss_peak_bytes": 271106048,
+          "rss_mean_bytes": 271106048.0,
+          "rss_min_bytes": 271106048,
+          "samples": 179,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "question": {
+          "rss_peak_bytes": 294473728,
+          "rss_mean_bytes": 284777422.29126215,
+          "rss_min_bytes": 271167488,
+          "samples": 103,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        },
+        "post_question_idle": {
+          "rss_peak_bytes": 294473728,
+          "rss_mean_bytes": 294473728.0,
+          "rss_min_bytes": 294473728,
+          "samples": 180,
+          "cgroup_current_peak_bytes": null,
+          "cgroup_current_mean_bytes": null,
+          "cgroup_samples": 0,
+          "cgroup_lifetime_peak_bytes": null
+        }
+      },
+      "startup_os_peak_rss_bytes": 271081472,
+      "question_os_lifetime_peak_rss_bytes": 294473728,
+      "os_peak_rss_bytes": 294477824,
+      "cgroup_directory": null
+    }
+  ]
+}
