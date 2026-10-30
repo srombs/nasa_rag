@@ -150,7 +150,8 @@ Uvicorn access log containing raw request URLs.
 
 See [runtime verification and measured RAM evidence](web-runtime-verification.md)
 for a repeatable offline server/profile command, persisted-cache restart checks,
-the provisional local memory report, and a RAM-only Railway cost estimate.
+the provisional local memory report, and rough Railway hosting costs with
+explicit resource assumptions and plan minimums.
 Real model benchmarks, portfolio/proxy integration, and deployment require
 separate authorization.
 

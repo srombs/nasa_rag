@@ -151,6 +151,64 @@ These are RAM-only figures. CPU, persistent cache storage, egress, subscription
 minimums/included usage, and unrelated services are excluded and must be
 considered separately for a total bill.
 
+## Rough monthly Railway hosting budget
+
+Pricing checked **2026-10-30 UTC (2026-10-29 Pacific)**. For a single continuously
+running API container, use these published resource rates:
+
+| Resource | Published rate | Input to the estimate |
+| --- | --- | --- |
+| RAM | $10 per GB-month | Average billed memory over the month |
+| CPU | $20 per vCPU-month | Average CPU consumption, not the CPU limit |
+| Persistent volume | $0.15 per GB-month | Average billed stored data |
+| Network egress | $0.05 per GB | Outbound data during the month |
+
+Source: [Railway container resource pricing](https://docs.railway.com/pricing/plans#resource-usage-pricing).
+The local profile measured process RAM only. CPU, volume usage, egress, and
+Railway's actual container memory are **not measured**; substitute deployed
+metrics when available. A 512 MiB memory limit supplies capacity headroom;
+it does not mean 512 MiB is consumed throughout the month.
+
+For a full month at the assumed averages:
+
+```text
+resource usage = 10 × average RAM GB
+               + 20 × average vCPU
+               + 0.15 × average stored GB
+               + 0.05 × outbound GB per month
+```
+
+These illustrative scenarios use decimal GB consistently with the RAM-only
+calculation above. The first rounds local retained RSS up to 0.295 GB; every
+other input is a budgeting assumption, including the higher RAM scenarios.
+They do not predict a request count or real-provider workload.
+
+| Scenario | Average RAM, GB | Average vCPU | Stored GB | Egress GB/month | Resource usage/month | Hobby total/month |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Local-RAM baseline, assumed light CPU | 0.295 | 0.01 | 0.1 | 1 | $3.22 | $5.00 |
+| Higher resident RAM and CPU | 0.5 | 0.05 | 1 | 5 | $6.40 | $6.40 |
+| Larger resident footprint | 1.0 | 0.10 | 1 | 5 | $12.40 | $12.40 |
+
+For this demo alone in a Hobby workspace, **roughly $5–$7/month** is an initial
+planning range under the first two scenarios. A larger footprint like the third
+would be about **$12–$13/month**. These are conditional estimates, not measured
+Railway bills or a spending cap. Traffic, retained memory, CPU, and other
+services can move the total beyond these examples.
+
+Hobby has a **$5 monthly minimum with $5 of included resource usage**. For an
+otherwise empty workspace, its simplified monthly total is
+`max($5, resource usage)`, before tax, add-ons, and other credits. Thus $3.22 of
+usage costs $5 total, while $6.40 of usage costs $6.40 total. Pro similarly has
+a $20 minimum with $20 included. See
+[Railway's billing explanation](https://docs.railway.com/pricing/understanding-your-bill#how-railway-billing-works).
+
+Included usage is shared across the workspace, not granted separately to each
+service. If the workspace already has workloads, calculate their combined
+usage before applying the minimum. OpenAI requests, portfolio/proxy hosting,
+other Railway services, optional backups/add-ons, and applicable taxes are
+outside these scenario totals. No resources or plan changes are provisioned by
+this estimate.
+
 ## Separately authorized live follow-up
 
 After explicit authorization, supply `OPENAI_API_KEY` through the environment

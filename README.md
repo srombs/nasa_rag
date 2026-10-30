@@ -205,4 +205,8 @@ top_k | hit_at_k        | mean_recall_at_k
 
 The optional local web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health` and `POST /ask`. The remaining demo work is described in [the FastAPI service implementation scope](docs/fastapi-service-plan.md).
 
+See the [rough Railway hosting budget](docs/web-runtime-verification.md#rough-monthly-railway-hosting-budget)
+for current pricing, measured local RAM, resource assumptions, and monthly
+examples including the Hobby plan minimum.
+
 The approved breakdown is recorded in [the local FastAPI demo tickets](.scratch/fastapi-demo/README.md), ordered **01 → 02 → 03**.
