@@ -1,0 +1,23 @@
+# Allow only application build inputs into the context.
+*
+!Dockerfile
+!.dockerignore
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!src/**
+!data/
+!data/*.txt
+
+# Apply these exclusions even inside the allowed source tree.
+**/.env
+**/.env.*
+**/.git
+**/.venv
+**/venv
+**/cache
+**/logs
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
