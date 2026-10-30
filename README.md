@@ -205,6 +205,10 @@ top_k | hit_at_k        | mean_recall_at_k
 
 The optional local web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health` and `POST /ask`. The remaining demo work is described in [the FastAPI service implementation scope](docs/fastapi-service-plan.md).
 
+To package and run the API as a container, follow [the Docker guide](docs/docker.md).
+It covers building the image without credentials, runtime environment settings,
+and retaining document embeddings on a persistent volume.
+
 See the [rough Railway hosting budget](docs/web-runtime-verification.md#rough-monthly-railway-hosting-budget)
 for current pricing, measured local RAM, resource assumptions, and monthly
 examples including the Hobby plan minimum.

@@ -19,6 +19,8 @@ required. Set `PORT` to choose a different listening port. Pip installations can
 use `pip install '.[web]'` followed by the same `uvicorn` command without `uv run`.
 The base installation and `nasa-rag` CLI remain available without the web extra.
 
+For the installed application in a Linux container, see [the Docker guide](docker.md).
+
 The cache directory must be writable and may be an absolute path to a persistent
 volume. The adapter uses the four bundled documents, current chunk size/overlap
 (100/20), top 30 display rankings, ten fused/reranked candidates, and RRF constant
