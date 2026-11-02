@@ -11,6 +11,7 @@ This expands item 1 of the portfolio demo plan: expose the existing Python RAG p
 - Answer caching is deferred. Document embeddings and the search-index cache remain part of the design.
 - A global daily quota is deferred from the initial demo. The earlier 50-attempt proposal was never confirmed. Retain the agreed per-IP submission limit.
 - Railway deployment and the portfolio UI are separate workstreams; this document focuses on the Python API.
+- Docker packaging decision recorded 2026-10-29: prepare a repository-owned Dockerfile for Railway, with locked web dependencies, persistent cache storage, and private backend access. Requirements are recorded in the [Railway deployment specification](../.scratch/railway-deployment/spec.md). The user will handle Railway dashboard setup; website UI and proxy integration remain separate work.
 - Endpoint capabilities agreed on 2026-10-28: independent questions, the four bundled source documents, and the current full hybrid pipeline. Verify the pipeline description with the user before implementation; no retrieval-setting changes have been approved.
 - OpenAI pricing is not a concern for this effort. Keep the existing pipeline; do not add model-cost optimization work. The hosting-cost investigation should focus on Railway resource usage, especially RAM.
 

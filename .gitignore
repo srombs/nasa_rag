@@ -11,5 +11,7 @@ venv/
 
 # Environment and local data
 .env
+.env.*
+!.env.example
 cache/
 logs/
