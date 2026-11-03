@@ -28,9 +28,12 @@ repository; ticket 04 is the user's Railway dashboard work.
   example, and [local Docker instructions](../../docs/docker.md). Existing tests
   and clean local production-install checks pass. Actual Linux image verification
   is deferred to ticket 02 because no Docker engine is available here.
-- The deployment CI workflow and full Railway dashboard guide remain unimplemented.
-- No Railway account has been connected and no service has been deployed by this
-  workstream. Linux/container and deployed verification remain pending.
+- Ticket 02's [container checks and CI workflow](../../docs/container-verification.md)
+  are implemented on `implement/railway-ticket-02`; local tests pass, while actual
+  Linux/container and GitHub-hosted execution remain pending. The full Railway
+  dashboard guide remains ticket 03.
+- The user reports an existing Railway deployment. This workstream has not
+  inspected or changed its configuration. Hosted verification remains pending.
 - Optional Railway infrastructure-as-code capture is deferred. The initial
   workflow uses the dashboard and Dockerfile detection. Website UI and proxy
   integration remain separate work.

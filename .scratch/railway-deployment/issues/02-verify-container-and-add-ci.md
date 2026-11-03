@@ -10,6 +10,10 @@ checks on each proposed change.
 
 Source: [Deployment specification](../spec.md).
 
+**Verification state:** Implementation prepared; actual Linux image/runtime
+execution and the hosted workflow remain pending. Local tests are supporting
+evidence, not completion of the container acceptance criteria.
+
 ## Acceptance criteria
 
 - [ ] Container checks build ticket 01's production image without credentials,
@@ -54,3 +58,17 @@ behavior are verified during ticket 04, after dashboard configuration exists.
 ## Comments
 
 2026-10-30: Specified and queued behind ticket 01; implementation not started.
+
+2026-11-02: User authorized implementation on `implement/railway-ticket-02`,
+created from updated `main` at `41f4f27`. Claimed for implementation. The user
+reports an existing Railway deployment; hosted configuration and behavior have
+not been inspected. This ticket remains offline verification and CI only.
+
+2026-11-03: Added production-image verification, two-container warm-cache checks,
+test-only provider substitution, Linux process/cgroup sampling, locked optional
+profiling dependencies, and the `Tests and Linux container` workflow. Existing
+tests: **132 passed**; profiling file: **3 passed**; Ruff, mypy (including Linux
+platform), and diff whitespace checks pass. A local two-process trial of the
+new probe passed its HTTP/cache/shutdown assertions. Actual container execution
+fails explicitly because Docker is absent; Linux metrics and GitHub-hosted
+results remain pending. See [verification commands and limits](../../../docs/container-verification.md).
