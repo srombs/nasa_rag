@@ -8,8 +8,8 @@ credentials, and persistent storage.
 
 **Status:** resolved
 
-**Verification:** Local package checks passed; Linux image build/import checks
-are pending ticket 02 because this workstation has no Docker engine.
+**Verification:** Local package checks passed. Ticket 02 completed the deferred
+Linux image build/import and runtime checks in [GitHub Actions](https://github.com/srombs/nasa_rag/actions/runs/41704044621).
 
 Source: [Deployment specification](../spec.md).
 
@@ -19,7 +19,7 @@ Source: [Deployment specification](../spec.md).
   from the existing dependency lockfile, with a pinned supported Python
   base-image version and pinned build tooling. The
   runtime image excludes development dependencies and unnecessary build tools.
-- [ ] The installed application includes all four NASA documents. Required Linux
+- [x] The installed application includes all four NASA documents. Required Linux
   libraries for FAISS are explicit; the package and FAISS import in the image.
 - [x] Docker build-context exclusions cover real environment files, Git metadata, local virtual
   environments, generated caches, logs, and bytecode. No keys or local embeddings
@@ -64,7 +64,7 @@ Added build-context exclusions, a public environment example, expanded Git
 environment-file exclusions, and [local Docker instructions](../../../docs/docker.md).
 Existing application, RAG/CLI source, dependencies, and lockfile are unchanged.
 
-Verification performed:
+Original ticket 01 verification (Linux follow-up is recorded in the latest comment):
 
 - `uv run --locked --extra web --extra dev --with psutil python -m pytest -q`:
   **132 passed**.
@@ -98,3 +98,10 @@ on this branch.
 2026-10-30: Packaging implementation completed. Local checks pass; container
 verification is explicitly deferred to ticket 02 as permitted above. Ticket 02
 is unblocked for implementation; its actual container results remain pending.
+
+2026-11-03: Ticket 02 completed the deferred actual Linux image checks in hosted
+run 41704044621. The production image builds, imports the installed package and
+FAISS, and locates all four documents. Two offline containers verify the
+production startup command, runtime port, API behavior, cache reuse, and graceful
+shutdown. The previously deferred acceptance criterion is now checked; see
+[Linux evidence and limitations](../../../docs/container-verification.md).

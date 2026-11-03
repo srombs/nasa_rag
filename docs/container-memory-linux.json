@@ -1,0 +1,236 @@
+{
+  "recorded_at_utc": "2026-11-03T19:32:19.127218+00:00",
+  "status": "passed",
+  "observation": "Linux container; synthetic warm cache; mocked provider HTTP",
+  "image_id": "sha256:8ee95864c98b9e58481a41183ab3a2e74a442245de62a7fcd57cd0e6f0642f31",
+  "architecture": "amd64",
+  "controller_platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "production_command": [
+    "sh",
+    "-c",
+    "exec uvicorn nasa_rag.web:app --host 0.0.0.0 --port \"$PORT\" --workers 1 --no-proxy-headers --no-access-log"
+  ],
+  "provider_mode": "mocked_http; container network disabled",
+  "measurement_notes": [
+    "Process RSS is sampled every 0.01s; peaks are sampled lower bounds.",
+    "OS process peaks include startup and are lifetime high-water marks.",
+    "Container cgroup includes the probe, page cache, and server.",
+    "Unreadable container counters are null/pending, never zero.",
+    "Synthetic 1536-dimensional embeddings; no cold ingestion measured.",
+    "Mock latency/output are not real provider or Railway capacity evidence.",
+    "Two seconds of idle per phase; no sustained-traffic measurement."
+  ],
+  "runs": [
+    {
+      "port": 8765,
+      "command": [
+        "sh",
+        "-c",
+        "exec uvicorn nasa_rag.web:app --host 0.0.0.0 --port \"$PORT\" --workers 1 --no-proxy-headers --no-access-log"
+      ],
+      "cache_reused": true,
+      "startup_model_requests": 0,
+      "health_model_requests": 0,
+      "question_provider_requests": {
+        "retrieval_plan": 1,
+        "query_embedding": 1,
+        "rerank_result": 10,
+        "answer": 1
+      },
+      "memory": {
+        "startup": {
+          "rss_peak_bytes": 206663680,
+          "rss_mean_bytes": 76965808.0,
+          "rss_min_bytes": 225280,
+          "samples": 256,
+          "cgroup_current_peak_bytes": 274100224,
+          "cgroup_current_mean_bytes": 140951616.0,
+          "cgroup_samples": 256,
+          "cgroup_lifetime_peak_bytes": 274100224
+        },
+        "loaded_idle": {
+          "rss_peak_bytes": 206675968,
+          "rss_mean_bytes": 206675968.0,
+          "rss_min_bytes": 206675968,
+          "samples": 198,
+          "cgroup_current_peak_bytes": 274096128,
+          "cgroup_current_mean_bytes": 274096128.0,
+          "cgroup_samples": 198,
+          "cgroup_lifetime_peak_bytes": 274100224
+        },
+        "health": {
+          "rss_peak_bytes": 206675968,
+          "rss_mean_bytes": 206675968.0,
+          "rss_min_bytes": 206675968,
+          "samples": 1,
+          "cgroup_current_peak_bytes": 274096128,
+          "cgroup_current_mean_bytes": 274096128.0,
+          "cgroup_samples": 1,
+          "cgroup_lifetime_peak_bytes": 274100224
+        },
+        "question": {
+          "rss_peak_bytes": 221917184,
+          "rss_mean_bytes": 214671774.78481013,
+          "rss_min_bytes": 206680064,
+          "samples": 79,
+          "cgroup_current_peak_bytes": 288952320,
+          "cgroup_current_mean_bytes": 282056366.98734176,
+          "cgroup_samples": 79,
+          "cgroup_lifetime_peak_bytes": 288972800
+        },
+        "post_question_idle": {
+          "rss_peak_bytes": 221917184,
+          "rss_mean_bytes": 221917184.0,
+          "rss_min_bytes": 221917184,
+          "samples": 198,
+          "cgroup_current_peak_bytes": 289181696,
+          "cgroup_current_mean_bytes": 288948513.61616164,
+          "cgroup_samples": 198,
+          "cgroup_lifetime_peak_bytes": 289181696
+        }
+      },
+      "startup_os_peak_rss_bytes": 206446592,
+      "os_lifetime_peak_rss_bytes": 221622272,
+      "cgroup_directory": "/sys/fs/cgroup",
+      "container_memory_status": "measured",
+      "cache": {
+        "chunks": 737,
+        "dimensions": 1536,
+        "embedding_provenance": "synthetic fixture; identical 1536-dimensional vectors",
+        "files": {
+          "embeds/document_cache_100_20.json": {
+            "sha256": "c50755e6590be204a7f9e6639da28111d4c6ba19b55330438cce05d7416f27d6",
+            "mtime_ns": 1793734344336437700
+          },
+          "faiss/document_100_20.index": {
+            "sha256": "2f490d402c1e3ad7296b6e9e182c42a446e57a58a8893115780b1cb445a4de5f",
+            "mtime_ns": 1793734340490456196
+          }
+        },
+        "sources": {
+          "hubble.txt": "de2397bbeaa84a0a4098766b02c347dc69bb5ebe9dc7650ac8f464aa2026fa6c",
+          "iss.txt": "ed3cdac0ea2a542d350bb97e342cde0165e054bbee43f28c40a9c72bcbc04338",
+          "nasa_overview.txt": "55b07a355e1ecbe4f8e5d8c05f1525d6866d131fae747ed3e873947933c69520",
+          "space_shuttle.txt": "126ae2a25aa150aa349a71fac867f7a68b0be116654ff4be1ba4995dc498d053"
+        }
+      },
+      "container_id": "5a750805866559d4bdd93bc35d167395d58ccff39599dc2955b7e15a213d13a3"
+    },
+    {
+      "port": 8765,
+      "command": [
+        "sh",
+        "-c",
+        "exec uvicorn nasa_rag.web:app --host 0.0.0.0 --port \"$PORT\" --workers 1 --no-proxy-headers --no-access-log"
+      ],
+      "cache_reused": true,
+      "startup_model_requests": 0,
+      "health_model_requests": 0,
+      "question_provider_requests": {
+        "retrieval_plan": 1,
+        "query_embedding": 1,
+        "rerank_result": 10,
+        "answer": 1
+      },
+      "memory": {
+        "startup": {
+          "rss_peak_bytes": 206573568,
+          "rss_mean_bytes": 77016183.06976745,
+          "rss_min_bytes": 249856,
+          "samples": 258,
+          "cgroup_current_peak_bytes": 273932288,
+          "cgroup_current_mean_bytes": 141204011.65891472,
+          "cgroup_samples": 258,
+          "cgroup_lifetime_peak_bytes": 274194432
+        },
+        "loaded_idle": {
+          "rss_peak_bytes": 206594048,
+          "rss_mean_bytes": 206594048.0,
+          "rss_min_bytes": 206594048,
+          "samples": 198,
+          "cgroup_current_peak_bytes": 274190336,
+          "cgroup_current_mean_bytes": 274190336.0,
+          "cgroup_samples": 198,
+          "cgroup_lifetime_peak_bytes": 274194432
+        },
+        "health": {
+          "rss_peak_bytes": 206594048,
+          "rss_mean_bytes": 206594048.0,
+          "rss_min_bytes": 206594048,
+          "samples": 1,
+          "cgroup_current_peak_bytes": 274186240,
+          "cgroup_current_mean_bytes": 274186240.0,
+          "cgroup_samples": 1,
+          "cgroup_lifetime_peak_bytes": 274194432
+        },
+        "question": {
+          "rss_peak_bytes": 222011392,
+          "rss_mean_bytes": 214445760.83116883,
+          "rss_min_bytes": 206598144,
+          "samples": 77,
+          "cgroup_current_peak_bytes": 289370112,
+          "cgroup_current_mean_bytes": 282075295.58441556,
+          "cgroup_samples": 77,
+          "cgroup_lifetime_peak_bytes": 289374208
+        },
+        "post_question_idle": {
+          "rss_peak_bytes": 222011392,
+          "rss_mean_bytes": 222011392.0,
+          "rss_min_bytes": 222011392,
+          "samples": 198,
+          "cgroup_current_peak_bytes": 289054720,
+          "cgroup_current_mean_bytes": 288854202.1818182,
+          "cgroup_samples": 198,
+          "cgroup_lifetime_peak_bytes": 289374208
+        }
+      },
+      "startup_os_peak_rss_bytes": 206311424,
+      "os_lifetime_peak_rss_bytes": 221655040,
+      "cgroup_directory": "/sys/fs/cgroup",
+      "container_memory_status": "measured",
+      "cache": {
+        "chunks": 737,
+        "dimensions": 1536,
+        "embedding_provenance": "synthetic fixture; identical 1536-dimensional vectors",
+        "files": {
+          "embeds/document_cache_100_20.json": {
+            "sha256": "c50755e6590be204a7f9e6639da28111d4c6ba19b55330438cce05d7416f27d6",
+            "mtime_ns": 1793734353235389987
+          },
+          "faiss/document_100_20.index": {
+            "sha256": "2f490d402c1e3ad7296b6e9e182c42a446e57a58a8893115780b1cb445a4de5f",
+            "mtime_ns": 1793734340490456196
+          }
+        },
+        "sources": {
+          "hubble.txt": "de2397bbeaa84a0a4098766b02c347dc69bb5ebe9dc7650ac8f464aa2026fa6c",
+          "iss.txt": "ed3cdac0ea2a542d350bb97e342cde0165e054bbee43f28c40a9c72bcbc04338",
+          "nasa_overview.txt": "55b07a355e1ecbe4f8e5d8c05f1525d6866d131fae747ed3e873947933c69520",
+          "space_shuttle.txt": "126ae2a25aa150aa349a71fac867f7a68b0be116654ff4be1ba4995dc498d053"
+        }
+      },
+      "container_id": "a8248dfd25361b235828e2668022ce83eea72324752a57d11e42b2ab74f5ce6a"
+    }
+  ],
+  "fixture": {
+    "chunks": 737,
+    "dimensions": 1536,
+    "embedding_provenance": "synthetic fixture; identical 1536-dimensional vectors",
+    "files": {
+      "embeds/document_cache_100_20.json": {
+        "sha256": "c50755e6590be204a7f9e6639da28111d4c6ba19b55330438cce05d7416f27d6",
+        "mtime_ns": 1793734340441456420
+      },
+      "faiss/document_100_20.index": {
+        "sha256": "2f490d402c1e3ad7296b6e9e182c42a446e57a58a8893115780b1cb445a4de5f",
+        "mtime_ns": 1793734340490456196
+      }
+    },
+    "sources": {
+      "hubble.txt": "de2397bbeaa84a0a4098766b02c347dc69bb5ebe9dc7650ac8f464aa2026fa6c",
+      "iss.txt": "ed3cdac0ea2a542d350bb97e342cde0165e054bbee43f28c40a9c72bcbc04338",
+      "nasa_overview.txt": "55b07a355e1ecbe4f8e5d8c05f1525d6866d131fae747ed3e873947933c69520",
+      "space_shuttle.txt": "126ae2a25aa150aa349a71fac867f7a68b0be116654ff4be1ba4995dc498d053"
+    }
+  }
+}

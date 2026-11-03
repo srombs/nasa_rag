@@ -66,6 +66,7 @@ The check performs these steps:
 The `container-verification` GitHub artifact contains the JSON report when one
 was produced, including partial runtime results on failure. Build/import failures
 can happen before a report exists; consult the failed step's logs in that case.
+Successful runs also print the report in the verification step's logs.
 
 ## Memory observations and limits
 
@@ -111,12 +112,42 @@ The user's existing deployment has not been inspected or modified by these check
 
 ## Recorded verification
 
-Local Docker execution is **pending**: this workstation has no Docker CLI or
+Local Docker execution is **unavailable**: this workstation has no Docker CLI or
 engine. The controller exits nonzero with `No such file or directory: 'docker'`;
 that is an unavailable check, not a passed container test. A local subprocess
 trial and the existing regression tests provide supporting evidence only.
-GitHub-hosted workflow execution and Linux/container measurements are **pending**
-until the branch is published and a Linux runner executes the workflow.
+
+Actual Linux execution **passed** in [GitHub Actions run 41704044621](https://github.com/srombs/nasa_rag/actions/runs/41704044621),
+for branch commit `7007220f1c24b64927490c4e5ba97ae349e9bfcd` and its PR merge
+checkout. The runner passed locked installation, Ruff/mypy, **132 tests**, the
+production image build/import check, both runtime probes, and artifact upload.
+Raw evidence is preserved in [container-memory-linux.json](container-memory-linux.json)
+and the [workflow artifact](https://github.com/srombs/nasa_rag/actions/runs/41704044621/artifacts/13265062200).
+The checked Linux amd64 image ID was
+`sha256:8ee95864c98b9e58481a41183ab3a2e74a442245de62a7fcd57cd0e6f0642f31`.
+
+Both independent containers used the same writable fixture volume with all four
+bundled sources, 737 chunks, and 1,536-dimensional synthetic vectors. Each
+recorded zero startup/health/document-embedding calls, 13 mocked question calls,
+unchanged embedding contents and FAISS hash/mtime, and successful API and
+graceful-shutdown assertions. No live provider or Railway call was made.
+
+Recorded 2026-11-03 UTC, with the limitations above:
+
+| Memory, MiB | First start | Restart |
+| --- | ---: | ---: |
+| Worker startup OS RSS high-water mark | 196.88 | 196.75 |
+| Worker loaded idle RSS, mean | 197.10 | 197.02 |
+| Worker question RSS, sampled peak | 211.64 | 211.73 |
+| Worker idle after question RSS, mean | 211.64 | 211.73 |
+| Container startup current memory, sampled peak | 261.40 | 261.24 |
+| Container loaded idle current memory, mean | 261.40 | 261.49 |
+| Container question current memory, sampled peak | 275.57 | 275.96 |
+| Container idle after question current memory, mean | 275.56 | 275.47 |
+
+The container cgroup counters were readable at `/sys/fs/cgroup`. These values
+include the probe and synthetic fixture overhead; they are not measurements of
+the user's Railway service and do not establish a production minimum or bill.
 
 Executed on the workstation during implementation:
 
@@ -133,4 +164,8 @@ Executed on the workstation during implementation:
   the expected 13 mocked provider calls for one successful question. The busy
   request, UUID/header, exact answer, and graceful shutdown checks passed.
   This trial used macOS; `/proc` listener/worker checks and container accounting
-  remain Linux-only. Its temporary fixtures/reports were removed after the trial.
+  were subsequently exercised on GitHub. Its temporary fixtures/reports were
+  removed after the trial.
+
+Standards review: no documented violations or substantive smells. Spec review:
+no actionable findings; the previously pending Linux evidence is recorded above.
