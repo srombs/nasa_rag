@@ -5,6 +5,8 @@ The **Tests and Linux container** workflow in
 `main`. Its single job runs the mocked CLI/API/profiling regression suite and
 builds/checks the root production Dockerfile. It uses `uv.lock` with the `web`,
 `dev`, and `profile` extras, pinned uv, and the Dockerfile's Python version.
+GitHub's Python setup action installs that interpreter explicitly; pinned uv
+does not need to know how to download newer Python patch releases.
 The optional `profile` extra supplies psutil for the existing profiling tests;
 neither development nor profiling packages enter the production image.
 
