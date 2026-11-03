@@ -209,6 +209,9 @@ To package and run the API as a container, follow [the Docker guide](docs/docker
 It covers building the image without credentials, runtime environment settings,
 and retaining document embeddings on a persistent volume.
 
+For private hosting, follow [the Railway dashboard deployment guide](docs/railway-deployment.md),
+including CI gating, runtime variables, persistent cache checks, and recovery.
+
 See the [rough Railway hosting budget](docs/web-runtime-verification.md#rough-monthly-railway-hosting-budget)
 for current pricing, measured local RAM, resource assumptions, and monthly
 examples including the Hobby plan minimum.

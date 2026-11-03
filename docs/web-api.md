@@ -20,6 +20,7 @@ use `pip install '.[web]'` followed by the same `uvicorn` command without `uv ru
 The base installation and `nasa-rag` CLI remain available without the web extra.
 
 For the installed application in a Linux container, see [the Docker guide](docker.md).
+For private hosting and the operator checklist, see [Railway dashboard deployment](railway-deployment.md).
 
 The cache directory must be writable and may be an absolute path to a persistent
 volume. The adapter uses the four bundled documents, current chunk size/overlap
