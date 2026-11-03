@@ -9,7 +9,7 @@ from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 
-import httpx
+import httpx2 as httpx
 import openai
 import uvicorn
 

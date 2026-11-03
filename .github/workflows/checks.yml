@@ -31,7 +31,9 @@ jobs:
       - name: Run mocked CLI, API, and profiling regression tests
         run: uv run --no-sync python -m pytest -q
       - name: Build and verify the production Linux image offline
-        run: uv run --no-sync python scripts/check_container.py --output "$RUNNER_TEMP/container-verification.json"
+        run: |
+          uv run --no-sync python scripts/check_container.py --output "$RUNNER_TEMP/container-verification.json"
+          cat "$RUNNER_TEMP/container-verification.json"
       - name: Upload container verification and memory observations
         if: always()
         uses: actions/upload-artifact@v4
