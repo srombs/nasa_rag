@@ -10,13 +10,13 @@ changes, publishing, live model calls, or deployment.
 | --- | --- | --- |
 | [01: Package the API for Docker](issues/01-package-api-for-docker.md) | None | resolved; Linux image verified by 02 |
 | [02: Verify Linux containers and add CI](issues/02-verify-container-and-add-ci.md) | 01 | resolved |
-| [03: Document Railway dashboard deployment](issues/03-document-dashboard-deployment.md) | 01, 02 | ready-for-agent |
+| [03: Document Railway dashboard deployment](issues/03-document-dashboard-deployment.md) | 01, 02 | resolved; triage ready-for-agent |
 | [04: Deploy the private service through Railway's dashboard](issues/04-deploy-through-dashboard.md) | 02, 03; implementation available on GitHub | ready-for-human |
 
 Work in order: **01 → 02 → 03 → 04**. The status labels identify who can perform
 the work once dependencies are met; they do not mean a blocked ticket can start.
-Tickets 01 and 02 are implemented; ticket 03 is next. Tickets 01–03 prepare the
-repository; ticket 04 is the user's Railway dashboard work, including verification
+Tickets 01–03 are implemented; ticket 04 is next after the implementation is
+published with matching CI evidence. Ticket 04 is the user's Railway dashboard work, including verification
 of the deployment the user reports already exists.
 
 ## Current state
@@ -32,12 +32,17 @@ of the deployment the user reports already exists.
   are implemented on `implement/railway-ticket-02` in [PR #5](https://github.com/srombs/nasa_rag/pull/5).
   Local tests and hosted Linux image/runtime verification pass. Linux process and
   container memory are recorded with synthetic-fixture/probe limits. The full
-  Railway dashboard guide remains ticket 03.
+  [Railway dashboard guide](../../docs/railway-deployment.md) is delivered by ticket 03.
 - The user reports an existing Railway deployment. This workstream has not
   inspected or changed its configuration. Hosted verification remains pending.
 - Optional Railway infrastructure-as-code capture is deferred. The initial
   workflow uses the dashboard and Dockerfile detection. Website UI and proxy
   integration remain separate work.
+- Ticket 03 provides the [dashboard guide](../../docs/railway-deployment.md),
+  private health/cache commands, recovery steps, and ticket 04 operator checklist.
+  Its completion is recorded separately from its configured triage role. Current
+  platform guidance and offline snippets are verified; publication and all hosted
+  observations remain pending.
 
 ## Comments
 
@@ -60,3 +65,8 @@ is the next task. No commit, push, live model request, or deployment was perform
 41704044621 passes 132 tests and the actual Linux build/import/runtime/cache
 checks. Both review axes report no actionable findings. No live model requests,
 Railway changes, or deployment were performed. Ticket 03 is unblocked.
+
+2026-11-03: Ticket 03 completed on `implement/railway-ticket-03`, based on updated
+`main` at `7922466`. Documentation links, offline snippets, 132 tests, Ruff, and
+mypy pass. The guide was checked against official Railway documentation. Ticket
+04 remains ready-for-human, pending publication/CI and the user's dashboard work.

@@ -112,7 +112,8 @@ Mount a persistent volume at `/data` and set the runtime key in Railway's Variab
 UI. Runtime mounts are not available during image builds. Keep public domains and
 TCP proxies absent until website integration is designed; listening on a
 non-loopback address inside the container does not itself publish a public URL.
-Detailed dashboard setup and hosted verification belong to tickets 03 and 04.
+Follow [the Railway dashboard deployment guide](railway-deployment.md) for setup,
+private health/cache checks, and the ticket 04 operator record.
 
 ## References
 
