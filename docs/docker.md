@@ -27,8 +27,8 @@ docker run --rm --network none --entrypoint python nasa-rag:local -c \
   'import faiss; import nasa_rag.web; from nasa_rag.paths import data_directory; sources = sorted(p.name for p in data_directory().glob("*.txt")); assert sources == ["hubble.txt", "iss.txt", "nasa_overview.txt", "space_shuttle.txt"]; print("FAISS, API import, and bundled documents: OK")'
 ```
 
-This check makes no model calls. Repeatable mocked runtime and CI checks are
-tracked separately in deployment ticket 02.
+This check makes no model calls. For repeatable runtime/cache checks, Linux
+memory observations, and GitHub Actions, see [container verification](container-verification.md).
 
 ## Run with a persistent cache
 

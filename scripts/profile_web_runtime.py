@@ -122,9 +122,25 @@ def read_counter(directory: Path | None, name: str) -> int | None:
 
 
 def measure(pid: int, action, interval: float, cgroup: Path | None) -> tuple:
-    import psutil
+    # Linux containers need no extra package in the production image.
+    if sys.platform == "linux":
 
-    process = psutil.Process(pid)
+        def rss():
+            fields = Path(f"/proc/{pid}/status").read_text().splitlines()
+            return next(
+                int(p.split()[1]) * 1024 for p in fields if p.startswith("VmRSS:")
+            )
+
+        sampling_exceptions = (OSError, StopIteration, ValueError)
+    else:
+        import psutil
+
+        process = psutil.Process(pid)
+
+        def rss():
+            return process.memory_info().rss
+
+        sampling_exceptions = (psutil.Error,)
     samples: list[int] = []
     container_samples: list[int] = []
     stopped = Event()
@@ -132,8 +148,8 @@ def measure(pid: int, action, interval: float, cgroup: Path | None) -> tuple:
     def sample():
         while not stopped.is_set():
             try:
-                samples.append(process.memory_info().rss)
-            except psutil.Error as error:
+                samples.append(rss())
+            except sampling_exceptions as error:
                 sampling_errors.append(str(error))
                 return
             current = read_counter(cgroup, "memory.current")

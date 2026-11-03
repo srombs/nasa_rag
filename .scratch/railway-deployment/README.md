@@ -8,16 +8,16 @@ changes, publishing, live model calls, or deployment.
 
 | Ticket | Blocked by | Status |
 | --- | --- | --- |
-| [01: Package the API for Docker](issues/01-package-api-for-docker.md) | None | resolved; Linux image verification pending 02 |
-| [02: Verify Linux containers and add CI](issues/02-verify-container-and-add-ci.md) | 01 | ready-for-agent |
+| [01: Package the API for Docker](issues/01-package-api-for-docker.md) | None | resolved; Linux image verified by 02 |
+| [02: Verify Linux containers and add CI](issues/02-verify-container-and-add-ci.md) | 01 | resolved |
 | [03: Document Railway dashboard deployment](issues/03-document-dashboard-deployment.md) | 01, 02 | ready-for-agent |
 | [04: Deploy the private service through Railway's dashboard](issues/04-deploy-through-dashboard.md) | 02, 03; implementation available on GitHub | ready-for-human |
 
 Work in order: **01 → 02 → 03 → 04**. The status labels identify who can perform
 the work once dependencies are met; they do not mean a blocked ticket can start.
-Ticket 01 packaging is implemented on `implement/railway-ticket-01`; ticket 02
-is next. Tickets 01–03 prepare the
-repository; ticket 04 is the user's Railway dashboard work.
+Tickets 01 and 02 are implemented; ticket 03 is next. Tickets 01–03 prepare the
+repository; ticket 04 is the user's Railway dashboard work, including verification
+of the deployment the user reports already exists.
 
 ## Current state
 
@@ -26,11 +26,15 @@ repository; ticket 04 is the user's Railway dashboard work.
 - The Docker/Railway requirements and this ticket breakdown are written.
 - Ticket 01 provides Docker packaging, build-context exclusions, an environment
   example, and [local Docker instructions](../../docs/docker.md). Existing tests
-  and clean local production-install checks pass. Actual Linux image verification
-  is deferred to ticket 02 because no Docker engine is available here.
-- The deployment CI workflow and full Railway dashboard guide remain unimplemented.
-- No Railway account has been connected and no service has been deployed by this
-  workstream. Linux/container and deployed verification remain pending.
+  and clean local production-install checks pass. Ticket 02 completed the actual
+  Linux image verification on GitHub's runner.
+- Ticket 02's [container checks and CI workflow](../../docs/container-verification.md)
+  are implemented on `implement/railway-ticket-02` in [PR #5](https://github.com/srombs/nasa_rag/pull/5).
+  Local tests and hosted Linux image/runtime verification pass. Linux process and
+  container memory are recorded with synthetic-fixture/probe limits. The full
+  Railway dashboard guide remains ticket 03.
+- The user reports an existing Railway deployment. This workstream has not
+  inspected or changed its configuration. Hosted verification remains pending.
 - Optional Railway infrastructure-as-code capture is deferred. The initial
   workflow uses the dashboard and Dockerfile detection. Website UI and proxy
   integration remain separate work.
@@ -51,3 +55,8 @@ created. Detailed configuration locations remain in the source specification.
 is delivered on `implement/railway-ticket-01`; [the ticket's verification record](issues/01-package-api-for-docker.md#answer)
 distinguishes passing local checks from pending Linux image checks. Ticket 02
 is the next task. No commit, push, live model request, or deployment was performed.
+
+2026-11-03: Ticket 02 implemented and resolved in PR #5. Hosted workflow run
+41704044621 passes 132 tests and the actual Linux build/import/runtime/cache
+checks. Both review axes report no actionable findings. No live model requests,
+Railway changes, or deployment were performed. Ticket 03 is unblocked.

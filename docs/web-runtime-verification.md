@@ -10,12 +10,13 @@ deadline, trusted proxies, and ordinary health/question commands.
 From the repository root, with compatible persisted caches available:
 
 ```sh
-uv run --extra web --extra dev --with psutil python scripts/profile_web_runtime.py \
+uv run --locked --extra web --extra dev --extra profile python scripts/profile_web_runtime.py \
   --cache-dir cache --output /tmp/nasa-rag-runtime.json
 ```
 
-The script supports macOS and Linux. `psutil` is a transient profiling dependency;
-it is not needed by the API or CLI. A pip environment can install `.[web]` and
+The script supports macOS and Linux. The optional `profile` extra locks psutil
+for profiling tests; it is not needed by the API or CLI. Linux process sampling
+uses `/proc` and works without psutil. A pip environment can install `.[web]` and
 `psutil`, then use `python scripts/profile_web_runtime.py` with the same arguments.
 No real credential is required for this default run. The child receives an
 offline placeholder rather than any inherited API key.
@@ -220,6 +221,11 @@ no model-price estimation or tuning is needed. The report remains provisional
 until matched with actual deployment observations.
 
 ## Automated verification
+
+The later [Linux container workflow](container-verification.md) builds the
+production image and verifies two fresh containers against a shared synthetic
+cache. Its observations and hosted execution status are recorded separately
+from the historical local profile below.
 
 ```sh
 uv run --extra web --extra dev --with psutil python -m pytest -q tests/test_web_runtime.py

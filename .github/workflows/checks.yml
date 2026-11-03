@@ -1,0 +1,43 @@
+name: Tests and Linux container
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Tests and Linux container
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13.18"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.5"
+          python-version: "3.13.18"
+      - name: Install locked web, dev, and profiling dependencies
+        run: uv sync --locked --extra web --extra dev --extra profile
+      - name: Check verification scripts
+        run: |
+          uv run --no-sync ruff check scripts tests/test_web_runtime.py
+          uv run --no-sync mypy --follow-imports=silent --ignore-missing-imports --check-untyped-defs scripts
+      - name: Run mocked CLI, API, and profiling regression tests
+        run: uv run --no-sync python -m pytest -q
+      - name: Build and verify the production Linux image offline
+        run: |
+          uv run --no-sync python scripts/check_container.py --output "$RUNNER_TEMP/container-verification.json"
+          cat "$RUNNER_TEMP/container-verification.json"
+      - name: Upload container verification and memory observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-verification
+          path: ${{ runner.temp }}/container-verification.json
+          if-no-files-found: warn

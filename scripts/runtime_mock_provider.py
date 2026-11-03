@@ -6,16 +6,21 @@ import resource
 import socket
 import sys
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
-import httpx
+import httpx2 as httpx
 import openai
 import uvicorn
 
 
-def serve(fd: int, state_path: Path, dimensions: int, live: bool) -> None:
+def install_provider(
+    dimensions: int,
+    live: bool = False,
+    on_request: Callable[[str], None] | None = None,
+) -> Counter[str]:
+    """Substitute only provider HTTP; reject document embedding requests."""
     requests: Counter[str] = Counter()
-    snapshots = []
     real_openai = openai.OpenAI
 
     def count(request: httpx.Request) -> None:
@@ -31,6 +36,8 @@ def serve(fd: int, state_path: Path, dimensions: int, live: bool) -> None:
         else:
             raise RuntimeError("Unexpected provider endpoint")
         requests[kind] += 1
+        if on_request is not None:
+            on_request(kind)
         if kind == "document_embedding":
             raise RuntimeError("Profiling requires compatible persisted embeddings")
 
@@ -91,6 +98,12 @@ def serve(fd: int, state_path: Path, dimensions: int, live: bool) -> None:
         return real_openai(*args, **kwargs)
 
     setattr(openai, "OpenAI", client)
+    return requests
+
+
+def serve(fd: int, state_path: Path, dimensions: int, live: bool) -> None:
+    requests = install_provider(dimensions, live)
+    snapshots = []
 
     # Import only after installing the external-provider boundary.
     from nasa_rag.web import create_app
