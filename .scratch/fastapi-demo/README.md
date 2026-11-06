@@ -8,8 +8,9 @@ Source plan: [FastAPI service plan](../../docs/fastapi-service-plan.md).
 | [02: Bound demo requests and report operational failures](issues/02-bound-demo-requests.md) | 01 | resolved |
 | [03: Verify the completed demo runtime and measure its RAM](issues/03-verify-runtime-and-memory.md) | 02 (which depends on 01) | resolved |
 
-Work in order: **01 → 02 → 03**. Each ticket includes its own acceptance criteria and verification. These ticket files are planning artifacts; implementation, live model requests, and deployment require a separate user instruction.
-
+Completed in dependency order: **01 → 02 → 03**. Each ticket includes its own
+acceptance criteria and verification. These files preserve the implementation
+history.
 
 ## Decisions so far
 
@@ -25,5 +26,7 @@ Work in order: **01 → 02 → 03**. Each ticket includes its own acceptance cri
   pass, with actual local worker RSS and a provisional Railway RAM-only estimate.
   See its [verification record](issues/03-verify-runtime-and-memory.md#answer) and
   [runtime procedure and memory evidence](../../docs/web-runtime-verification.md).
-  Real-provider, Linux/container, and deployed observations remain pending
-  separate authorization; no deployment was performed.
+  Subsequent Linux/container verification is recorded in the
+  [Railway tickets](../railway-deployment/README.md). The user confirmed deployment
+  and publication are complete on 2026-11-06; detailed hosted and real-provider
+  observations are not recorded here.

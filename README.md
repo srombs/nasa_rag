@@ -201,9 +201,9 @@ top_k | hit_at_k        | mean_recall_at_k
    10 | 19/23 (82.6%) | 58.3%
 ```
 
-## FastAPI service planning
+## FastAPI service and deployment
 
-The optional local web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health` and `POST /ask`. The remaining demo work is described in [the FastAPI service implementation scope](docs/fastapi-service-plan.md).
+The optional web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health` and `POST /ask`. The completed implementation follows the [original FastAPI service scope](docs/fastapi-service-plan.md).
 
 To package and run the API as a container, follow [the Docker guide](docs/docker.md).
 It covers building the image without credentials, runtime environment settings,
@@ -216,4 +216,7 @@ See the [rough Railway hosting budget](docs/web-runtime-verification.md#rough-mo
 for current pricing, measured local RAM, resource assumptions, and monthly
 examples including the Hobby plan minimum.
 
-The approved breakdown is recorded in [the local FastAPI demo tickets](.scratch/fastapi-demo/README.md), ordered **01 → 02 → 03**.
+The [FastAPI demo tickets](.scratch/fastapi-demo/README.md) and
+[Railway deployment tickets](.scratch/railway-deployment/README.md) are complete.
+The user confirmed on 2026-11-06 that deployment is done and all existing work
+is pushed to GitHub.

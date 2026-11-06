@@ -1,9 +1,9 @@
 # Railway deployment specification
 
-Recorded 2026-10-29; ticket breakdown added 2026-10-30. This document and the
-[implementation tickets](README.md) specify future packaging and deployment
-work. Creating these planning artifacts does not authorize implementation or
-deployment.
+Recorded 2026-10-29; ticket breakdown added 2026-10-30. The
+[implementation tickets](README.md) are complete; on 2026-11-06, the user
+confirmed deployment is done and all existing work is pushed to GitHub.
+The specification below preserves the agreed scope and original requirements.
 
 ## Goal and agreed decisions
 
