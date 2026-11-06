@@ -1,6 +1,9 @@
 # FastAPI service — high-level implementation scope
 
-Status: initial demo plan recorded, 2026-10-28. No application implementation or deployment is authorized by this document.
+Status: historical demo plan recorded, 2026-10-28. The
+[API implementation tickets](../.scratch/fastapi-demo/README.md) are resolved;
+the user confirmed deployment and publication are complete on 2026-11-06.
+The planning text below preserves the original scope and decisions.
 
 This expands item 1 of the portfolio demo plan: expose the existing Python RAG pipeline through a FastAPI service. The user requested sensible defaults for the remaining items because this is a small demo. Preserve the decisions already agreed; use the defaults below instead of continuing an exhaustive design interview. This remains documentation only.
 

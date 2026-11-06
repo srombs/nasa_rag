@@ -6,11 +6,15 @@ verified source revision, with persistent cache reuse demonstrated after restart
 **Blocked by:** 02: Successful container/CI checks; 03: Dashboard deployment
 guide; implementation committed and available on GitHub.
 
-**Status:** ready-for-human
+**Status:** resolved
 
 Source: [Deployment specification](../spec.md).
 
 ## Acceptance criteria
+
+Completion was confirmed by the user on 2026-11-06; see the [answer](#answer).
+The checklist below retains unrecorded verification items rather than implying
+that detailed hosted evidence was collected.
 
 - [ ] The implementation is available on the connected GitHub branch and its
   required CI checks pass. Link the exact deployed source revision and CI run.
@@ -43,7 +47,21 @@ agent to sign in, provision resources, push code, deploy, or make paid requests.
 Record the actual result when the user performs the deployment; do not resolve
 this ticket based only on packaging or documentation being complete.
 
+## Answer
+
+2026-11-06: The user confirmed that human deployment is done and all existing
+work is pushed to GitHub. This ticket is resolved on the user's confirmation.
+
+The exact deployed revision/CI run, service identity, dashboard settings,
+private health/cache-reuse results, hosted memory, and failed-CI gating evidence
+were not supplied in this update. No agent dashboard inspection or live-provider
+check was performed. The unchecked criteria above remain an evidence checklist;
+they do not represent a new deployment task.
+
 ## Comments
 
 2026-10-30: Assigned to the human deployment path requested by the user. Blocked
 on implementation and handoff; no account connection or deployment performed.
+
+2026-11-06: Resolved after the user confirmed deployment and publication are
+complete. No credentials or unobserved verification results were recorded.

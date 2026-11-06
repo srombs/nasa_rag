@@ -2,7 +2,9 @@
 
 Source: [Railway deployment specification](spec.md).
 
-Planning recorded 2026-10-30; ticket 01 packaging is implemented. These are local
+Planning recorded 2026-10-30; all four tickets are complete. On 2026-11-06,
+the user confirmed deployment is done and all existing work is pushed to GitHub.
+These are local
 Markdown tickets, not GitHub issues. Creating them does not authorize code
 changes, publishing, live model calls, or deployment.
 
@@ -11,13 +13,11 @@ changes, publishing, live model calls, or deployment.
 | [01: Package the API for Docker](issues/01-package-api-for-docker.md) | None | resolved; Linux image verified by 02 |
 | [02: Verify Linux containers and add CI](issues/02-verify-container-and-add-ci.md) | 01 | resolved |
 | [03: Document Railway dashboard deployment](issues/03-document-dashboard-deployment.md) | 01, 02 | resolved; triage ready-for-agent |
-| [04: Deploy the private service through Railway's dashboard](issues/04-deploy-through-dashboard.md) | 02, 03; implementation available on GitHub | ready-for-human |
+| [04: Deploy the private service through Railway's dashboard](issues/04-deploy-through-dashboard.md) | 02, 03; implementation available on GitHub | resolved; user confirmed deployment |
 
-Work in order: **01 → 02 → 03 → 04**. The status labels identify who can perform
-the work once dependencies are met; they do not mean a blocked ticket can start.
-Tickets 01–03 are implemented; ticket 04 is next after the implementation is
-published with matching CI evidence. Ticket 04 is the user's Railway dashboard work, including verification
-of the deployment the user reports already exists.
+Completed in dependency order: **01 → 02 → 03 → 04**. Ticket 04 records the
+user's deployment confirmation; detailed hosted verification evidence has not
+been supplied to this tracker.
 
 ## Current state
 
@@ -33,16 +33,17 @@ of the deployment the user reports already exists.
   Local tests and hosted Linux image/runtime verification pass. Linux process and
   container memory are recorded with synthetic-fixture/probe limits. The full
   [Railway dashboard guide](../../docs/railway-deployment.md) is delivered by ticket 03.
-- The user reports an existing Railway deployment. This workstream has not
-  inspected or changed its configuration. Hosted verification remains pending.
+- The user confirmed the Railway deployment is complete on 2026-11-06.
+  The agent has not inspected its configuration or collected hosted verification
+  evidence; see [ticket 04's completion record](issues/04-deploy-through-dashboard.md#answer).
 - Optional Railway infrastructure-as-code capture is deferred. The initial
   workflow uses the dashboard and Dockerfile detection. Website UI and proxy
   integration remain separate work.
 - Ticket 03 provides the [dashboard guide](../../docs/railway-deployment.md),
   private health/cache commands, recovery steps, and ticket 04 operator checklist.
   Its completion is recorded separately from its configured triage role. Current
-  platform guidance and offline snippets are verified; publication and all hosted
-  observations remain pending.
+  platform guidance and offline snippets are verified. Publication is complete
+  per the user's confirmation; detailed hosted observations are not recorded.
 
 ## Comments
 
@@ -70,3 +71,8 @@ Railway changes, or deployment were performed. Ticket 03 is unblocked.
 `main` at `7922466`. Documentation links, offline snippets, 132 tests, Ruff, and
 mypy pass. The guide was checked against official Railway documentation. Ticket
 04 remains ready-for-human, pending publication/CI and the user's dashboard work.
+
+2026-11-06: User confirmed human deployment is done and all existing work is
+pushed to GitHub. Resolved ticket 04 on that confirmation and refreshed the
+current-state summary. Historical comments retain their original context;
+no new dashboard inspection or hosted measurements were performed.
