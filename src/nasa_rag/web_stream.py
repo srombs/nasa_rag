@@ -9,20 +9,47 @@ import asyncio
 import json
 from collections import deque
 from collections.abc import AsyncIterator, Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from threading import Lock
 from time import monotonic
-from typing import Any
+from typing import Literal
 
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 from starlette.types import Receive, Scope, Send
 
-from .search_flow import STAGE_IDS, StageEvent
+from .search_flow import STAGE_IDS, StageEvent, StageId
 
 HEARTBEAT_SECONDS = 15.0
 MAX_QUEUED_EVENTS = 64
 FailureMapper = Callable[[Exception], tuple[int, dict[str, str]]]
+
+
+@dataclass
+class StageSnapshot:
+    """Observed lifecycle state, serialized through an explicit public allowlist."""
+
+    stage_id: StageId
+    status: Literal[
+        "pending", "running", "completed", "failed", "skipped", "unknown"
+    ] = "pending"
+    duration_ms: float | None = None
+    error: dict[str, str] | None = None
+
+    def public(self) -> dict:
+        return {
+            "stage_id": self.stage_id,
+            "status": self.status,
+            "details": {} if self.status == "completed" else None,
+            "progress": None,
+            "metrics": (
+                {"duration_ms": self.duration_ms}
+                if self.duration_ms is not None
+                else None
+            ),
+            "error": self.error,
+        }
 
 
 class SearchStream:
@@ -43,17 +70,7 @@ class SearchStream:
         self._sequence = 0
         self._outcome = "disconnected"
         self._failure_code: str | None = None
-        self._stages: dict[str, dict[str, Any]] = {
-            stage: {
-                "stage_id": stage,
-                "status": "pending",
-                "details": None,
-                "progress": None,
-                "metrics": None,
-                "error": None,
-            }
-            for stage in STAGE_IDS
-        }
+        self._stages = {stage: StageSnapshot(stage) for stage in STAGE_IDS}
         self._publish("run.started", None, {"stage_ids": STAGE_IDS})
 
     def _publish(self, kind: str, stage_id: str | None, data: dict) -> None:
@@ -90,20 +107,19 @@ class SearchStream:
                 self._timeout_locked(True)
                 return
             snapshot = self._stages[event.stage_id]
-            data: dict[str, Any] = {}
+            data: dict = {}
             if event.type == "stage.started":
-                snapshot["status"] = "running"
+                snapshot.status = "running"
             else:
-                snapshot["metrics"] = {"duration_ms": event.duration_ms}
-                data["metrics"] = snapshot["metrics"]
+                snapshot.duration_ms = event.duration_ms
+                data["metrics"] = {"duration_ms": event.duration_ms}
                 if event.error is None:
-                    snapshot["status"] = "completed"
-                    snapshot["details"] = {}
+                    snapshot.status = "completed"
                     data["details"] = {}
                 else:
                     _, error = self.failure(event.error)
-                    snapshot["status"] = "failed"
-                    snapshot["error"] = error
+                    snapshot.status = "failed"
+                    snapshot.error = error
                     data["error"] = error
             self._publish(event.type, event.stage_id, data)
 
@@ -124,8 +140,8 @@ class SearchStream:
                 self._timeout_locked(False)
                 return
             for stage in self._stages.values():
-                if stage["status"] == "pending":
-                    stage["status"] = "skipped"
+                if stage.status == "pending":
+                    stage.status = "skipped"
             self._finish(
                 "run.failed",
                 {
@@ -144,8 +160,8 @@ class SearchStream:
 
     def _timeout_locked(self, processing: bool) -> None:
         for stage in self._stages.values():
-            if stage["status"] in {"pending", "running"}:
-                stage["status"] = "unknown"
+            if stage.status in {"pending", "running"}:
+                stage.status = "unknown"
         self._finish(
             "run.failed",
             {
@@ -163,7 +179,7 @@ class SearchStream:
     def _finish(self, kind: str, data: dict, outcome: str) -> None:
         # Encode the terminal snapshot while locked, then freeze the event sink.
         data["metrics"] = {"duration_ms": (monotonic() - self.admitted) * 1000}
-        data["stages"] = list(self._stages.values())
+        data["stages"] = [stage.public() for stage in self._stages.values()]
         self._outcome = outcome
         self._failure_code = data.get("error", {}).get("code")
         self._publish(kind, None, data)

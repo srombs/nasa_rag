@@ -7,7 +7,7 @@ question endpoint or adding model work.
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 **Specification:** [PRD/TRD](../spec.md), especially stage order, additive HTTP
 transport, event contract, and shared admission controls.
@@ -61,14 +61,6 @@ results, and 04 completes model-usage metrics. Do not fill unfinished fields wit
 fabricated values or present this intermediate implementation as the complete
 version-1 frontend contract. Each later slice extends this same real pipeline.
 
-## Comments
-
-- 2026-11-08: Published from the approved backend-only ticket breakdown.
-
-- 2026-11-08: User approved implementation on `implement/rag-ui-trace-ticket-01`
-  after updating from main `c69f02b`. Using the specified mocked HTTP boundary,
-  including real loopback delivery with a blocked provider.
-
 ## Answer
 
 Implemented `POST /ask/stream` with real lifecycle observation of all eight
@@ -85,16 +77,39 @@ version-1 frontend contract remains development-only through ticket 06.
 
 Verification (mocked providers only):
 
-- `uv run --locked --extra web --extra dev --extra profile python -m pytest -q`:
-  **158 passed**, including an actual loopback TCP stream received while
+- `.venv/bin/python -m pytest -q` (after installing the locked web/dev/profile
+  environment with `uv run --locked --extra web --extra dev --extra profile`):
+  **162 passed**, including an actual loopback TCP stream received while
   generation was held by a test event, then released for final-answer delivery.
 - Focused HTTP checks cover strict admission, shared IP allowances/proxy trust,
   stage order, framing/IDs, heartbeat delivery, provider-output validation,
   sanitized failures, response deadlines, cancellation/disconnect, slot ownership,
   unchanged answers, and no additional model calls.
 - Ruff checks on all changed Python files: **passed**.
-- mypy on `search_flow.py`, `web_stream.py`, and `web.py`, with existing
+- mypy on `search_flow.py`, `web_stream.py`, `web.py`, and
+  `retrieval/faiss_retriever.py`, with existing
   `--follow-imports=silent --ignore-missing-imports --check-untyped-defs` flags:
   **passed**; `git diff --check`: **passed**.
 
-Review is pending. No paid calls, deployment, or frontend changes were performed.
+Standards review: **0 hard violations, 0 remaining optional smells**.
+Spec review: **0 remaining findings**. Review caught vector validation completing
+outside the embedding boundary; fixed by preparing the vector within that stage
+and reusing its normalized matrix in FAISS. Four regressions cover empty,
+wrong-dimension, non-finite, and zero vectors while preserving legacy errors.
+The optional snapshot-typing suggestion was also addressed with `StageSnapshot`.
+
+One affected-suite run exceeded an existing two-second busy-recovery test wait;
+the isolated cases and final full suite passed without changing its threshold.
+
+No paid calls, deployment, or frontend changes were performed.
+
+## Comments
+
+- 2026-11-08: Published from the approved backend-only ticket breakdown.
+
+- 2026-11-08: User approved implementation on `implement/rag-ui-trace-ticket-01`
+  after updating from main `c69f02b`. Using the specified mocked HTTP boundary,
+  including real loopback delivery with a blocked provider.
+- 2026-11-08: Completed ticket 01 after standards/spec reviews and 162 passing
+  tests. Tickets 02 and 04 are unblocked; complete frontend integration remains
+  gated on ticket 06.

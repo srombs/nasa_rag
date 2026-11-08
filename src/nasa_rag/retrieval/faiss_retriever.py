@@ -1,6 +1,7 @@
 """FAISS-specific retrieval over already loaded document chunks."""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 
 import faiss
@@ -8,6 +9,13 @@ import numpy as np
 
 from ..models import DocumentChunk
 from .vector_store import create_query_matrix, load_or_create_index, validate_index
+
+
+@dataclass(frozen=True)
+class PreparedQuery:
+    """A query matrix that has already passed FAISS preparation and validation."""
+
+    matrix: np.ndarray
 
 
 class FaissRetriever:
@@ -31,9 +39,20 @@ class FaissRetriever:
         validate_index(index, self.document_chunks)
         self.index = index
 
+    def prepare_query(self, query_embedding: Sequence[float]) -> PreparedQuery:
+        """Normalize and validate a vector before observing semantic search."""
+        if self.index is None:
+            raise RuntimeError("Load the FAISS retriever before searching.")
+        query_matrix = create_query_matrix(query_embedding)
+        if query_matrix.shape[1] != self.index.d:
+            raise ValueError(
+                "Query embedding dimension does not match the FAISS index."
+            )
+        return PreparedQuery(query_matrix)
+
     def search(
         self,
-        query_embedding: Sequence[float],
+        query_embedding: Sequence[float] | PreparedQuery,
         top_k: int,
         source_file_filter: str | None = None,
     ) -> list[DocumentChunk]:
@@ -47,11 +66,12 @@ class FaissRetriever:
         if source_file_filter is not None and not source_file_filter.strip():
             raise ValueError("Source file filter cannot be empty.")
 
-        query_matrix = create_query_matrix(query_embedding)
-        if query_matrix.shape[1] != self.index.d:
-            raise ValueError(
-                "Query embedding dimension does not match the FAISS index."
-            )
+        prepared = (
+            query_embedding
+            if isinstance(query_embedding, PreparedQuery)
+            else self.prepare_query(query_embedding)
+        )
+        query_matrix = prepared.matrix
 
         candidate_count = top_k
         if source_file_filter is not None:

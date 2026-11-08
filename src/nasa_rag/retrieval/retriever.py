@@ -235,11 +235,18 @@ class Retriever:
 
         try:
             search_query = rewritten_query or self.query_rewriter.rewrite(query)
-            with search_stage("embed_query"):
+            with search_stage("embed_query") as observed:
                 query_embedding = embed_query(search_query)
+                # Preserve the original interface for unobserved library/CLI calls.
+                # Observed runs validate before declaring embedding complete.
+                faiss_query = (
+                    self.faiss_retriever.prepare_query(query_embedding)
+                    if observed
+                    else query_embedding
+                )
             with search_stage("semantic_search"):
                 faiss_results = self.faiss_retriever.search(
-                    query_embedding,
+                    faiss_query,
                     top_k=len(self.document_chunks),
                     source_file_filter=source_file_filter,
                 )

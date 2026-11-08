@@ -19,7 +19,7 @@ or stage results to fill unfinished fields.
 
 | Ticket | What it delivers | Blocked by | Status |
 | --- | --- | --- | --- |
-| [01: Stream a question's live search stages](issues/01-stream-live-search-stages.md) | Real stage lifecycle events and the final answer over the additive streaming endpoint. | None | ready-for-agent |
+| [01: Stream a question's live search stages](issues/01-stream-live-search-stages.md) | Real stage lifecycle events and the final answer over the additive streaming endpoint. | None | resolved |
 | [02: Expose planning and retrieval results](issues/02-expose-planning-and-retrieval-results.md) | Inspectable query plan, embedding summary, passages, native rankings, and fusion metadata. | 01 | ready-for-agent |
 | [03: Stream reranking progress and citation results](issues/03-stream-reranking-and-citation-results.md) | Per-candidate progress, final reranking, context references, and citation-reference outcomes. | 02 | ready-for-agent |
 | [04: Report request-scoped timing and model costs](issues/04-report-request-timing-and-model-costs.md) | Accurate stage/run metrics and request-correlated usage records. | 01 | ready-for-agent |

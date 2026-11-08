@@ -52,16 +52,16 @@ def observe_search(observer: Observer) -> Iterator[None]:
 
 
 @contextmanager
-def search_stage(stage_id: StageId) -> Iterator[None]:
-    """Publish boundaries around an operation and its existing validation."""
+def search_stage(stage_id: StageId) -> Iterator[bool]:
+    """Publish operation boundaries; yield whether this execution is observed."""
     observer = _observer.get()
     if observer is None:
-        yield
+        yield False
         return
     started = monotonic()
     observer(StageEvent("stage.started", stage_id))
     try:
-        yield
+        yield True
     except Exception as error:
         observer(
             StageEvent("stage.failed", stage_id, (monotonic() - started) * 1000, error)

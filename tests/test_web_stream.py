@@ -55,6 +55,7 @@ def provider(monkeypatch, tmp_path):
     operations = []
     hooks = {}
     outputs = {}
+    vector = [1.0, 0.5]
 
     def record(kind, arguments):
         operations.append((kind, arguments))
@@ -64,7 +65,7 @@ def provider(monkeypatch, tmp_path):
     def embeddings_create(**arguments):
         assert isinstance(arguments["input"], str), "Startup must use cached vectors"
         record("query_embedding", arguments)
-        return SimpleNamespace(data=[SimpleNamespace(embedding=[1.0, 0.5])])
+        return SimpleNamespace(data=[SimpleNamespace(embedding=vector.copy())])
 
     def responses_create(**arguments):
         kind = arguments.get("text", {}).get("format", {}).get("name", "answer")
@@ -88,7 +89,9 @@ def provider(monkeypatch, tmp_path):
     monkeypatch.setattr(openai, "OpenAI", lambda: client)
     monkeypatch.setenv("OPENAI_API_KEY", "mock-key")
     monkeypatch.setenv("NASA_RAG_CACHE_DIR", str(cache))
-    return SimpleNamespace(operations=operations, hooks=hooks, outputs=outputs)
+    return SimpleNamespace(
+        operations=operations, hooks=hooks, outputs=outputs, vector=vector
+    )
 
 
 def events(response):
@@ -121,6 +124,9 @@ def test_stream_preserves_real_stage_order_answer_and_model_calls(provider):
         ]
         assert flow[-1]["type"] == "run.completed"
         assert flow[-1]["data"]["answer"] == ANSWER
+        assert [stage["status"] for stage in flow[-1]["data"]["stages"]] == [
+            "completed"
+        ] * 8
         for i, event in enumerate(flow, 1):
             assert event["schema_version"] == 1
             assert event["sequence"] == i
@@ -375,3 +381,27 @@ def test_worker_cannot_publish_success_after_the_absolute_deadline(
     assert flow[-1]["data"]["error"]["code"] == "response_timeout"
     assert not any(e["type"] == "run.completed" for e in flow)
     assert not any(e["type"] == "stage.failed" for e in flow)
+
+
+@pytest.mark.parametrize(
+    "vector", [[], [1.0, 0.0, 0.0], [float("nan"), 0.0], [0.0, 0.0]]
+)
+def test_embedding_stage_validates_provider_vectors_before_completing(provider, vector):
+    provider.vector[:] = vector
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+        legacy = client.post("/ask", json={"question": "Hubble?"})
+    flow = events(response)
+    assert [(e["type"], e["stage_id"]) for e in flow[-3:]] == [
+        ("stage.started", "embed_query"),
+        ("stage.failed", "embed_query"),
+        ("run.failed", None),
+    ]
+    assert flow[-1]["data"]["http_equivalent_status"] == legacy.status_code == 500
+    assert flow[-1]["data"]["error"] == legacy.json()["error"]
+    assert [kind for kind, _ in provider.operations] == [
+        "retrieval_plan",
+        "query_embedding",
+        "retrieval_plan",
+        "query_embedding",
+    ]
