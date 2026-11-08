@@ -17,6 +17,13 @@ available and accepts the same flags. Installed outside the source checkout,
 the command stores caches in `~/.cache/nasa_rag` and cost logs in
 `~/.local/state/nasa_rag/model_costs.jsonl`.
 
+See the [search CLI and logging reference](docs/search-cli.md) for all arguments,
+pipeline output, and persistent model cost records.
+The [live search flow PRD/TRD](.scratch/rag-ui-trace/spec.md) defines planned
+visitor-facing stage updates and includes a separate frontend handoff.
+The [backend ticket index](.scratch/rag-ui-trace/README.md) lists implementation
+slices and their dependencies.
+
 The search CLI reads every `.txt` file in `data/`, chunks and embeds each
 file separately, and retains its filename on every `DocumentChunk` result.
 
