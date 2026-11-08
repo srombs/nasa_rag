@@ -74,12 +74,13 @@ def test_health_and_questions_reuse_startup_pipeline_and_preserve_answers():
         None,
     ],
 )
-def test_invalid_requests_have_public_error_and_never_run_pipeline(payload):
+@pytest.mark.parametrize("route", ["/ask", "/ask/stream"])
+def test_invalid_requests_have_public_error_and_never_run_pipeline(payload, route):
     def unexpected(question):
         pytest.fail("Invalid input reached the pipeline")
 
     with TestClient(web.create_app(lambda: unexpected)) as client:
-        response = client.post("/ask", json=payload)
+        response = client.post(route, json=payload)
         assert response.status_code == 422
         body = response.json()
         assert set(body) == {"request_id", "error"}
@@ -301,7 +302,10 @@ def test_default_startup_aborts_on_cache_or_retriever_failure(
 def test_uninitialized_app_does_not_report_health_or_accept_questions():
     client = TestClient(web.create_app(lambda: lambda question: question))
     assert client.get("/health").status_code == 503
-    assert client.post("/ask", json={"question": "Hello"}).status_code == 503
+    for route in ("/ask", "/ask/stream"):
+        response = client.post(route, json={"question": "Hello"})
+        assert response.status_code == 503
+        assert response.json()["error"]["code"] == "not_ready"
 
 
 def test_rate_limit_has_a_sliding_boundary_separate_ips_and_resets_on_restart(caplog):
@@ -340,8 +344,9 @@ def test_rate_limit_has_a_sliding_boundary_separate_ips_and_resets_on_restart(ca
 
 
 @pytest.mark.parametrize("trusted", [False, True])
+@pytest.mark.parametrize("route", ["/ask", "/ask/stream"])
 def test_only_configured_proxy_connections_can_change_rate_identity(
-    monkeypatch, trusted
+    monkeypatch, trusted, route
 ):
     monkeypatch.setenv("NASA_RAG_TRUSTED_PROXIES", "10.0.0.0/24" if trusted else "")
     with TestClient(
@@ -350,19 +355,19 @@ def test_only_configured_proxy_connections_can_change_rate_identity(
         for _ in range(10):
             # The proxy appends the real visitor after any visitor-supplied value.
             response = client.post(
-                "/ask",
+                route,
                 json={},
                 headers={"X-Forwarded-For": "198.51.100.99, 192.0.2.1"},
             )
             assert response.status_code == 422
         response = client.post(
-            "/ask",
+            route,
             json={"question": "Hello"},
             headers={"X-Forwarded-For": "198.51.100.100, 192.0.2.1"},
         )
         assert response.status_code == 429
         other_visitor = client.post(
-            "/ask",
+            route,
             json={"question": "Hello"},
             headers={"X-Forwarded-For": "192.0.2.2"},
         )
@@ -419,7 +424,8 @@ def test_deadline_keeps_pipeline_busy_until_work_finishes(
 
 
 @pytest.mark.parametrize("abort", ["disconnect", "cancel"])
-def test_disconnected_request_keeps_slot_until_pipeline_finishes(abort):
+@pytest.mark.parametrize("route", ["/ask", "/ask/stream"])
+def test_disconnected_request_keeps_slot_until_pipeline_finishes(abort, route, caplog):
     started = Event()
     finish = Event()
     finished = Event()
@@ -453,8 +459,8 @@ def test_disconnected_request_keeps_slot_until_pipeline_finishes(abort):
             "http_version": "1.1",
             "method": "POST",
             "scheme": "http",
-            "path": "/ask",
-            "raw_path": b"/ask",
+            "path": route,
+            "raw_path": route.encode(),
             "query_string": b"",
             "headers": [(b"content-type", b"application/json")],
             "client": ("192.0.2.1", 1000),
@@ -469,11 +475,15 @@ def test_disconnected_request_keeps_slot_until_pipeline_finishes(abort):
         else:
             incoming.put_nowait({"type": "http.disconnect"})
             await asyncio.wait_for(request, timeout=1)
-            assert messages[0]["status"] == 499
+            assert messages[0]["status"] == (200 if route.endswith("stream") else 499)
 
     with TestClient(app) as client:
         try:
             client.portal.call(abandon_request)
+            if route.endswith("stream"):
+                record = [r for r in caplog.records if r.name == "nasa_rag.web"][-1]
+                assert record.http_status == 200
+                assert record.stream_outcome == "disconnected"
             busy = client.post("/ask", json={"question": "Second"})
             assert busy.status_code == 503
             assert busy.json()["error"]["code"] == "busy"

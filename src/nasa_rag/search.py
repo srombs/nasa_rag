@@ -16,6 +16,7 @@ from .models import BM25SearchResult, DocumentChunk, RerankResult
 from .paths import cache_directory, data_directory
 from .retrieval.retrieval_planner import RetrievalPlanner
 from .retrieval.retriever import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP_SIZE, Retriever
+from .search_flow import search_stage
 
 TOP_RESULTS = 10
 TOP_K = 30
@@ -143,8 +144,10 @@ def run_both_searches(
 
 def generate_rag_answer(question: str, results: Sequence[DocumentChunk]) -> str:
     """Build retrieved context and generate an answer to a question."""
-    answer = generate_answer(build_context(results), question)
-    return validate_answer_citations(answer, build_chunk_references(results))
+    with search_stage("generate_answer"):
+        answer = generate_answer(build_context(results), question)
+    with search_stage("check_citations"):
+        return validate_answer_citations(answer, build_chunk_references(results))
 
 
 @report_run_costs("search")

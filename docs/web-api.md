@@ -76,9 +76,73 @@ is canceled, the client disconnects, or its response deadline expires. No questi
 queue is maintained. Normal shutdown waits for that work to finish; process
 termination does not recover it on restart.
 
+## Live search stages (development slice)
+
+`POST /ask/stream` accepts the same strict question body as `/ask`. This is the
+first backend slice of the [live search flow](../.scratch/rag-ui-trace/spec.md),
+for development only until ticket 06 verifies the complete frontend contract.
+It currently delivers stage lifecycles and the final answer. Stage completion
+`details` objects are empty, and `metrics` contains only measured `duration_ms`.
+Planning/retrieval payloads, reranking progress, structured citation results,
+usage/cost fields, and detailed interruption snapshots arrive in tickets 02–05.
+Missing fields are not fabricated values or claims of zero model usage.
+
+With live model calls authorized, inspect incremental delivery using:
+
+```sh
+curl --no-buffer --fail-with-body "http://127.0.0.1:$PORT/ask/stream" \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"What mission launched Hubble?"}'
+```
+
+Accepted requests return HTTP 200, UTF-8 `text/event-stream`,
+`Cache-Control: no-cache, no-transform`, and `X-Request-ID`, without a fixed
+content length. Each application event uses `event: <type>`, `id: <sequence>`,
+and JSON `data: <envelope>`, followed by a blank line. The envelope contains
+`schema_version` (1), `request_id`, contiguous `sequence` starting at 1, `type`,
+UTC `timestamp_utc`, monotonic `elapsed_ms`, `stage_id` (null for run events),
+and a type-specific `data` object. Idle periods send `: heartbeat` comments at
+least every 15 seconds; these do not consume sequence numbers or reset deadlines.
+
+`run.started` supplies the ordered `stage_ids`. Each operation emits
+`stage.started` before its work and `stage.completed` after successful return
+and its existing validation: planning, embedding, semantic search, keyword
+search, fusion, reranking, generation, and the citation reference check.
+`run.completed` delivers the unchanged full `answer` after citation checking.
+Answer tokens are not streamed. There is exactly one terminal event on a healthy
+connection. A failure emits sanitized `stage.failed` and `run.failed` events;
+`run.failed` includes the existing public error, `http_equivalent_status`, and
+`processing_may_continue`. Deadlines emit a terminal failure without inventing
+a stage failure. HTTP status remains 200 once streaming headers were sent.
+
+Both routes share the work slot, IP allowance, proxy trust, and admission errors.
+Invalid, unavailable, busy, and over-limit submissions receive the usual JSON
+errors before SSE headers. After a timeout or disconnect, the actual worker
+keeps its slot until it finishes. Observation is detachable, with a 64-event
+queue bound; overflow closes observation rather than blocking model work.
+EOF without a terminal event means interruption. There is no replay, automatic
+resubmission, or claim that closing the stream cancels processing.
+
+Stream request logs retain the actual HTTP status and add `stream_outcome`
+(`completed`, `failed`, `timeout`, or `disconnected`) and `failure_code` when
+known. HTTP 200 alone does not establish successful observation. Questions,
+event bodies, and raw exceptions are omitted from operational logs.
+
+The focused offline streaming tests include a real loopback TCP connection with
+a deterministically blocked mocked provider. They receive an active stage and
+heartbeat before releasing generation, then receive the unchanged final answer:
+
+```sh
+uv run --extra web --extra dev python -m pytest -q tests/test_web_stream.py
+```
+
+This is backend evidence only. Website proxy buffering, runtime timeouts, and
+browser delivery still need verification in the frontend repository.
+
 ## Submission limits and deadlines
 
-Each client IP may submit ten `POST /ask` requests in a rolling ten-minute window.
+Each client IP may submit ten requests across `POST /ask` and `POST /ask/stream`
+in a rolling ten-minute window.
 The eleventh receives 429. Invalid submissions, busy requests, timeouts, and
 failures consume the allowance; over-limit attempts do not extend the window.
 Separate addresses have separate allowances. Health checks do not consume them.
@@ -88,11 +152,13 @@ there is no database, Redis service, or global daily quota.
 
 `NASA_RAG_RESPONSE_TIMEOUT_SECONDS` sets the pipeline response deadline (default
 120 seconds); it must be a positive finite number or startup fails. A deadline
-produces 504 with a request ID. This ends the HTTP wait; underlying processing
+produces 504 with a request ID for `/ask`, or a `run.failed` event after
+streaming admission. This ends the HTTP wait; underlying processing
 may continue, with the service returning `busy` until that call actually finishes.
 The adapter does not retry or claim cancellation. Existing model-client retries
-are unchanged. A disconnected or canceled request is recorded with status 499;
-the disconnected visitor cannot receive that response.
+are unchanged. A disconnected or canceled JSON request is recorded with status 499;
+the disconnected visitor cannot receive that response. Admitted streams retain
+HTTP 200 and record `stream_outcome=disconnected`.
 
 ## Proxy trust and access boundary
 
@@ -147,9 +213,9 @@ Match the response ID to that entry for operational correlation. Routine web
 logging omits bodies, questions, context, headers, raw URLs, and credentials.
 During the web lifespan, logging configuration silences existing RAG loggers
 (including their prompt-bearing INFO logs and exception tracebacks) and provider
-HTTP library logs. Original RAG/CLI modules are unchanged; logger configuration
-is restored when the app shuts down. Keep `--no-access-log` to avoid a second
-Uvicorn access log containing raw request URLs.
+HTTP library logs. Existing CLI logging behavior is preserved; logger
+configuration is restored when the app shuts down. Keep `--no-access-log` to avoid
+a second Uvicorn access log containing raw request URLs.
 
 See [runtime verification and measured RAM evidence](web-runtime-verification.md)
 for a repeatable offline server/profile command, persisted-cache restart checks,
