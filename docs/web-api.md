@@ -78,14 +78,37 @@ termination does not recover it on restart.
 
 ## Live search stages (development slice)
 
-`POST /ask/stream` accepts the same strict question body as `/ask`. This is the
-first backend slice of the [live search flow](../.scratch/rag-ui-trace/spec.md),
+`POST /ask/stream` accepts the same strict question body as `/ask`. This is an
+incremental backend implementation of the [live search flow](../.scratch/rag-ui-trace/spec.md),
 for development only until ticket 06 verifies the complete frontend contract.
-It currently delivers stage lifecycles and the final answer. Stage completion
-`details` objects are empty, and `metrics` contains only measured `duration_ms`.
-Planning/retrieval payloads, reranking progress, structured citation results,
-usage/cost fields, and detailed interruption snapshots arrive in tickets 02–05.
+It currently delivers stage lifecycles, planning/retrieval details, and the final
+answer. `metrics` contains only measured `duration_ms`. Reranking progress,
+structured citation results, usage/cost fields, and complete interruption
+handling arrive in tickets 03–05; their completion `details` remain empty.
 Missing fields are not fabricated values or claims of zero model usage.
+
+The first five `stage.completed` events include these `data.details` fields:
+
+| Stage | Details |
+| --- | --- |
+| `plan_query` | Actual `search_query` and `source_file_filter` (filename or null). Invalid provider plans fail this stage. |
+| `embed_query` | Requested `model` and validated vector `dimensions`. |
+| `semantic_search` | `results`: up to 30 passages with one-based `rank` and native `similarity`. |
+| `keyword_search` | `results`: up to 30 passages with one-based `rank` and native `bm25_score`. |
+| `combine_rankings` | Actual `rrf_k` (60) and up to ten `results` with `rank`, `rrf_score`, `faiss_rank`, and `bm25_rank`. |
+
+Each passage includes `source` (filename), zero-based `chunk_index`, printable
+`reference` (for example `[hubble.txt, chunk 0]`), and full chunk `text`. Scores
+are finite JSON numbers. Arrays preserve actual ranking and tie order. Fusion
+uses the full eligible base rankings before truncating inspection lists, so its
+source ranks can exceed 30. Retrieval results are candidates; selection does
+not establish that a passage is cited or proves an answer. Scores from different
+methods are not directly comparable or accuracy percentages.
+
+Details are frozen when their stage completes. The same snapshots appear in
+terminal `data.stages`, including completed retrieval stages retained after a
+later pipeline failure. Serialization uses explicit allowed fields; embedding
+vectors and raw provider objects are excluded.
 
 With live model calls authorized, inspect incremental delivery using:
 

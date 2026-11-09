@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from .. import embedder
 from ..embedder import embed_query
 from ..ingestion.file_loader import document_cache_file_name, load_and_embed_directory
 from ..models import (
@@ -10,6 +11,7 @@ from ..models import (
     DocumentChunk,
     RerankResult,
 )
+from ..search_details import StageDetails
 from ..search_flow import search_stage
 from .bm25_retriever import BM25Retriever
 from .faiss_retriever import FaissRetriever
@@ -244,18 +246,26 @@ class Retriever:
                     if observed
                     else query_embedding
                 )
-            with search_stage("semantic_search"):
+                if observed is not None:
+                    observed.details = StageDetails.embedding(
+                        embedder.EMBEDDING_MODEL, len(query_embedding)
+                    )
+            with search_stage("semantic_search") as completion:
                 faiss_results = self.faiss_retriever.search(
                     faiss_query,
                     top_k=len(self.document_chunks),
                     source_file_filter=source_file_filter,
                 )
-            with search_stage("keyword_search"):
+                if completion is not None:
+                    completion.details = StageDetails.semantic(faiss_results[:top_k])
+            with search_stage("keyword_search") as completion:
                 bm25_results = self.bm25_retriever.search(
                     tokenize_text(search_query),
                     top_k=len(self.document_chunks),
                     source_file_filter=source_file_filter,
                 )
+                if completion is not None:
+                    completion.details = StageDetails.keyword(bm25_results[:top_k])
         except ValueError:
             raise
         except Exception as error:
@@ -263,7 +273,7 @@ class Retriever:
                 "Unable to calculate reciprocal rank fusion."
             ) from error
 
-        with search_stage("combine_rankings"):
+        with search_stage("combine_rankings") as completion:
             eligible_chunks = self.document_chunks
             if source_file_filter is not None:
                 eligible_chunks = [
@@ -278,9 +288,11 @@ class Retriever:
                 chunk.bm25_rank = None
             for rank, chunk in enumerate(faiss_results, start=1):
                 chunk.faiss_rank = rank
+                assert chunk.rrf_score is not None
                 chunk.rrf_score += 1 / (rrf_k + rank)
             for rank, result in enumerate(bm25_results, start=1):
                 result.chunk.bm25_rank = rank
+                assert result.chunk.rrf_score is not None
                 result.chunk.rrf_score += 1 / (rrf_k + rank)
 
             rrf_results = sorted(
@@ -290,4 +302,6 @@ class Retriever:
                 ),
                 reverse=True,
             )[:rrf_top_k]
+            if completion is not None:
+                completion.details = StageDetails.fusion(rrf_results, rrf_k)
         return faiss_results[:top_k], bm25_results[:top_k], rrf_results

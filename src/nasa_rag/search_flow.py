@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from time import monotonic
 from typing import Literal
 
+from .search_details import StageDetails
+
 StageId = Literal[
     "plan_query",
     "embed_query",
@@ -35,6 +37,14 @@ class StageEvent:
     stage_id: StageId
     duration_ms: float | None = None
     error: Exception | None = None
+    details: StageDetails = StageDetails()
+
+
+@dataclass
+class StageCompletion:
+    """The observed operation supplies its snapshot before leaving the stage."""
+
+    details: StageDetails = StageDetails()
 
 
 Observer = Callable[[StageEvent], None]
@@ -52,16 +62,17 @@ def observe_search(observer: Observer) -> Iterator[None]:
 
 
 @contextmanager
-def search_stage(stage_id: StageId) -> Iterator[bool]:
-    """Publish operation boundaries; yield whether this execution is observed."""
+def search_stage(stage_id: StageId) -> Iterator[StageCompletion | None]:
+    """Publish boundaries and optional details from the actual operation."""
     observer = _observer.get()
     if observer is None:
-        yield False
+        yield None
         return
     started = monotonic()
     observer(StageEvent("stage.started", stage_id))
+    completion = StageCompletion()
     try:
-        yield True
+        yield completion
     except Exception as error:
         observer(
             StageEvent("stage.failed", stage_id, (monotonic() - started) * 1000, error)
@@ -69,5 +80,10 @@ def search_stage(stage_id: StageId) -> Iterator[bool]:
         raise
     else:
         observer(
-            StageEvent("stage.completed", stage_id, (monotonic() - started) * 1000)
+            StageEvent(
+                "stage.completed",
+                stage_id,
+                (monotonic() - started) * 1000,
+                details=completion.details,
+            )
         )
