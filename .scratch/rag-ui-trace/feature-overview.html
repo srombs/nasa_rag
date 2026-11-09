@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NASA RAG · Live search flow overview</title>
+  <style>
+    :root { color-scheme:light; --ink:#17332f; --muted:#526761; --paper:#f5f5ed; --line:#d8ded3; --green:#236446; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:1140px; margin:auto; padding:40px 28px 60px; }
+    a { color:var(--green); text-underline-offset:3px; }
+    a:hover { text-decoration-thickness:2px; }
+    button:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid #b56b14; outline-offset:4px; }
+    .topline,.section-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .eyebrow { font-size:.76rem; letter-spacing:.13em; font-weight:750; text-transform:uppercase; }
+    .pill { border:1px solid var(--line); padding:5px 12px; border-radius:30px; font-size:.8rem; background:#fff9; }
+    h1 { max-width:850px; font-size:clamp(2.5rem,6vw,4.6rem); line-height:1.06; letter-spacing:-.055em; margin:28px 0 22px; }
+    .lead { max-width:820px; color:var(--muted); font-size:1.18rem; }
+    h2 { font-size:1.55rem; line-height:1.25; letter-spacing:-.025em; margin:0 0 14px; }
+    h3 { font-size:1.07rem; line-height:1.4; margin:0 0 10px; }
+    p { margin:0 0 16px; }
+    section { margin-top:42px; }
+    .facts { display:grid; grid-template-columns:repeat(3,1fr); border-block:1px solid var(--line); margin:32px 0; }
+    .facts div { padding:18px 16px 18px 0; }
+    .facts strong { display:block; font-size:1.12rem; }
+    .facts span,.hint { color:var(--muted); font-size:.88rem; }
+    .notice { border-left:3px solid #ab7728; padding:10px 18px; background:#fff4dd; border-radius:0 8px 8px 0; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .card { background:#fff9; border:1px solid var(--line); border-radius:14px; padding:24px; }
+    ul { padding-left:20px; margin:0; }
+    li { margin:8px 0; }
+    .stages { border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#fff; }
+    .stages details+details { border-top:1px solid var(--line); }
+    .stages summary { cursor:pointer; padding:15px 22px; }
+    .stages details[open] { background:#f1f5eb; }
+    .stage-number { color:var(--muted); font-size:.8rem; display:inline-block; width:32px; margin-left:7px; }
+    .stage-title { font-weight:650; }
+    .stage-detail { padding:0 24px 6px 66px; max-width:900px; }
+    .tag { font-size:.72rem; font-weight:700; border-radius:5px; padding:3px 8px; display:inline-block; }
+    .built { color:#215a37; background:#e6f2e5; }
+    .next { color:#82500f; background:#fff0d5; }
+    .later { color:#475d6e; background:#e9eff4; }
+    .filters { display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 8px; }
+    .filters button { font:inherit; cursor:pointer; border:1px solid #b7c5b8; border-radius:30px; padding:7px 15px; background:transparent; color:var(--ink); font-size:.9rem; }
+    .filters button[aria-pressed="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+    .ticket-list { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+    .ticket { background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px; }
+    .ticket[data-phase="next"] { border:2px solid #b18a43; }
+    .ticket .meta { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .ticket p { font-size:.94rem; }
+    .ticket p:last-child { margin-bottom:0; }
+    .ticket[hidden] { display:none; }
+    .path { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:18px 0; }
+    .path .card { padding:20px; }
+    .path .eyebrow { display:block; color:var(--muted); margin-bottom:10px; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:#fff9; }
+    table { border-collapse:collapse; width:100%; text-align:left; font-size:.94rem; }
+    th,td { padding:15px 20px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { background:#edf0e6; font-size:.82rem; }
+    tr:last-child td { border:0; }
+    .decision { background:#e8edde; border-radius:16px; padding:28px; }
+    .decision a.primary { display:inline-block; background:var(--ink); color:white; border-radius:8px; padding:10px 18px; text-decoration:none; }
+    footer { margin-top:30px; color:var(--muted); font-size:.82rem; }
+    code { font-size:.87em; }
+    @media(max-width:720px) { main { padding:28px 18px 44px; } .columns,.ticket-list,.path,.facts { grid-template-columns:1fr; } .facts div { padding:12px 0; } .facts div+div { border-top:1px solid var(--line); } .stage-detail { padding-left:26px; } th,td { padding:12px; } }
+    @media print { body { background:white; } main { max-width:none; padding:0; } h1 { font-size:36px; } .filters { display:none; } .ticket,.card,details { break-inside:avoid; } .ticket[hidden] { display:block; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="topline"><span class="eyebrow">NASA RAG / Feature overview</span><a href="ticket-05-review.html">Open ticket 05 review →</a></div>
+    <h1>See how a NASA answer comes together.</h1>
+    <p class="lead">The live search flow lets visitors inspect the stages behind an answer: how their question was interpreted, which passages were retrieved, how candidates were ranked, and what model work was recorded.</p>
+    <div class="facts">
+      <div><strong>Built: tickets 01–04</strong><span>Live backend events, search details, and metrics</span></div>
+      <div><strong>Next: ticket 05</strong><span>Complete and verify interruption handling</span></div>
+      <div><strong>Then: ticket 06 + frontend</strong><span>Verify the contract, integrate the visitor experience</span></div>
+    </div>
+    <p class="notice"><strong>Current checkpoint:</strong> the backend is partly delivered. The complete version-1 stream contract remains development-only until ticket 06 passes. Website integration and deployed browser delivery remain separate acceptance work.</p>
+    <p class="hint">Snapshot of the local tracker reviewed at main <code>464f62b</code>. This is a static review document; it does not update ticket statuses automatically.</p>
+  </header>
+
+  <section aria-labelledby="experience-heading">
+    <h2 id="experience-heading">The intended visitor experience</h2>
+    <div class="columns">
+      <div class="card"><h3>While the search runs</h3><p>See the active stage and expand completed steps to inspect the query plan, passages, rankings, and relevance reasons. Reranking reports progress after each validated candidate.</p><p>Stage updates arrive as the work happens. The whole answer arrives at the end.</p></div>
+      <div class="card"><h3>When the search ends</h3><p>Read the answer with its existing citations and warnings. Inspect stage durations, models, recorded calls, available token usage, and estimated costs.</p><p>If observation ends early, keep received results and distinguish an actual failure from an unknown outcome.</p></div>
+    </div>
+    <p class="hint" style="margin-top:12px">These are the feature’s intended website behaviors. Backend payloads support them; the production frontend is outside this repository’s ticket set.</p>
+  </section>
+
+  <section aria-labelledby="journey-heading">
+    <div class="section-heading"><h2 id="journey-heading">One question, eight inspectable stages</h2><span class="hint">Expand a stage to see what it explains</span></div>
+    <p>Example question: “What did Hubble discover?” These descriptions explain the available data; they are not a live search or generated answer.</p>
+    <div class="stages">
+      <details open><summary><span class="stage-number">01</span><span class="stage-title">Plan query</span></summary><div class="stage-detail"><p>Inspect the rewritten search query and any source-file restriction actually used for retrieval. <span class="tag built">Ticket 02 · built</span></p></div></details>
+      <details><summary><span class="stage-number">02</span><span class="stage-title">Embed query</span></summary><div class="stage-detail"><p>See the requested embedding model and the vector’s dimension count. The embedding vector itself is not exposed. <span class="tag built">Ticket 02 · built</span></p></div></details>
+      <details><summary><span class="stage-number">03</span><span class="stage-title">Semantic search</span></summary><div class="stage-detail"><p>Inspect up to 30 passages selected by semantic similarity, including their text, references, ranks, and native similarity scores. <span class="tag built">Ticket 02 · built</span></p></div></details>
+      <details><summary><span class="stage-number">04</span><span class="stage-title">Keyword search</span></summary><div class="stage-detail"><p>Inspect up to 30 keyword-search passages with their native ranks and BM25 scores. Semantic and keyword scores use different scales. <span class="tag built">Ticket 02 · built</span></p></div></details>
+      <details><summary><span class="stage-number">05</span><span class="stage-title">Combine rankings</span></summary><div class="stage-detail"><p>See up to ten combined candidates, their reciprocal-rank-fusion scores, and contributing ranks from each search. Inspection limits do not change the underlying retrieval. <span class="tag built">Ticket 02 · built</span></p></div></details>
+      <details><summary><span class="stage-number">06</span><span class="stage-title">Rerank evidence</span></summary><div class="stage-detail"><p>Follow one update per validated candidate, with a relevance score and reason. Progress is in evaluation order; the completed stage supplies the final ranking. <span class="tag built">Ticket 03 · built</span></p></div></details>
+      <details><summary><span class="stage-number">07</span><span class="stage-title">Generate answer</span></summary><div class="stage-detail"><p>Inspect the ordered context references supplied to generation. The final answer is delivered after the citation reference check, without answer-token streaming. <span class="tag built">Tickets 01 + 03 · built</span></p></div></details>
+      <details><summary><span class="stage-number">08</span><span class="stage-title">Check citation references</span></summary><div class="stage-detail"><p>See whether answer references match the supplied context: valid references, a warning, or no citations. This checks reference membership, not factual accuracy. <span class="tag built">Ticket 03 · built</span></p></div></details>
+    </div>
+    <p class="hint" style="margin-top:12px">Ticket 01 supplies stage lifecycles. Ticket 04 adds per-stage and overall metrics. Retrieved passages are candidates, not guarantees that a claim is proven.</p>
+  </section>
+
+  <section aria-labelledby="delivery-heading">
+    <h2 id="delivery-heading">What’s built, what’s next, what remains</h2>
+    <p>The backend tickets are incremental. Completing four tickets does not establish that the whole feature is ready for visitors.</p>
+    <div class="filters" role="group" aria-label="Filter delivery work">
+      <button type="button" data-filter="all" aria-pressed="true">All work</button>
+      <button type="button" data-filter="built" aria-pressed="false">Built</button>
+      <button type="button" data-filter="next" aria-pressed="false">Next</button>
+      <button type="button" data-filter="later" aria-pressed="false">Remaining</button>
+    </div>
+    <p id="filter-status" class="hint" role="status">Showing all 7 work items.</p>
+    <div class="ticket-list">
+      <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 01</span><span class="tag built">Resolved</span></div><h3>Stream the real search stages</h3><p>An additive streaming endpoint emits actual stage events and one final answer. Both routes share the work slot and request allowance; the existing JSON endpoint remains available.</p><p><a href="issues/01-stream-live-search-stages.md">Read ticket 01 →</a></p></article>
+      <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 02</span><span class="tag built">Resolved</span></div><h3>Expose planning and retrieval results</h3><p>Publish the query plan, embedding summary, retrieved passages, native scores and ranks, and combined rankings. Completed detail snapshots stay consistent with the search.</p><p><a href="issues/02-expose-planning-and-retrieval-results.md">Read ticket 02 →</a></p></article>
+      <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 03</span><span class="tag built">Resolved</span></div><h3>Explain reranking and citation references</h3><p>Emit validated candidate progress, final reranking results, generation context references, and citation-reference outcomes. Retain evaluated candidates if a later one fails.</p><p><a href="issues/03-stream-reranking-and-citation-results.md">Read ticket 03 →</a></p></article>
+      <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 04</span><span class="tag built">Resolved</span></div><h3>Report timing and model costs</h3><p>Attach stage and request durations, model names, recorded call counts, available token usage, and estimated costs. Worker accounting retains request correlation after observation ends.</p><p><a href="issues/04-report-request-timing-and-model-costs.md">Read ticket 04 →</a></p></article>
+      <article class="ticket" data-phase="next"><div class="meta"><span class="eyebrow">Ticket 05</span><span class="tag next">Next · awaiting confirmation</span></div><h3>Preserve results through interruptions</h3><p>Complete and verify partial failures, deadlines, disconnects, bounded delivery, terminal snapshots, and worker ownership. Much of the foundation exists; edge-case evidence and any resulting fixes remain.</p><p><strong>Depends on:</strong> resolved tickets 03 and 04.</p><p><a href="ticket-05-review.html">Explore the five outcome examples →</a></p></article>
+      <article class="ticket" data-phase="later"><div class="meta"><span class="eyebrow">Ticket 06</span><span class="tag later">Pending · depends on 05</span></div><h3>Verify and package the full contract</h3><p>Prove the combined contract over real incremental HTTP with mocked providers. Deliver serialization-checked protocol fixtures, current API documentation, regression evidence, and the frontend handoff.</p><p><a href="issues/06-verify-and-document-stream-contract.md">Read ticket 06 →</a></p></article>
+      <article class="ticket" data-phase="later"><div class="meta"><span class="eyebrow">Frontend repository</span><span class="tag later">Separate acceptance work</span></div><h3>Bring the flow to the website</h3><p>Implement the proxy, stream reader, expandable timeline, safe answer rendering, retained partial results, and manual retry experience. Verify accessibility and live delivery through the deployed proxy.</p><p>The frontend implementation and hosting path have not been verified in this backend review.</p><p><a href="frontend-handoff.md">Read the frontend handoff →</a></p></article>
+    </div>
+  </section>
+
+  <section aria-labelledby="difference-heading">
+    <h2 id="difference-heading">What ticket 05 adds to the foundation</h2>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Already delivered in 01–04</th><th scope="col">Completion target for 05</th></tr></thead><tbody>
+      <tr><td>Stage details and validated rerank updates</td><td>Prove retained partial results across failures and observation ending.</td></tr>
+      <tr><td>Worker-scoped usage and frozen metric snapshots</td><td>Verify late usage, immutable terminal totals, and eventual worker exceptions across lifecycle edges.</td></tr>
+      <tr><td>Shared admission and basic detachable stream handling</td><td>Prove slot ownership and recovery through disconnects, queue exhaustion, and transport faults.</td></tr>
+      <tr><td>Existing deadline checks and focused HTTP tests</td><td>Resolve completion/deadline races and complete deterministic lifecycle coverage.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section aria-labelledby="handoff-heading">
+    <h2 id="handoff-heading">How the backend reaches a visitor</h2>
+    <div class="path">
+      <div class="card"><span class="eyebrow">01 / Backend</span><h3>Produce the search flow</h3><p>Run the shared search, publish versioned events, preserve usage and worker ownership.</p><span class="tag next">Finish 05, then 06</span></div>
+      <div class="card"><span class="eyebrow">02 / Website proxy</span><h3>Forward events promptly</h3><p>Preserve errors and request IDs; verify buffering, runtime lifetime, and disconnect handling.</p><span class="tag later">Frontend integration</span></div>
+      <div class="card"><span class="eyebrow">03 / Browser</span><h3>Render what was received</h3><p>Parse incremental events, show accessible details, retain partial results, and offer manual retry.</p><span class="tag later">Frontend acceptance</span></div>
+    </div>
+    <p>Rollout order: finish backend verification, deploy the additive backend capability, verify the real proxy path, then enable the frontend flow. Backend tests alone do not prove that visitors receive live updates.</p>
+  </section>
+
+  <section class="columns" aria-label="Interpretation and boundaries">
+    <div class="card"><h2>Read the results accurately</h2><ul>
+      <li>Search scores are native to each method, not answer-accuracy percentages.</li>
+      <li>Costs are estimates. Missing usage stays unknown; a known subtotal may be incomplete.</li>
+      <li>A deadline or disconnect does not establish that model work stopped.</li>
+      <li>HTTP 200 or end-of-stream alone does not establish success; the terminal event determines the observed outcome.</li>
+    </ul></div>
+    <div class="card"><h2>Feature boundaries</h2><ul>
+      <li>Whole-answer delivery; no answer-token streaming.</li>
+      <li>Existing search and citation behavior; no new factual-verification classifier.</li>
+      <li>Flow state lives in the current page; no saved history, replay, or reload recovery.</li>
+      <li>Manual retries only; each is a fresh ordinarily limited request.</li>
+    </ul></div>
+  </section>
+
+  <section class="decision" aria-labelledby="decision-heading"><h2 id="decision-heading">The next decision is ticket 05</h2><p>This overview shows the whole feature. Ticket 05 is the immediate implementation checkpoint; its review page contains the concrete interruption examples and an editable confirmation message.</p><a class="primary" href="ticket-05-review.html">Review ticket 05 and confirm its scope →</a></section>
+  <footer>Source: <a href="README.md">Backend ticket map</a> · <a href="spec.md">PRD/TRD</a> · <a href="frontend-handoff.md">Frontend handoff</a> · <a href="../../docs/web-api.md">Current API documentation</a><br>Local overview for review. Markdown tickets and the specification remain the acceptance sources.</footer>
+</main>
+<script>
+  'use strict';
+  const filters = document.querySelectorAll('[data-filter]');
+  const tickets = document.querySelectorAll('[data-phase]');
+  filters.forEach(button => button.addEventListener('click', () => {
+    const filter = button.dataset.filter;
+    filters.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    let count = 0;
+    tickets.forEach(ticket => {
+      ticket.hidden = filter !== 'all' && ticket.dataset.phase !== filter;
+      if (!ticket.hidden) count += 1;
+    });
+    const label = button.textContent.toLowerCase();
+    document.getElementById('filter-status').textContent = filter === 'all'
+      ? `Showing all ${count} work items.`
+      : `Showing ${count} ${label} work ${count === 1 ? 'item' : 'items'}.`;
+  }));
+</script>
+</body>
+</html>

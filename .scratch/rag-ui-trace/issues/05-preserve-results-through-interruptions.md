@@ -8,7 +8,7 @@ to the actual search, not the lifetime of its HTTP connection.
 **Blocked by:** 03 — Stream reranking progress and citation results;
 04 — Report request-scoped timing and model costs.
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 **Specification:** [PRD/TRD](../spec.md), especially event state transitions,
 terminal snapshots, admission controls, and resource lifecycle.
@@ -67,3 +67,6 @@ work; this ticket provides the server behavior they consume.
 ## Comments
 
 - 2026-11-08: Published from the approved backend-only ticket breakdown.
+- 2026-11-09: User confirmed implementation after reviewing the ticket and
+  feature overview. Claimed on `implement/rag-ui-trace-ticket-05`; lifecycle
+  tests use the approved public HTTP/ASGI boundary with mocked providers.

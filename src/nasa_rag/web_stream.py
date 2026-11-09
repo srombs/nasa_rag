@@ -98,10 +98,15 @@ class SearchStream:
             "stage_id": stage_id,
             "data": data,
         }
-        frame = (
-            f"event: {kind}\nid: {self._sequence}\n"
-            f"data: {json.dumps(payload, ensure_ascii=False, allow_nan=False)}\n\n"
-        ).encode()
+        try:
+            frame = (
+                f"event: {kind}\nid: {self._sequence}\n"
+                f"data: {json.dumps(payload, ensure_ascii=False, allow_nan=False)}\n\n"
+            ).encode()
+        except (TypeError, ValueError):
+            # An unusable observation must not fail or restart actual work.
+            self._detach()
+            return
         notify = not self._frames
         self._frames.append(frame)
         if notify:
@@ -135,10 +140,15 @@ class SearchStream:
                     snapshot.details = event.details
                     data["details"] = event.details.public()
                 else:
-                    _, error = self.failure(event.error)
+                    status, error = self.failure(event.error)
                     snapshot.status = "failed"
                     snapshot.error = error
+                    self._failure_code = error["code"]
                     data["error"] = error
+                    self._publish(event.type, event.stage_id, data)
+                    # A deadline cannot replace an already observed failure.
+                    self._fail_locked(status, error)
+                    return
             self._publish(event.type, event.stage_id, data)
 
     def complete(self, answer: str) -> None:
@@ -150,25 +160,30 @@ class SearchStream:
                     self._finish("run.completed", {"answer": answer}, "completed")
 
     def fail(self, error: Exception) -> None:
-        status, public = self.failure(error)
         with self._lock:
             if self._closed:
                 return
             if monotonic() >= self.expires_at:
                 self._timeout_locked(False)
                 return
-            for stage in self._stages.values():
-                if stage.status == "pending":
-                    stage.status = "skipped"
-            self._finish(
-                "run.failed",
-                {
-                    "error": public,
-                    "http_equivalent_status": status,
-                    "processing_may_continue": False,
-                },
-                "failed",
-            )
+            status, public = self.failure(error)
+            self._fail_locked(status, public)
+
+    def _fail_locked(self, status: int, public: dict[str, str]) -> None:
+        if self._closed:
+            return
+        for stage in self._stages.values():
+            if stage.status == "pending":
+                stage.status = "skipped"
+        self._finish(
+            "run.failed",
+            {
+                "error": public,
+                "http_equivalent_status": status,
+                "processing_may_continue": False,
+            },
+            "failed",
+        )
 
     def _timeout(self, processing: bool) -> None:
         with self._lock:
@@ -215,9 +230,10 @@ class SearchStream:
         self._frames.clear()
         self._loop.call_soon_threadsafe(self._ready.set)
 
-    def detach(self) -> None:
-        """Drop queued observations; actual worker ownership remains with the app."""
+    def detach(self, request: Request) -> None:
+        """Drop observations and retain a known failure even if delivery failed."""
         with self._lock:
+            request.state.failure_code = self._failure_code
             self._detach()
 
     async def body(
@@ -250,7 +266,7 @@ class SearchStream:
                         if monotonic() < self.expires_at:
                             yield b": heartbeat\n\n"
         finally:
-            self.detach()
+            self.detach(request)
 
 
 class SearchStreamResponse(StreamingResponse):
@@ -264,4 +280,4 @@ class SearchStreamResponse(StreamingResponse):
         try:
             await super().__call__(scope, receive, send)
         finally:
-            self.stream.detach()
+            self.stream.detach(Request(scope))
