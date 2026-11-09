@@ -65,7 +65,13 @@ def provider(monkeypatch, tmp_path):
     def embeddings_create(**arguments):
         assert isinstance(arguments["input"], str), "Startup must use cached vectors"
         record("query_embedding", arguments)
-        return SimpleNamespace(data=[SimpleNamespace(embedding=vector.copy())])
+        return SimpleNamespace(
+            model="provider-alias",
+            private="provider-only-secret",
+            data=[
+                SimpleNamespace(embedding=vector.copy(), private="provider-only-secret")
+            ],
+        )
 
     def responses_create(**arguments):
         kind = arguments.get("text", {}).get("format", {}).get("name", "answer")
@@ -80,7 +86,9 @@ def provider(monkeypatch, tmp_path):
             output = GENERATED
         else:
             pytest.fail("Unexpected extra rewrite/model call")
-        return SimpleNamespace(output_text=outputs.get(kind, output))
+        return SimpleNamespace(
+            output_text=outputs.get(kind, output), private="provider-only-secret"
+        )
 
     client = SimpleNamespace(
         embeddings=SimpleNamespace(create=embeddings_create),
@@ -90,8 +98,39 @@ def provider(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_API_KEY", "mock-key")
     monkeypatch.setenv("NASA_RAG_CACHE_DIR", str(cache))
     return SimpleNamespace(
-        operations=operations, hooks=hooks, outputs=outputs, vector=vector
+        operations=operations, hooks=hooks, outputs=outputs, vector=vector, cache=cache
     )
+
+
+@pytest.fixture
+def ranked_corpus(provider):
+    """Opposing base rankings make full-ranking fusion observable over HTTP."""
+    from nasa_rag.ingestion.file_loader import save_document_cache
+    from nasa_rag.models import DocumentChunk
+
+    texts = [
+        " ".join(["rare"] * (i + 1) + ["filler"] * (78 - i) + ["Ω"]) for i in range(40)
+    ]
+    save_document_cache(
+        provider.cache / "embeds/document_cache_100_20.json",
+        {
+            "hubble.txt": [
+                DocumentChunk("hubble.txt", i, text, [1.0, i / 40])
+                for i, text in enumerate(texts)
+            ],
+            "iss.txt": [
+                DocumentChunk("iss.txt", i, "other " * 80, [0.0, 1.0])
+                for i in range(50)
+            ],
+            "nasa_overview.txt": [],
+            "space_shuttle.txt": [],
+        },
+    )
+    provider.vector[:] = [1.0, 0.0]
+    provider.outputs["retrieval_plan"] = (
+        '{"search_query":"rare", "source_file_filter":"hubble.txt"}'
+    )
+    return texts
 
 
 def events(response):
@@ -105,6 +144,269 @@ def events(response):
         assert sequence == "id: " + str(payload["sequence"])
         result.append(payload)
     return result
+
+
+def completed_details(flow):
+    return {
+        event["stage_id"]: event["data"]["details"]
+        for event in flow
+        if event["type"] == "stage.completed"
+    }
+
+
+@pytest.mark.parametrize("source", ["hubble.txt", None])
+def test_plan_and_embedding_details_reflect_the_actual_requests(provider, source):
+    provider.outputs["retrieval_plan"] = json.dumps(
+        {"search_query": "  planned Hubble  ", "source_file_filter": source}
+    )
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    details = completed_details(flow)
+    assert details["plan_query"] == {
+        "search_query": "planned Hubble",
+        "source_file_filter": source,
+    }
+    assert details["embed_query"] == {
+        "model": "text-embedding-3-small",
+        "dimensions": 2,
+    }
+    assert provider.operations[1][1] == {
+        "model": "text-embedding-3-small",
+        "input": "planned Hubble",
+    }
+    terminal = {stage["stage_id"]: stage for stage in flow[-1]["data"]["stages"]}
+    for stage in ("plan_query", "embed_query"):
+        assert terminal[stage]["details"] == details[stage]
+
+
+def test_embedding_details_name_the_requested_model(provider, monkeypatch):
+    from nasa_rag import embedder
+
+    with TestClient(web.create_app()) as client:
+        monkeypatch.setattr(embedder, "EMBEDDING_MODEL", "requested-embedding-model")
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    details = completed_details(events(response))
+    assert details["embed_query"]["model"] == "requested-embedding-model"
+    assert provider.operations[1][1]["model"] == "requested-embedding-model"
+
+
+def test_native_rankings_use_bounded_ordered_passages_and_explicit_fields(
+    provider, ranked_corpus
+):
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Find rare"})
+    details = completed_details(events(response))
+    semantic = details["semantic_search"]["results"]
+    keyword = details["keyword_search"]["results"]
+    assert [p["chunk_index"] for p in semantic] == list(range(30))
+    assert [p["chunk_index"] for p in keyword] == list(range(39, 9, -1))
+    assert semantic[0] == {
+        "source": "hubble.txt",
+        "chunk_index": 0,
+        "reference": "[hubble.txt, chunk 0]",
+        "text": ranked_corpus[0],
+        "rank": 1,
+        "similarity": 1.0,
+    }
+    assert keyword[0] == {
+        "source": "hubble.txt",
+        "chunk_index": 39,
+        "reference": "[hubble.txt, chunk 39]",
+        "text": ranked_corpus[39],
+        "rank": 1,
+        "bm25_score": pytest.approx(0.531738, abs=0.000001),
+    }
+    for results, score in ((semantic, "similarity"), (keyword, "bm25_score")):
+        assert [p["rank"] for p in results] == list(range(1, 31))
+        assert all(p["source"] == "hubble.txt" for p in results)
+        assert all(
+            set(p) == {"source", "chunk_index", "reference", "text", "rank", score}
+            for p in results
+        )
+
+
+def test_fusion_uses_full_rankings_and_preserves_candidates_and_model_work(
+    provider, ranked_corpus
+):
+    with TestClient(web.create_app()) as client:
+        flow = events(client.post("/ask/stream", json={"question": "Find rare"}))
+        streamed_calls = provider.operations.copy()
+        provider.operations.clear()
+        legacy = client.post("/ask", json={"question": "Find rare"})
+    details = completed_details(flow)
+    fusion = details["combine_rankings"]
+    assert fusion["rrf_k"] == 60
+    candidates = fusion["results"]
+    # Opposing 40-item lists: both extremes win, with stable corpus-order ties.
+    assert [p["chunk_index"] for p in candidates] == [0, 39, 1, 38, 2, 37, 3, 36, 4, 35]
+    assert candidates[0] == {
+        "source": "hubble.txt",
+        "chunk_index": 0,
+        "reference": "[hubble.txt, chunk 0]",
+        "text": ranked_corpus[0],
+        "rank": 1,
+        "rrf_score": pytest.approx(0.02639344262295082),
+        "faiss_rank": 1,
+        "bm25_rank": 40,
+    }
+    assert candidates[1]["faiss_rank"] == 40
+    assert candidates[1]["bm25_rank"] == 1
+    assert candidates[1]["rrf_score"] == candidates[0]["rrf_score"]
+    assert [p["rank"] for p in candidates] == list(range(1, 11))
+    assert all(set(p) == set(candidates[0]) for p in candidates)
+    assert flow[-1]["data"]["answer"] == legacy.json()["answer"] == ANSWER
+    assert streamed_calls == provider.operations
+    assert [kind for kind, _ in streamed_calls] == [
+        "retrieval_plan",
+        "query_embedding",
+        *(["rerank_result"] * 10),
+        "answer",
+    ]
+    rerank_inputs = [
+        args["input"] for kind, args in streamed_calls if kind == "rerank_result"
+    ]
+    assert rerank_inputs == [
+        "Query:\nFind rare\n\nChunk:\n" + ranked_corpus[i]
+        for i in [0, 39, 1, 38, 2, 37, 3, 36, 4, 35]
+    ]
+    generation_input = streamed_calls[-1][1]["input"]
+    assert generation_input == (
+        "Context:\n"
+        + "\n\n---\n\n".join(p["reference"] + "\n" + p["text"] for p in candidates)
+        + "\n\nQuestion:\nFind rare"
+    )
+    for snapshot in flow[-1]["data"]["stages"][:5]:
+        assert snapshot["details"] == details[snapshot["stage_id"]]
+
+
+@pytest.mark.parametrize("later_failure", [False, True])
+def test_published_retrieval_snapshots_survive_chunk_mutation_and_later_failure(
+    provider, ranked_corpus, monkeypatch, later_failure
+):
+    from nasa_rag.retrieval.retriever import Retriever
+
+    # Retain the real loaded objects solely to inject later shared-state mutation.
+    # Retrieval and all model work still follow the production pipeline.
+    load = Retriever.load
+
+    def load_with_mutation(retriever):
+        load(retriever)
+
+        def mutate():
+            for chunk in retriever.document_chunks:
+                chunk.source = "mutated-source.txt"
+                chunk.chunk_index += 1000
+                chunk.text = "mutated-after-publication"
+                chunk.similarity = -123.0
+                chunk.rrf_score = -456.0
+                chunk.faiss_rank = 999
+                chunk.bm25_rank = 999
+            if later_failure:
+                raise RuntimeError("private-later-failure")
+
+        provider.hooks["rerank_result"] = mutate
+
+    monkeypatch.setattr(Retriever, "load", load_with_mutation)
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Find rare"})
+    flow = events(response)
+    details = completed_details(flow)
+    assert flow[-1]["type"] == ("run.failed" if later_failure else "run.completed")
+    for snapshot in flow[-1]["data"]["stages"][:5]:
+        assert snapshot["status"] == "completed"
+        assert snapshot["details"] == details[snapshot["stage_id"]]
+    for stage in ("semantic_search", "keyword_search", "combine_rankings"):
+        for passage in details[stage]["results"]:
+            assert passage["text"] == ranked_corpus[passage["chunk_index"]]
+    assert details["semantic_search"]["results"][0]["similarity"] == 1.0
+    assert details["combine_rankings"]["results"][0]["rrf_score"] == pytest.approx(
+        0.02639344262295082
+    )
+    assert "mutated-after-publication" not in response.text
+    assert "mutated-source.txt" not in response.text
+    assert "private-later-failure" not in response.text
+    assert "provider-only-secret" not in response.text
+    if later_failure:
+        snapshots = flow[-1]["data"]["stages"]
+        assert snapshots[5]["status"] == "failed"
+        assert [s["status"] for s in snapshots[6:]] == ["skipped", "skipped"]
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "[]",
+        '{"search_query":" ","source_file_filter":null}',
+        '{"search_query":"x","source_file_filter":123}',
+        '{"search_query":"x","source_file_filter":" "}',
+        '{"search_query":"x"}',
+        '{"search_query":"x","source_file_filter":null,"extra":"provider-only-secret"}',
+    ],
+)
+def test_invalid_plans_never_publish_success_or_start_embedding(provider, output):
+    provider.outputs["retrieval_plan"] = output
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    assert [(e["type"], e["stage_id"]) for e in flow] == [
+        ("run.started", None),
+        ("stage.started", "plan_query"),
+        ("stage.failed", "plan_query"),
+        ("run.failed", None),
+    ]
+    assert flow[-1]["data"]["http_equivalent_status"] == 502
+    assert flow[-1]["data"]["stages"][0]["details"] is None
+    assert [kind for kind, _ in provider.operations] == ["retrieval_plan"]
+    assert "provider-only-secret" not in response.text
+
+
+@pytest.mark.parametrize("stage", ["semantic_search", "keyword_search"])
+@pytest.mark.parametrize("score", [float("nan"), float("inf"), -float("inf")])
+def test_nonfinite_native_scores_fail_the_stage_before_completion(
+    provider, ranked_corpus, monkeypatch, stage, score
+):
+    if stage == "semantic_search":
+        import faiss
+
+        search = faiss.IndexFlatIP.search
+
+        def invalid_search(index, *args, **kwargs):
+            scores, indexes = search(index, *args, **kwargs)
+            scores[0, 0] = score
+            return scores, indexes
+
+        monkeypatch.setattr(faiss.IndexFlatIP, "search", invalid_search)
+    else:
+        from rank_bm25 import BM25Okapi
+
+        get_scores = BM25Okapi.get_scores
+
+        def invalid_scores(index, *args, **kwargs):
+            scores = get_scores(index, *args, **kwargs)
+            # Set every eligible score so truncation cannot hide the fault.
+            scores[:40] = score
+            return scores
+
+        monkeypatch.setattr(BM25Okapi, "get_scores", invalid_scores)
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Find rare"})
+    flow = events(response)
+    assert [(e["type"], e["stage_id"]) for e in flow[-2:]] == [
+        ("stage.failed", stage),
+        ("run.failed", None),
+    ]
+    assert stage not in completed_details(flow)
+    assert flow[-1]["data"]["stages"][0]["status"] == "completed"
+    assert all(kind != "rerank_result" for kind, _ in provider.operations)
+
+    # parse_constant rejects Python's otherwise permissive NaN/Infinity handling.
+    def reject_constant(value):
+        pytest.fail(f"Invalid JSON number: {value}")
+
+    for line in response.text.splitlines():
+        if line.startswith("data: "):
+            json.loads(line[6:], parse_constant=reject_constant)
 
 
 def test_stream_preserves_real_stage_order_answer_and_model_calls(provider):
@@ -268,7 +570,13 @@ def test_invalid_model_outputs_fail_the_actual_stage_without_leaking_details(
         "code": "upstream_error",
         "message": "The model provider could not answer.",
     }
-    assert "private" not in response.text + caplog.text
+    for secret in (
+        "private question",
+        "private reason",
+        "private.txt",
+        "provider-only-secret",
+    ):
+        assert secret not in response.text + caplog.text
     assert sum(e["type"].startswith("run.") for e in flow) == 2
     record = [r for r in caplog.records if r.name == "nasa_rag.web"][-1]
     assert record.http_status == 200

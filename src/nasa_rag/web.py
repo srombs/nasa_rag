@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from .search_details import StageDetails
 from .search_flow import observe_search, search_stage
 from .web_stream import SearchStream, SearchStreamResponse
 
@@ -142,7 +143,7 @@ def load_pipeline() -> Pipeline:
     planner = RetrievalPlanner()
 
     def answer(question: str) -> str:
-        with search_stage("plan_query"):
+        with search_stage("plan_query") as completion:
             plan = planner.infer(question)
             try:
                 retriever.validate_source_file_filter(plan.source_file_filter)
@@ -150,6 +151,8 @@ def load_pipeline() -> Pipeline:
                 raise RetrievalPlanningError(
                     "The provider plan names an unavailable source."
                 ) from None
+            if completion is not None:
+                completion.details = StageDetails.plan(plan)
         _, _, _, reranked, _ = run_both_searches(
             question,
             retriever,

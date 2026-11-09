@@ -1,8 +1,8 @@
 """Bounded, detachable SSE observation of one synchronous search worker.
 
-Ticket 01 publishes lifecycle events and measured durations. Completion details,
-usage metrics, and detailed interruption snapshots are delivered by later slices;
-absent data is never fabricated to imitate the complete frontend contract.
+Publishes lifecycle events, planning/retrieval details, and measured durations.
+Reranking/citation details, usage metrics, and complete interruption behavior
+arrive in later slices; absent data is never fabricated.
 """
 
 import asyncio
@@ -19,6 +19,7 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 from starlette.types import Receive, Scope, Send
 
+from .search_details import StageDetails
 from .search_flow import STAGE_IDS, StageEvent, StageId
 
 HEARTBEAT_SECONDS = 15.0
@@ -36,12 +37,13 @@ class StageSnapshot:
     ] = "pending"
     duration_ms: float | None = None
     error: dict[str, str] | None = None
+    details: StageDetails | None = None
 
     def public(self) -> dict:
         return {
             "stage_id": self.stage_id,
             "status": self.status,
-            "details": {} if self.status == "completed" else None,
+            "details": self.details.public() if self.details is not None else None,
             "progress": None,
             "metrics": (
                 {"duration_ms": self.duration_ms}
@@ -115,7 +117,8 @@ class SearchStream:
                 data["metrics"] = {"duration_ms": event.duration_ms}
                 if event.error is None:
                     snapshot.status = "completed"
-                    data["details"] = {}
+                    snapshot.details = event.details
+                    data["details"] = event.details.public()
                 else:
                     _, error = self.failure(event.error)
                     snapshot.status = "failed"

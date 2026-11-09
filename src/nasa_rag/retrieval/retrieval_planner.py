@@ -106,6 +106,10 @@ class RetrievalPlanner:
             raise RetrievalPlanningError(
                 "The retrieval-plan API returned invalid JSON."
             )
+        if set(payload) != {"search_query", "source_file_filter"}:
+            raise RetrievalPlanningError(
+                "The retrieval-plan API returned invalid fields."
+            )
 
         search_query = payload.get("search_query")
         source_file_filter = payload.get("source_file_filter")
