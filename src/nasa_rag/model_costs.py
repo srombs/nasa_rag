@@ -4,13 +4,15 @@ import json
 import logging
 import os
 from collections import Counter, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from functools import wraps
 from pathlib import Path
+from threading import Lock
 from typing import Any, TypeVar
 from uuid import uuid4
 
@@ -33,26 +35,156 @@ PRICES = {
     "text-embedding-3-small": {"input": Decimal("0.02")},
 }
 
+TOKEN_FIELDS = (
+    "input_tokens",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "output_tokens",
+    "reasoning_tokens",
+)
+
+
+@dataclass(frozen=True)
+class UsageSnapshot:
+    """Detached recorded usage; an in-flight call is not part of this snapshot."""
+
+    model_calls: int = 0
+    models: tuple[str, ...] = ()
+    tokens: tuple[int | None, ...] = (0, 0, 0, 0, 0)
+    known_cost_usd: Decimal = Decimal(0)
+    unknown_cost_calls: int = 0
+    price_dates: tuple[str, ...] = ()
+
+    def public(self, duration_ms: float | None) -> dict:
+        return {
+            "duration_ms": duration_ms,
+            "model_calls": self.model_calls,
+            "models": list(self.models),
+            "tokens": dict(zip(TOKEN_FIELDS, self.tokens, strict=True)),
+            "known_cost_usd": str(self.known_cost_usd),
+            "unknown_cost_calls": self.unknown_cost_calls,
+            "cost_complete": self.unknown_cost_calls == 0,
+            "price_dates": list(self.price_dates),
+        }
+
+
+@dataclass
+class _UsageTotals:
+    calls: int = 0
+    models: set[str] = field(default_factory=set)
+    tokens: dict[str, int | None] = field(
+        default_factory=lambda: dict.fromkeys(TOKEN_FIELDS, 0)
+    )
+    known_cost: Decimal = Decimal(0)
+    unknown_calls: int = 0
+    price_dates: set[str] = field(default_factory=set)
+
+    def record(self, model: str, counts: dict, cost: Decimal | None) -> None:
+        self.calls += 1
+        self.models.add(model)
+        for category in TOKEN_FIELDS:
+            # Omitted categories (embedding output/cache/reasoning) do not apply.
+            value = counts.get(category, 0)
+            previous = self.tokens[category]
+            self.tokens[category] = (
+                None if previous is None or value is None else previous + value
+            )
+        if cost is None:
+            self.unknown_calls += 1
+        else:
+            self.known_cost += cost
+            self.price_dates.add(PRICE_DATE)
+
+    def snapshot(self) -> UsageSnapshot:
+        return UsageSnapshot(
+            self.calls,
+            tuple(sorted(self.models)),
+            tuple(self.tokens[name] for name in TOKEN_FIELDS),
+            self.known_cost,
+            self.unknown_calls,
+            tuple(sorted(self.price_dates)),
+        )
+
 
 @dataclass
 class CostRun:
-    """Accumulate the model requests made during one CLI or evaluation run."""
+    """Accumulate recorded calls for one CLI, evaluation, or HTTP worker."""
 
     name: str
     id: str = field(default_factory=lambda: uuid4().hex)
-    calls: int = 0
-    unknown_calls: int = 0
-    total_usd: Decimal = Decimal(0)
     by_operation: dict[str, Decimal] = field(
         default_factory=lambda: defaultdict(Decimal)
     )
     operation_counts: Counter[str] = field(default_factory=Counter)
     unknown_by_operation: Counter[str] = field(default_factory=Counter)
+    request_id: str | None = None
+    _totals: _UsageTotals = field(default_factory=_UsageTotals, repr=False)
+    _stages: dict[str, _UsageTotals] = field(default_factory=dict, repr=False)
+    _lock: Lock = field(default_factory=Lock, repr=False)
+
+    @property
+    def calls(self) -> int:
+        return self._totals.calls
+
+    @property
+    def unknown_calls(self) -> int:
+        return self._totals.unknown_calls
+
+    @property
+    def total_usd(self) -> Decimal:
+        return self._totals.known_cost
+
+    def record(
+        self, operation: str, model: str, counts: dict, cost: Decimal | None
+    ) -> None:
+        with self._lock:
+            self.operation_counts[operation] += 1
+            if cost is None:
+                self.unknown_by_operation[operation] += 1
+            else:
+                self.by_operation[operation] += cost
+            self._totals.record(model, counts, cost)
+            stage = _CURRENT_STAGE.get()
+            if stage is not None:
+                self._stages.setdefault(stage, _UsageTotals()).record(
+                    model, counts, cost
+                )
+
+    def snapshots(self) -> tuple[UsageSnapshot, dict[str, UsageSnapshot]]:
+        """Capture run and stage totals together, independent of ledger writes."""
+        with self._lock:
+            return self._totals.snapshot(), {
+                stage: totals.snapshot() for stage, totals in self._stages.items()
+            }
+
+    def stage_snapshot(self, stage: str) -> UsageSnapshot:
+        with self._lock:
+            return self._stages.get(stage, _UsageTotals()).snapshot()
 
 
 _CURRENT_RUN: ContextVar[CostRun | None] = ContextVar("model_cost_run", default=None)
+_CURRENT_STAGE: ContextVar[str | None] = ContextVar("model_cost_stage", default=None)
 _PROCESS_RUN = CostRun("unscoped")
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+@contextmanager
+def track_costs(run: CostRun) -> Iterator[None]:
+    """Bind accounting inside the actual worker, for its entire lifetime."""
+    token = _CURRENT_RUN.set(run)
+    try:
+        yield
+    finally:
+        _CURRENT_RUN.reset(token)
+
+
+@contextmanager
+def track_stage(stage: str) -> Iterator[None]:
+    token = _CURRENT_STAGE.set(stage)
+    try:
+        yield
+    finally:
+        _CURRENT_STAGE.reset(token)
 
 
 def _usage_value(usage: Any, field_name: str) -> int | None:
@@ -119,14 +251,7 @@ def _record(
     model = requested_model  # The requested model defines the known rate.
     usage = getattr(response, "usage", None)
     counts, cost = _estimate_cost(endpoint, model, usage)
-    run.calls += 1
-    run.operation_counts[operation] += 1
-    if cost is None:
-        run.unknown_calls += 1
-        run.unknown_by_operation[operation] += 1
-    else:
-        run.total_usd += cost
-        run.by_operation[operation] += cost
+    run.record(operation, model, counts, cost)
 
     record = {
         "timestamp_utc": datetime.now(UTC).isoformat(),
@@ -145,6 +270,8 @@ def _record(
             key: str(value) for key, value in PRICES.get(model, {}).items()
         },
     }
+    if run.request_id is not None:
+        record["request_id"] = run.request_id
     path = Path(os.environ.get(LOG_PATH_ENV, DEFAULT_LOG_PATH))
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,8 +309,7 @@ def print_cost_summary(run: CostRun) -> None:
             f"known ~${run.by_operation[operation]:.8f}{suffix}"
         )
     print(
-        f"  Known total: {run.calls - run.unknown_calls} call(s), "
-        f"~${run.total_usd:.8f}"
+        f"  Known total: {run.calls - run.unknown_calls} call(s), ~${run.total_usd:.8f}"
     )
     if run.unknown_calls:
         print(f"  Unknown cost: {run.unknown_calls} call(s)")

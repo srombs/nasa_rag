@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from time import monotonic
 from typing import Literal
 
+from .model_costs import track_stage
 from .models import RerankResult
 from .search_details import StageDetails
 
@@ -95,26 +96,29 @@ def observe_search(observer: Observer) -> Iterator[None]:
 @contextmanager
 def search_stage(stage_id: StageId) -> Iterator[StageCompletion | None]:
     """Publish boundaries and optional details from the actual operation."""
-    observer = _observer.get()
-    if observer is None:
-        yield None
-        return
-    started = monotonic()
-    observer(StageEvent("stage.started", stage_id))
-    completion = StageCompletion()
-    try:
-        yield completion
-    except Exception as error:
-        observer(
-            StageEvent("stage.failed", stage_id, (monotonic() - started) * 1000, error)
-        )
-        raise
-    else:
-        observer(
-            StageEvent(
-                "stage.completed",
-                stage_id,
-                (monotonic() - started) * 1000,
-                details=completion.details,
+    with track_stage(stage_id):
+        observer = _observer.get()
+        if observer is None:
+            yield None
+            return
+        started = monotonic()
+        observer(StageEvent("stage.started", stage_id))
+        completion = StageCompletion()
+        try:
+            yield completion
+        except Exception as error:
+            observer(
+                StageEvent(
+                    "stage.failed", stage_id, (monotonic() - started) * 1000, error
+                )
             )
-        )
+            raise
+        else:
+            observer(
+                StageEvent(
+                    "stage.completed",
+                    stage_id,
+                    (monotonic() - started) * 1000,
+                    details=completion.details,
+                )
+            )
