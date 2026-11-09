@@ -22,6 +22,9 @@ from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from .search_flow import observe_search, search_stage
+from .web_stream import SearchStream, SearchStreamResponse
+
 Pipeline = Callable[[str], str]
 LOGGER = logging.getLogger(__name__)
 
@@ -102,6 +105,16 @@ def is_upstream_failure(error: Exception) -> bool:
     return False
 
 
+def public_failure(error: Exception) -> tuple[int, dict[str, str]]:
+    """Use the same fixed public vocabulary before and after streaming headers."""
+    if is_upstream_failure(error):
+        return 502, {
+            "code": "upstream_error",
+            "message": "The model provider could not answer.",
+        }
+    return 500, {"code": "internal_error", "message": "Unable to answer the question."}
+
+
 def load_pipeline() -> Pipeline:
     """Initialize the existing pipeline at server startup."""
     if not os.environ.get("OPENAI_API_KEY", "").strip():
@@ -129,13 +142,14 @@ def load_pipeline() -> Pipeline:
     planner = RetrievalPlanner()
 
     def answer(question: str) -> str:
-        plan = planner.infer(question)
-        try:
-            retriever.validate_source_file_filter(plan.source_file_filter)
-        except ValueError:
-            raise RetrievalPlanningError(
-                "The provider plan names an unavailable source."
-            ) from None
+        with search_stage("plan_query"):
+            plan = planner.infer(question)
+            try:
+                retriever.validate_source_file_filter(plan.source_file_filter)
+            except ValueError:
+                raise RetrievalPlanningError(
+                    "The provider plan names an unavailable source."
+                ) from None
         _, _, _, reranked, _ = run_both_searches(
             question,
             retriever,
@@ -212,7 +226,7 @@ class RequestControls:
             await send(message)
 
         try:
-            if scope["method"] == "POST" and scope["path"] == "/ask":
+            if scope["method"] == "POST" and scope["path"] in {"/ask", "/ask/stream"}:
                 now = self.clock()
                 for address, times in list(self.submissions.items()):
                     while times and times[0] <= now - 600:
@@ -233,34 +247,33 @@ class RequestControls:
                 times.append(now)
             await self.app(scope, receive, observed_send)
         except asyncio.CancelledError:
-            status = 499
+            if not response_started:
+                status = 499
             raise
         except Exception as error:
             if response_started:
                 raise
-            if is_upstream_failure(error):
-                response = error_response(
-                    request,
-                    502,
-                    "upstream_error",
-                    "The model provider could not answer.",
-                )
-            else:
-                response = error_response(
-                    request, 500, "internal_error", "Unable to answer the question."
-                )
+            failure_status, public = public_failure(error)
+            response = error_response(
+                request, failure_status, public["code"], public["message"]
+            )
             await response(scope, receive, observed_send)
         finally:
             elapsed = (monotonic() - started) * 1000
             LOGGER.info(
-                "request_id=%s status=%d elapsed_ms=%.2f",
+                "request_id=%s status=%d elapsed_ms=%.2f "
+                "stream_outcome=%s failure_code=%s",
                 request.state.request_id,
                 status,
                 elapsed,
+                getattr(request.state, "stream_outcome", None),
+                getattr(request.state, "failure_code", None),
                 extra={
                     "request_id": request.state.request_id,
                     "http_status": status,
                     "elapsed_ms": elapsed,
+                    "stream_outcome": getattr(request.state, "stream_outcome", None),
+                    "failure_code": getattr(request.state, "failure_code", None),
                 },
             )
 
@@ -335,6 +348,7 @@ def create_app(
         return {"status": "ok"}
 
     @app.post("/ask")
+    @app.post("/ask/stream")
     async def ask(body: Question, request: Request):
         nonlocal running
         if pipeline is None:
@@ -345,16 +359,44 @@ def create_app(
             return error_response(
                 request, 503, "busy", "The service is processing a question."
             )
-        task = asyncio.create_task(asyncio.to_thread(pipeline, body.question))
+        admitted = monotonic()
+        stream = (
+            SearchStream(request.state.request_id, admitted, deadline, public_failure)
+            if request.url.path == "/ask/stream"
+            else None
+        )
+        active_pipeline = pipeline
+
+        def work() -> str:
+            if stream is None:
+                return active_pipeline(body.question)
+            with observe_search(stream.stage):
+                try:
+                    answer = active_pipeline(body.question)
+                except Exception as error:
+                    stream.fail(error)
+                    raise
+                stream.complete(answer)
+                return answer
+
+        task = asyncio.create_task(asyncio.to_thread(work))
         running = task
         task.add_done_callback(
             lambda task: task.exception() if not task.cancelled() else None
         )
+        if stream is not None:
+            request.state.stream_outcome = "disconnected"
+            return SearchStreamResponse(
+                stream,
+                stream.body(request, task),
+                media_type="text/event-stream",
+                headers={"Cache-Control": "no-cache, no-transform"},
+            )
         disconnected = asyncio.create_task(wait_for_disconnect(request))
         try:
             done, _ = await asyncio.wait(
                 {task, disconnected},
-                timeout=deadline,
+                timeout=max(0, deadline - (monotonic() - admitted)),
                 return_when=asyncio.FIRST_COMPLETED,
             )
             if task in done:

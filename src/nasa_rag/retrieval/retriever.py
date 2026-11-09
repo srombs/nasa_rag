@@ -10,6 +10,7 @@ from ..models import (
     DocumentChunk,
     RerankResult,
 )
+from ..search_flow import search_stage
 from .bm25_retriever import BM25Retriever
 from .faiss_retriever import FaissRetriever
 from .query_rewriter import QueryRewriter
@@ -199,7 +200,8 @@ class Retriever:
             rewritten_query=rewritten_query,
             source_file_filter=source_file_filter,
         )
-        rerank_results = self.rerank_rrf_results(query, rrf_results)
+        with search_stage("rerank_evidence"):
+            rerank_results = self.rerank_rrf_results(query, rrf_results)
         return (
             faiss_results,
             bm25_results,
@@ -216,9 +218,7 @@ class Retriever:
         rrf_k: int = 60,
         rewritten_query: str | None = None,
         source_file_filter: str | None = None,
-    ) -> tuple[
-        list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]
-    ]:
+    ) -> tuple[list[DocumentChunk], list[BM25SearchResult], list[DocumentChunk]]:
         """Return FAISS, BM25, and fused RRF rankings for one query."""
         if not query:
             raise ValueError("Query text cannot be empty.")
@@ -235,16 +235,27 @@ class Retriever:
 
         try:
             search_query = rewritten_query or self.query_rewriter.rewrite(query)
-            faiss_results = self.faiss_retriever.search(
-                embed_query(search_query),
-                top_k=len(self.document_chunks),
-                source_file_filter=source_file_filter,
-            )
-            bm25_results = self.bm25_retriever.search(
-                tokenize_text(search_query),
-                top_k=len(self.document_chunks),
-                source_file_filter=source_file_filter,
-            )
+            with search_stage("embed_query") as observed:
+                query_embedding = embed_query(search_query)
+                # Preserve the original interface for unobserved library/CLI calls.
+                # Observed runs validate before declaring embedding complete.
+                faiss_query = (
+                    self.faiss_retriever.prepare_query(query_embedding)
+                    if observed
+                    else query_embedding
+                )
+            with search_stage("semantic_search"):
+                faiss_results = self.faiss_retriever.search(
+                    faiss_query,
+                    top_k=len(self.document_chunks),
+                    source_file_filter=source_file_filter,
+                )
+            with search_stage("keyword_search"):
+                bm25_results = self.bm25_retriever.search(
+                    tokenize_text(search_query),
+                    top_k=len(self.document_chunks),
+                    source_file_filter=source_file_filter,
+                )
         except ValueError:
             raise
         except Exception as error:
@@ -252,28 +263,31 @@ class Retriever:
                 "Unable to calculate reciprocal rank fusion."
             ) from error
 
-        eligible_chunks = self.document_chunks
-        if source_file_filter is not None:
-            eligible_chunks = [
-                chunk
-                for chunk in self.document_chunks
-                if chunk.source == source_file_filter
-            ]
+        with search_stage("combine_rankings"):
+            eligible_chunks = self.document_chunks
+            if source_file_filter is not None:
+                eligible_chunks = [
+                    chunk
+                    for chunk in self.document_chunks
+                    if chunk.source == source_file_filter
+                ]
 
-        for chunk in eligible_chunks:
-            chunk.rrf_score = 0.0
-            chunk.faiss_rank = None
-            chunk.bm25_rank = None
-        for rank, chunk in enumerate(faiss_results, start=1):
-            chunk.faiss_rank = rank
-            chunk.rrf_score += 1 / (rrf_k + rank)
-        for rank, result in enumerate(bm25_results, start=1):
-            result.chunk.bm25_rank = rank
-            result.chunk.rrf_score += 1 / (rrf_k + rank)
+            for chunk in eligible_chunks:
+                chunk.rrf_score = 0.0
+                chunk.faiss_rank = None
+                chunk.bm25_rank = None
+            for rank, chunk in enumerate(faiss_results, start=1):
+                chunk.faiss_rank = rank
+                chunk.rrf_score += 1 / (rrf_k + rank)
+            for rank, result in enumerate(bm25_results, start=1):
+                result.chunk.bm25_rank = rank
+                result.chunk.rrf_score += 1 / (rrf_k + rank)
 
-        rrf_results = sorted(
-            eligible_chunks,
-            key=lambda chunk: chunk.rrf_score if chunk.rrf_score is not None else 0.0,
-            reverse=True,
-        )[:rrf_top_k]
+            rrf_results = sorted(
+                eligible_chunks,
+                key=lambda chunk: (
+                    chunk.rrf_score if chunk.rrf_score is not None else 0.0
+                ),
+                reverse=True,
+            )[:rrf_top_k]
         return faiss_results[:top_k], bm25_results[:top_k], rrf_results
