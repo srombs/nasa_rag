@@ -1,8 +1,8 @@
 """Bounded, detachable SSE observation of one synchronous search worker.
 
-Publishes lifecycle events, planning/retrieval details, and measured durations.
-Reranking/citation details, usage metrics, and complete interruption behavior
-arrive in later slices; absent data is never fabricated.
+Publishes lifecycle events, stage details, reranking progress, and durations.
+Usage metrics and complete interruption behavior arrive in later slices;
+absent data is never fabricated.
 """
 
 import asyncio
@@ -20,7 +20,7 @@ from fastapi.responses import StreamingResponse
 from starlette.types import Receive, Scope, Send
 
 from .search_details import StageDetails
-from .search_flow import STAGE_IDS, StageEvent, StageId
+from .search_flow import STAGE_IDS, StageEvent, StageId, StageProgress
 
 HEARTBEAT_SECONDS = 15.0
 MAX_QUEUED_EVENTS = 64
@@ -38,13 +38,14 @@ class StageSnapshot:
     duration_ms: float | None = None
     error: dict[str, str] | None = None
     details: StageDetails | None = None
+    progress: StageProgress | None = None
 
     def public(self) -> dict:
         return {
             "stage_id": self.stage_id,
             "status": self.status,
             "details": self.details.public() if self.details is not None else None,
-            "progress": None,
+            "progress": self.progress.public() if self.progress is not None else None,
             "metrics": (
                 {"duration_ms": self.duration_ms}
                 if self.duration_ms is not None
@@ -112,6 +113,12 @@ class SearchStream:
             data: dict = {}
             if event.type == "stage.started":
                 snapshot.status = "running"
+            elif event.progress is not None:
+                snapshot.progress = event.progress
+                snapshot.details = (
+                    snapshot.details or StageDetails()
+                ).append_evaluated(event.progress.result)
+                data = event.progress.public()
             else:
                 snapshot.duration_ms = event.duration_ms
                 data["metrics"] = {"duration_ms": event.duration_ms}

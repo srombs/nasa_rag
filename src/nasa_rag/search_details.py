@@ -4,8 +4,8 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from .generation.generator import format_chunk_reference
-from .models import BM25SearchResult, DocumentChunk, RetrievalPlan
+from .generation.generator import CitationCheck, format_chunk_reference
+from .models import BM25SearchResult, DocumentChunk, RerankResult, RetrievalPlan
 
 
 def _passage(chunk: DocumentChunk) -> dict:
@@ -23,6 +23,17 @@ def _score(value: float | None) -> float:
     return float(value)
 
 
+def _reranked_passage(result: RerankResult) -> dict:
+    return {
+        **_passage(result.chunk),
+        "rerank_score": float(result.score),
+        "reason": result.reason,
+        "rrf_score": _score(result.chunk.rrf_score),
+        "faiss_rank": result.chunk.faiss_rank,
+        "bm25_rank": result.chunk.bm25_rank,
+    }
+
+
 @dataclass(frozen=True)
 class StageDetails:
     """An immutable snapshot; each public read returns independent JSON values."""
@@ -35,6 +46,45 @@ class StageDetails:
 
     def public(self) -> dict:
         return json.loads(self._json)
+
+    @classmethod
+    def candidate(cls, result: RerankResult) -> "StageDetails":
+        return cls._capture(_reranked_passage(result))
+
+    def append_evaluated(self, result: "StageDetails") -> "StageDetails":
+        return self._capture(
+            {
+                "evaluated_results": [
+                    *self.public().get("evaluated_results", []),
+                    result.public(),
+                ]
+            }
+        )
+
+    @classmethod
+    def reranking(cls, results: Sequence[RerankResult]) -> "StageDetails":
+        return cls._capture(
+            {
+                "results": [
+                    {**_reranked_passage(result), "rank": rank}
+                    for rank, result in enumerate(results, 1)
+                ]
+            }
+        )
+
+    @classmethod
+    def generation(cls, context_references: Sequence[str]) -> "StageDetails":
+        return cls._capture({"context_references": list(context_references)})
+
+    @classmethod
+    def citations(cls, check: CitationCheck) -> "StageDetails":
+        return cls._capture(
+            {
+                "outcome": check.outcome,
+                "checked_references": list(check.checked_references),
+                "invalid_references": list(check.invalid_references),
+            }
+        )
 
     @classmethod
     def plan(cls, plan: RetrievalPlan) -> "StageDetails":

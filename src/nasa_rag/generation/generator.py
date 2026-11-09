@@ -3,6 +3,8 @@
 import logging
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Literal
 
 from ..model_costs import call_model
 from ..models import DocumentChunk
@@ -59,17 +61,42 @@ def build_context(results: Sequence[DocumentChunk]) -> str:
     )
 
 
+@dataclass(frozen=True)
+class CitationCheck:
+    """Reference matching only; it does not establish factual accuracy."""
+
+    checked_references: tuple[str, ...]
+    invalid_references: tuple[str, ...]
+
+    @property
+    def outcome(self) -> Literal["valid", "warning", "no_citations"]:
+        if self.invalid_references:
+            return "warning"
+        return "valid" if self.checked_references else "no_citations"
+
+    def apply_warning(self, answer: str) -> str:
+        if self.invalid_references:
+            invalid_text = ", ".join(self.invalid_references)
+            return (
+                f"{answer}\n\n[Validation warning: citations not in retrieved chunks: "
+                f"{invalid_text}]"
+            )
+        return answer
+
+
+def check_answer_citations(
+    answer: str, chunk_references: Sequence[str]
+) -> CitationCheck:
+    """Compare the answer's distinct references with its supplied context."""
+    citations = set(CITATION_PATTERN.findall(answer))
+    return CitationCheck(
+        tuple(sorted(citations)), tuple(sorted(citations.difference(chunk_references)))
+    )
+
+
 def validate_answer_citations(answer: str, chunk_references: Sequence[str]) -> str:
     """Append a warning when an answer cites chunks that were not retrieved."""
-    citations = set(CITATION_PATTERN.findall(answer))
-    invalid_citations = sorted(citations.difference(chunk_references))
-    if invalid_citations:
-        invalid_text = ", ".join(invalid_citations)
-        return (
-            f"{answer}\n\n[Validation warning: citations not in retrieved chunks: "
-            f"{invalid_text}]"
-        )
-    return answer
+    return check_answer_citations(answer, chunk_references).apply_warning(answer)
 
 
 def generate_answer(context: str, question: str) -> str:

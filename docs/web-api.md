@@ -81,13 +81,13 @@ termination does not recover it on restart.
 `POST /ask/stream` accepts the same strict question body as `/ask`. This is an
 incremental backend implementation of the [live search flow](../.scratch/rag-ui-trace/spec.md),
 for development only until ticket 06 verifies the complete frontend contract.
-It currently delivers stage lifecycles, planning/retrieval details, and the final
-answer. `metrics` contains only measured `duration_ms`. Reranking progress,
-structured citation results, usage/cost fields, and complete interruption
-handling arrive in tickets 03–05; their completion `details` remain empty.
+It currently delivers stage lifecycles, all stage details, per-candidate
+reranking progress, and the final answer. `metrics` contains only measured
+`duration_ms`. Usage/cost fields and complete interruption handling arrive in
+tickets 04–05.
 Missing fields are not fabricated values or claims of zero model usage.
 
-The first five `stage.completed` events include these `data.details` fields:
+`stage.completed` events include these `data.details` fields:
 
 | Stage | Details |
 | --- | --- |
@@ -96,6 +96,9 @@ The first five `stage.completed` events include these `data.details` fields:
 | `semantic_search` | `results`: up to 30 passages with one-based `rank` and native `similarity`. |
 | `keyword_search` | `results`: up to 30 passages with one-based `rank` and native `bm25_score`. |
 | `combine_rankings` | Actual `rrf_k` (60) and up to ten `results` with `rank`, `rrf_score`, `faiss_rank`, and `bm25_rank`. |
+| `rerank_evidence` | Final sorted `results` with `rank`, native `rerank_score` (0–1), relevance `reason`, and contributing `rrf_score`, `faiss_rank`, and `bm25_rank`. |
+| `generate_answer` | Ordered `context_references` actually supplied to generation. No raw answer text. |
+| `check_citations` | `outcome`: `valid`, `warning`, or `no_citations`; `checked_references` and `invalid_references` arrays. |
 
 Each passage includes `source` (filename), zero-based `chunk_index`, printable
 `reference` (for example `[hubble.txt, chunk 0]`), and full chunk `text`. Scores
@@ -109,6 +112,22 @@ Details are frozen when their stage completes. The same snapshots appear in
 terminal `data.stages`, including completed retrieval stages retained after a
 later pipeline failure. Serialization uses explicit allowed fields; embedding
 vectors and raw provider objects are excluded.
+
+After each successfully validated candidate, `rerank_evidence` emits one
+`stage.progress` event. Its `data` contains `completed`, the actual candidate
+`total`, and `result` with the passage, rerank score/reason, and fusion metadata.
+These results follow evaluation order and have no final `rank`. Only the stage's
+completion `results` establish final order, using the existing rerank and fusion
+tie behavior. Snapshots retain the latest progress in `progress`; incomplete
+reranking snapshots preserve validated candidates in `details.evaluated_results`
+in evaluation order if a later candidate fails or observation ends.
+
+Citation results come from the existing reference matching logic. Arrays contain
+distinct references in sorted order. `valid` means citations were found and all
+name supplied context; `warning` means some references do not; `no_citations`
+means none were found. This does not establish factual accuracy. Warnings and
+uncited answers remain successful content. The original question, generation
+instructions, model-call counts, answer text, and appended warnings are preserved.
 
 With live model calls authorized, inspect incremental delivery using:
 
@@ -151,9 +170,12 @@ Stream request logs retain the actual HTTP status and add `stream_outcome`
 known. HTTP 200 alone does not establish successful observation. Questions,
 event bodies, and raw exceptions are omitted from operational logs.
 
-The focused offline streaming tests include a real loopback TCP connection with
-a deterministically blocked mocked provider. They receive an active stage and
-heartbeat before releasing generation, then receive the unchanged final answer:
+The focused offline streaming tests include real loopback TCP connections with
+deterministically blocked mocked providers. They receive candidate progress
+before releasing a later evaluation, retain validated candidates on failure,
+and receive an active stage and heartbeat before releasing generation. They
+also verify final ranking/context order, all three citation outcomes, unchanged
+answers, and unchanged model-call counts:
 
 ```sh
 uv run --extra web --extra dev python -m pytest -q tests/test_web_stream.py

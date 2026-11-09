@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from time import monotonic
 from typing import Literal
 
+from .models import RerankResult
 from .search_details import StageDetails
 
 StageId = Literal[
@@ -32,12 +33,27 @@ STAGE_IDS: tuple[StageId, ...] = (
 
 
 @dataclass(frozen=True)
+class StageProgress:
+    completed: int
+    total: int
+    result: StageDetails
+
+    def public(self) -> dict:
+        return {
+            "completed": self.completed,
+            "total": self.total,
+            "result": self.result.public(),
+        }
+
+
+@dataclass(frozen=True)
 class StageEvent:
-    type: Literal["stage.started", "stage.completed", "stage.failed"]
+    type: Literal["stage.started", "stage.progress", "stage.completed", "stage.failed"]
     stage_id: StageId
     duration_ms: float | None = None
     error: Exception | None = None
     details: StageDetails = StageDetails()
+    progress: StageProgress | None = None
 
 
 @dataclass
@@ -49,6 +65,21 @@ class StageCompletion:
 
 Observer = Callable[[StageEvent], None]
 _observer: ContextVar[Observer | None] = ContextVar("search_observer", default=None)
+
+
+def report_rerank_progress(result: RerankResult, completed: int, total: int) -> None:
+    """Publish only validated candidates, frozen before evaluating the next one."""
+    observer = _observer.get()
+    if observer is not None:
+        observer(
+            StageEvent(
+                "stage.progress",
+                "rerank_evidence",
+                progress=StageProgress(
+                    completed, total, StageDetails.candidate(result)
+                ),
+            )
+        )
 
 
 @contextmanager
