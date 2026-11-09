@@ -24,7 +24,7 @@ or stage results to fill unfinished fields.
 | [03: Stream reranking progress and citation results](issues/03-stream-reranking-and-citation-results.md) | Per-candidate progress, final reranking, context references, and citation-reference outcomes. | 02 | resolved |
 | [04: Report request-scoped timing and model costs](issues/04-report-request-timing-and-model-costs.md) | Accurate stage/run metrics and request-correlated usage records. | 01 | resolved |
 | [05: Preserve results through failures and interruptions](issues/05-preserve-results-through-interruptions.md) | Complete partial-result, deadline, disconnect, buffering, and worker-lifecycle behavior. | 03, 04 | resolved |
-| [06: Verify and document the backend stream contract](issues/06-verify-and-document-stream-contract.md) | Final backend integration evidence, reusable protocol fixtures, and current API documentation. | 05 | ready-for-agent |
+| [06: Verify and document the backend stream contract](issues/06-verify-and-document-stream-contract.md) | Final backend integration evidence, reusable protocol fixtures, and current API documentation. | 05 | resolved |
 
 ## Working order
 
@@ -44,8 +44,12 @@ Backend completion means the final contract passes real incremental HTTP checks
 with mocked model calls and the existing regression checks. It does not prove
 that a browser receives live updates through the deployed website proxy.
 
-Transfer the combined specification, frontend handoff, and implemented protocol
-fixtures to the website repo when backend implementation is ready. Proxy
+Ticket 06 verified backend version 1 on 2026-11-09: 230 mocked regressions
+passed, including 81 focused stream/contract/lifecycle checks. The
+[implemented contract](../../docs/web-stream-contract.md),
+[public fixtures](../../docs/fixtures/search-stream-v1/README.md), and
+[verification record](../../docs/web-stream-verification.md) are ready to
+transfer with the specification and frontend handoff to the website repo. Proxy
 streaming verification, timeline presentation, accessibility, and browser tests
 remain frontend acceptance work. The legacy JSON endpoint remains available.
 

@@ -1,12 +1,27 @@
 # Frontend handoff: live RAG search flow
 
-Recorded: 2026-11-06
+Recorded: 2026-11-06; backend contract updated: 2026-11-09
 Companion document: [Combined PRD/TRD](spec.md)
 
-Copy this document and `spec.md` into the frontend repository together. The
-combined specification is the authoritative version-1 contract; this document
-identifies FE work and the integration checks required there. Backend streaming
-is proposed by that specification and is not implemented by these documents.
+The backend version-1 stream is implemented and verified offline with mocked
+providers. This handoff packages the contract for the separate website
+implementation; deployed proxy/browser acceptance remains outstanding.
+
+Copy these files into the frontend repository together, preserving relative
+paths or updating links on import:
+
+- This handoff and [spec.md](spec.md), the combined product/technical scope.
+- [Implemented contract](../../docs/web-stream-contract.md) and
+  [API guide](../../docs/web-api.md), including actual detail/metric fields.
+- The complete [public fixture directory](../../docs/fixtures/search-stream-v1/README.md),
+  including its README, six `.sse` files, and JSON admission-rejection fixture.
+- [Backend verification record](../../docs/web-stream-verification.md), including
+  commands, evidence boundaries, and remaining FE checks.
+
+The API references describe the implemented wire behavior; the combined spec
+also includes the FE work that remains. Fixtures contain synthetic content,
+with identity and timing normalized as documented; they are checked against
+actual backend serialization and require no model credentials to consume.
 
 ## Visitor experience
 
@@ -142,3 +157,16 @@ Use shared protocol fixtures delivered with backend implementation. Enable the
 new UI after additive backend deployment and a successful incremental delivery
 check through the deployed proxy. A buffering or too-short-lived proxy must be
 resolved before claiming live progress is shipped.
+
+## Rollout and rollback
+
+Deploy the additive backend first, keeping `/ask` and `/health` available.
+Implement and verify the same-origin streaming proxy/reader against these
+references and fixtures, then perform the browser-through-deployed-proxy check
+before enabling the new UI. This backend ticket performs no deployment or
+website changes.
+
+Rollback switches future explicit submissions to the existing legacy JSON UI
+and `/ask` path. Do not automatically fall back to JSON after admitting a
+stream: that would create another search while the first might still run.
+Retain the failed/interrupted attempt until the visitor deliberately retries.

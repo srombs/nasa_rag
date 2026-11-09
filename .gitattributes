@@ -1,0 +1,2 @@
+# SSE frames require a final blank-line delimiter, including the last frame.
+docs/fixtures/search-stream-v1/*.sse text eol=lf whitespace=-blank-at-eof
