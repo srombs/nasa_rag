@@ -21,7 +21,7 @@ or stage results to fill unfinished fields.
 | --- | --- | --- | --- |
 | [01: Stream a question's live search stages](issues/01-stream-live-search-stages.md) | Real stage lifecycle events and the final answer over the additive streaming endpoint. | None | resolved |
 | [02: Expose planning and retrieval results](issues/02-expose-planning-and-retrieval-results.md) | Inspectable query plan, embedding summary, passages, native rankings, and fusion metadata. | 01 | resolved |
-| [03: Stream reranking progress and citation results](issues/03-stream-reranking-and-citation-results.md) | Per-candidate progress, final reranking, context references, and citation-reference outcomes. | 02 | ready-for-agent |
+| [03: Stream reranking progress and citation results](issues/03-stream-reranking-and-citation-results.md) | Per-candidate progress, final reranking, context references, and citation-reference outcomes. | 02 | resolved |
 | [04: Report request-scoped timing and model costs](issues/04-report-request-timing-and-model-costs.md) | Accurate stage/run metrics and request-correlated usage records. | 01 | ready-for-agent |
 | [05: Preserve results through failures and interruptions](issues/05-preserve-results-through-interruptions.md) | Complete partial-result, deadline, disconnect, buffering, and worker-lifecycle behavior. | 03, 04 | ready-for-agent |
 | [06: Verify and document the backend stream contract](issues/06-verify-and-document-stream-contract.md) | Final backend integration evidence, reusable protocol fixtures, and current API documentation. | 05 | ready-for-agent |
