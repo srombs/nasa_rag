@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket 05 · Keep useful work when a search is interrupted</title>
+  <style>
+    :root { color-scheme: light; --ink:#17332f; --muted:#526761; --paper:#f5f5ed; --line:#d8ded3; --green:#236446; --orange:#8a4b10; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:1140px; margin:auto; padding:44px 28px 64px; }
+    a { color:var(--green); text-underline-offset:3px; }
+    a:hover { text-decoration-thickness:2px; }
+    .eyebrow { font-size:.76rem; letter-spacing:.13em; font-weight:750; text-transform:uppercase; }
+    .topline { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+    .pill { display:inline-block; border:1px solid var(--line); padding:5px 12px; border-radius:30px; font-size:.8rem; background:#fff9; }
+    h1 { max-width:840px; font-size:clamp(2.4rem,5.6vw,4.4rem); line-height:1.06; letter-spacing:-.055em; margin:28px 0 22px; }
+    .lead { max-width:760px; color:var(--muted); font-size:1.18rem; }
+    h2 { font-size:1.5rem; line-height:1.25; letter-spacing:-.025em; margin:0 0 14px; }
+    h3 { font-size:1.04rem; line-height:1.4; margin:0 0 10px; }
+    p { margin:0 0 16px; }
+    .facts { display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:32px 0 44px; }
+    .facts div { padding:18px 20px 18px 0; }
+    .facts strong { display:block; }
+    .facts span { color:var(--muted); font-size:.9rem; }
+    section { margin-top:40px; }
+    .section-heading { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .hint { color:var(--muted); font-size:.87rem; }
+    .scenario-buttons { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0; }
+    button { font:inherit; cursor:pointer; }
+    .scenario-buttons button { border:1px solid #b7c5b8; border-radius:30px; padding:8px 16px; background:transparent; color:var(--ink); font-size:.9rem; }
+    .scenario-buttons button[aria-pressed="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+    button:focus-visible, a:focus-visible, summary:focus-visible, textarea:focus-visible { outline:3px solid #b56b14; outline-offset:4px; }
+    .example { background:#fff; border:1px solid var(--line); border-radius:18px; overflow:hidden; }
+    .example-header { padding:24px 28px; border-bottom:1px solid var(--line); background:#f9faf5; }
+    .example-header p { margin:8px 0 0; }
+    .example-grid { display:grid; grid-template-columns:1fr 1fr; }
+    .timeline { padding:26px 28px; border-right:1px solid var(--line); }
+    .timeline ol { list-style:none; margin:0; padding:0; }
+    .timeline li { display:flex; align-items:center; gap:10px; padding:9px 0; }
+    .stage-number { font-size:.74rem; color:var(--muted); min-width:21px; }
+    .stage-name { flex:1; }
+    .state { font-size:.74rem; font-weight:650; border-radius:5px; padding:2px 8px; background:#edf0eb; white-space:nowrap; }
+    .completed { color:#215a37; background:#e6f2e5; }
+    .failed { color:#982e2c; background:#fcebe7; }
+    .unknown { color:#82500f; background:#fff0d5; }
+    .result { padding:26px 28px; }
+    .callout { border-left:3px solid #789181; padding:0 0 0 15px; margin:16px 0 20px; }
+    .result ul { padding-left:20px; margin:0; }
+    .result li { margin:10px 0; }
+    .worker { margin-top:20px; border:1px solid var(--line); border-radius:9px; padding:12px 15px; font-size:.9rem; }
+    .worker strong { display:block; }
+    .protocol { border-top:1px solid var(--line); padding:16px 28px; }
+    summary { cursor:pointer; font-size:.9rem; font-weight:650; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#18332e; color:#e5eee2; border-radius:9px; padding:18px; font-size:.8rem; line-height:1.7; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+    .card { background:#fff9; border:1px solid var(--line); border-radius:14px; padding:24px; }
+    .card ul { padding-left:20px; margin:0; }
+    .card li { margin:10px 0; }
+    .checklist { padding:0; list-style:none; }
+    .checklist li { padding:12px 0; border-bottom:1px solid var(--line); display:flex; gap:14px; }
+    .checklist li::before { content:'↳'; color:var(--green); }
+    .decision { background:#e8edde; border-radius:16px; padding:28px; }
+    textarea { width:100%; min-height:108px; resize:vertical; padding:14px; border:1px solid #9daf9d; border-radius:8px; font:inherit; color:var(--ink); background:#fffffff0; }
+    .actions { display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap; }
+    .primary { background:var(--ink); color:white; border:0; border-radius:8px; padding:10px 18px; }
+    footer { margin-top:30px; color:var(--muted); font-size:.82rem; }
+    @media (max-width:720px) { main { padding:28px 18px 44px; } .facts { grid-template-columns:1fr; } .facts div { padding:12px 0; } .facts div+div { border-top:1px solid var(--line); } .example-grid,.columns { grid-template-columns:1fr; } .timeline { border-right:0; border-bottom:1px solid var(--line); } .example-header,.timeline,.result,.protocol { padding:20px; } .state { font-size:.7rem; } }
+    @media print { body { background:white; } main { max-width:none; padding:0; } .scenario-buttons,.decision,.hint[role="status"] { display:none; } .example,.card { break-inside:avoid; } h1 { font-size:36px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="topline"><span class="eyebrow">NASA RAG / Ticket 05</span><a href="feature-overview.html">See the whole feature →</a><span class="pill">Scope confirmed · Implementation verified</span></div>
+    <h1>Keep useful work when a search is interrupted.</h1>
+    <p class="lead">If a search fails or the connection ends, completed results should stay useful. The backend should report what it observed, preserve recorded usage, and keep its work slot occupied until the actual search ends.</p>
+    <div class="facts">
+      <div><strong>Backend reliability</strong><span>Failure, deadline, and connection handling</span></div>
+      <div><strong>Dependencies complete</strong><span>03: search results · 04: timing and cost</span></div>
+      <div><strong>222 tests passing</strong><span>Full offline suite, including 18 new lifecycle cases</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="examples-heading">
+    <div class="section-heading"><h2 id="examples-heading">Explore the intended outcomes</h2><span class="hint">Illustrative examples · No model calls</span></div>
+    <p>Example question: “What did Hubble discover?” Choose a situation to see what remains known and what happens to the underlying search.</p>
+    <div class="scenario-buttons" role="group" aria-label="Example situation">
+      <button type="button" data-scenario="success" aria-pressed="false">Search succeeds</button>
+      <button type="button" data-scenario="failure" aria-pressed="true">Reranking fails</button>
+      <button type="button" data-scenario="timeout" aria-pressed="false">Deadline expires</button>
+      <button type="button" data-scenario="disconnect" aria-pressed="false">Connection ends</button>
+      <button type="button" data-scenario="overflow" aria-pressed="false">Consumer falls behind</button>
+    </div>
+    <div class="example">
+      <div class="example-header" aria-live="polite" aria-atomic="true"><h3 id="scenario-title">Reranking fails after two evaluated passages</h3><p id="scenario-description">Keep the completed retrieval results and the two validated candidate evaluations. Report the failure and skip the stages that never started.</p></div>
+      <div class="example-grid">
+        <div class="timeline"><h3>Search flow at observation end</h3><ol id="stages"></ol><p class="hint" id="timeline-note"></p></div>
+        <div class="result"><h3 id="outcome-heading"></h3><p class="callout" id="visitor-message"></p><ul id="retained"></ul><div class="worker"><strong id="worker-title"></strong><span id="worker-detail"></span></div></div>
+      </div>
+      <details class="protocol"><summary>Backend contract example</summary><p class="hint">Selected fields and events only; abbreviated for review.</p><pre id="protocol"></pre></details>
+    </div>
+    <p class="hint" style="margin-top:12px">This page explains backend behavior. Visitor messages and the timeline are conceptual; the production website UI belongs to a separate frontend ticket.</p>
+  </section>
+
+  <section aria-labelledby="scope-heading">
+    <h2 id="scope-heading">What this ticket will accomplish</h2>
+    <div class="columns">
+      <div class="card"><h3>Preserve an honest account</h3><ul>
+        <li>Keep completed stage details and validated rerank candidates when later work fails.</li>
+        <li>Distinguish an actual failure from work whose outcome became unknown.</li>
+        <li>Freeze published results and observed metrics; record later model usage under the same request ID.</li>
+        <li>Return safe public errors and one sanitized operational record per HTTP request.</li>
+      </ul></div>
+      <div class="card"><h3>Keep resource ownership correct</h3><ul>
+        <li>Use one response deadline from admission, including time spent across all stages.</li>
+        <li>Keep both question routes busy until the actual worker finishes.</li>
+        <li>Detach an absent observer and discard later events. Bound the event queue to 64 entries.</li>
+        <li>Observe late worker exceptions, recover the slot, and wait for active work during shutdown.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="work-heading">
+    <h2 id="work-heading">What implementation verified</h2>
+    <p>The earlier tickets supplied much of the foundation. Ticket 05 adds lifecycle evidence and fixes failure/deadline ordering, known error-code logging, and observation encoding faults.</p>
+    <ul class="checklist">
+      <li><span><strong>Slow or absent consumers.</strong> Exercise queue exhaustion and transport failures without blocking or cancelling the search.</span></li>
+      <li><span><strong>Competing terminal outcomes.</strong> Test completion near the deadline and verify that a healthy connected run gets exactly one terminal event with no later application events.</span></li>
+      <li><span><strong>Work after observation ends.</strong> Verify retained results, immutable metrics, late cost records, eventual exceptions, and slot recovery on both routes.</span></li>
+      <li><span><strong>Operational evidence.</strong> Extend deterministic mocked HTTP checks for failures, disconnects, cancellation, sanitized logs, and shutdown with active work.</span></li>
+    </ul>
+  </section>
+
+  <section class="columns" aria-label="Boundaries and completion criteria">
+    <div class="card"><h2>Scope boundaries</h2><p>The ticket covers the NASA RAG backend. Browser presentation, retry buttons, proxy integration, and deployment remain separate work.</p><p>It adds no automatic retries, replay, saved search history, job queue, or separate rate allowance. A manual retry is a fresh request and may receive a busy response while earlier work continues.</p></div>
+    <div class="card"><h2>Ready when</h2><p>Every acceptance criterion in ticket 05 has evidence, including the interruption cases above. Focused tests, type checks, and the full regression suite pass; the implementation is reviewed and committed.</p><p>Ticket 06 then verifies and documents the complete stream contract before frontend integration is declared ready.</p></div>
+  </section>
+
+  <section class="decision" aria-labelledby="decision-heading">
+    <h2 id="decision-heading">Keep the agreed scope handy</h2>
+    <p>The user confirmed this scope before implementation. Copy or edit the summary below when discussing the feature. Ticket 06 is the next backend step.</p>
+    <label for="confirmation" class="eyebrow">Scope summary</label>
+    <textarea id="confirmation">Ticket 05 preserves partial results, distinguishes failures from interruptions, keeps worker ownership and accounting correct, and verifies lifecycle edge cases. Frontend work remains separate. Ticket 06 verifies and packages the complete backend contract.</textarea>
+    <div class="actions"><button type="button" class="primary" id="copy">Copy message</button><span id="copy-status" class="hint" role="status"></span></div>
+  </section>
+
+  <footer>Source: <a href="issues/05-preserve-results-through-interruptions.md">Ticket 05</a> · <a href="spec.md">PRD/TRD</a> · <a href="frontend-handoff.md">Frontend handoff</a><br>Local review document. Examples are illustrative; the Markdown ticket remains the acceptance source.</footer>
+</main>
+<script>
+  'use strict';
+  const names = ['Plan query','Embed query','Semantic search','Keyword search','Combine rankings','Rerank evidence','Generate answer','Check citation references'];
+  const completed = Array(5).fill('completed');
+  const scenarios = {
+    success: {
+      title:'The search completes successfully', description:'All eight stages finish. The answer and its citation-reference outcome arrive with a frozen final snapshot.',
+      states:Array(8).fill('completed'), note:'Citation reference checks verify supplied references, not the factual accuracy of the answer.',
+      heading:'One final answer', message:'The answer is ready, with the completed search flow available to inspect.',
+      retained:['Completed stage details and final rankings.','The answer, context references, citation-reference outcome, and recorded usage metrics.'],
+      workerTitle:'Work finished · slot available', worker:'A new question can be admitted, subject to the usual request limits.',
+      protocol:'stage.completed · check_citations\nrun.completed\n  answer: "…"\n  stages: [all eight completed]\n  metrics: [recorded final totals]\n\nNo application events follow the terminal event.'
+    },
+    failure: {
+      title:'Reranking fails after two evaluated passages', description:'Keep the completed retrieval results and the two validated candidate evaluations. Report the failure and skip the stages that never started.',
+      states:[...completed,'failed','skipped','skipped'], note:'Only successfully validated candidate evaluations are retained.',
+      heading:'Partial results remain useful', message:'The model provider could not answer. Earlier search results and two candidate evaluations remain available.',
+      retained:['The query plan, embedding summary, retrieved passages, and combined rankings.','Two validated rerank results and the usage recorded before failure.'],
+      workerTitle:'Work ends · slot becomes available', worker:'The underlying exception is observed. A manual retry uses a new request ID and the normal request limits.',
+      protocol:'HTTP 200 already sent\nstage.failed · rerank_evidence\nrun.failed\n  error.code: "upstream_error"\n  http_equivalent_status: 502\n  processing_may_continue: false\n  stages: [completed × 5, failed, skipped, skipped]\n\nProvider details and raw exceptions stay out of the response.'
+    },
+    timeout: {
+      title:'The deadline expires during answer generation', description:'The response deadline ends observation while a provider call is still blocked. Earlier work remains inspectable; the unfinished stages become unknown.',
+      states:[...completed,'completed','unknown','unknown'], note:'Unknown means observation ended; it does not establish failure or cancellation.',
+      heading:'A timeout with retained results', message:'The response deadline was exceeded; processing may still be running.',
+      retained:['All completed retrieval and reranking results.','A frozen usage snapshot of calls recorded so far. The pending call is not yet included.'],
+      workerTitle:'Work may continue · slot stays occupied', worker:'Both routes return busy until the actual worker finishes. Late usage records keep the original request ID and do not change the earlier snapshot.',
+      protocol:'HTTP 200 already sent\nrun.failed\n  error.code: "response_timeout"\n  http_equivalent_status: 504\n  processing_may_continue: true\n  stages: [completed × 6, unknown, unknown]\n  metrics: [observed totals only]\n\nNo stage.failed is manufactured for the deadline.'
+    },
+    disconnect: {
+      title:'The connection ends during reranking', description:'In this example, the consumer received two candidate evaluations before losing the connection. It retains only what it already received.',
+      states:[...completed,'unknown','unknown','unknown'], note:'This is the consumer’s last-known view. No terminal snapshot is guaranteed after a disconnect.',
+      heading:'Previously received work survives', message:'The connection ended. The final search outcome is unknown.',
+      retained:['Completed stage events and the two rerank updates already received by the consumer.','No promise that a final answer or complete usage totals reached the consumer.'],
+      workerTitle:'Observer detached · slot stays occupied', worker:'Later event emissions are discarded. The worker continues with its usage scope, and its eventual result or exception is observed.',
+      protocol:'Last received: stage.progress · rerank_evidence\n  completed: 2\n  total: [actual candidate count]\n\nConnection ends; no terminal event is guaranteed.\nRequest log: stream_outcome="disconnected"\n\nThe disconnected consumer cannot receive later results.'
+    },
+    overflow: {
+      title:'The consumer cannot keep up with events', description:'If pending application events exhaust the 64-event queue, the backend detaches observation instead of blocking the search worker.',
+      states:[...completed,'unknown','unknown','unknown'], note:'Illustrative last-received state. The exact retained stages depend on which events reached the consumer.',
+      heading:'Bounded observation', message:'The stream ended without a terminal event. Keep received results and treat the outcome as interrupted.',
+      retained:['Whatever stage results the consumer already received.','A bounded queue: pending frames are discarded when observation detaches.'],
+      workerTitle:'Search continues · slot stays occupied', worker:'Queue exhaustion must not deadlock or restart the worker. Real work keeps its request accounting and releases the slot on completion.',
+      protocol:'Maximum queued application events: 64\nQueue exhausted → detach observer and discard queued frames\nSubsequent emissions → discard\n\nTerminal delivery is not guaranteed.\nEOF without a terminal event means interruption.'
+    }
+  };
+  function render(key) {
+    const s = scenarios[key];
+    document.querySelectorAll('[data-scenario]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scenario === key)));
+    const fields = {'scenario-title':s.title,'scenario-description':s.description,'timeline-note':s.note,'outcome-heading':s.heading,'visitor-message':s.message,'worker-title':s.workerTitle,'worker-detail':s.worker,'protocol':s.protocol};
+    for (const [id,value] of Object.entries(fields)) document.getElementById(id).textContent = value;
+    document.getElementById('stages').replaceChildren(...names.map((name,i) => {
+      const li = document.createElement('li');
+      for (const [className,text] of [['stage-number',String(i+1).padStart(2,'0')],['stage-name',name],['state '+s.states[i],s.states[i]]]) {
+        const span = document.createElement('span'); span.className = className; span.textContent = text; li.append(span);
+      }
+      return li;
+    }));
+    document.getElementById('retained').replaceChildren(...s.retained.map(text => { const li = document.createElement('li'); li.textContent = text; return li; }));
+  }
+  document.querySelectorAll('[data-scenario]').forEach(button => button.addEventListener('click', () => render(button.dataset.scenario)));
+  document.getElementById('copy').addEventListener('click', async () => {
+    const field = document.getElementById('confirmation');
+    try { await navigator.clipboard.writeText(field.value); document.getElementById('copy-status').textContent = 'Copied. Send it in chat when ready.'; }
+    catch { field.focus(); field.select(); document.getElementById('copy-status').textContent = 'Text selected. Use your browser’s Copy command, then send it in chat.'; }
+  });
+  render('failure');
+</script>
+</body>
+</html>

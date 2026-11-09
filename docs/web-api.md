@@ -83,7 +83,8 @@ incremental backend implementation of the [live search flow](../.scratch/rag-ui-
 for development only until ticket 06 verifies the complete frontend contract.
 It currently delivers stage lifecycles, all stage details, per-candidate
 reranking progress, stage/request timing and recorded model usage/cost estimates,
-and the final answer. Complete interruption handling is verified in ticket 05.
+and the final answer. Interruption handling preserves completed results and
+observed usage while retaining ownership of actual work through completion.
 
 `stage.completed`, `stage.failed`, and terminal run events expose `data.metrics`.
 Terminal `data.stages` retains the same completed/failed metrics and includes
@@ -196,19 +197,28 @@ connection. A failure emits sanitized `stage.failed` and `run.failed` events;
 `run.failed` includes the existing public error, `http_equivalent_status`, and
 `processing_may_continue`. Deadlines emit a terminal failure without inventing
 a stage failure. HTTP status remains 200 once streaming headers were sent.
+Once an actual stage failure is observed, its stage/run failure snapshots are
+published atomically; a later deadline cannot replace it with a timeout. A
+completed run likewise stays successful if terminal delivery crosses the
+deadline. The worker retains the admission slot through any remaining cleanup.
 
 Both routes share the work slot, IP allowance, proxy trust, and admission errors.
 Invalid, unavailable, busy, and over-limit submissions receive the usual JSON
 errors before SSE headers. After a timeout or disconnect, the actual worker
 keeps its slot until it finishes. Observation is detachable, with a 64-event
 queue bound; overflow closes observation rather than blocking model work.
+An event serialization/encoding failure also detaches observation without
+failing or restarting the search. Detached observers discard later emissions;
+late calls still update worker-scoped usage and the request-correlated ledger.
 EOF without a terminal event means interruption. There is no replay, automatic
 resubmission, or claim that closing the stream cancels processing.
 
 Stream request logs retain the actual HTTP status and add `stream_outcome`
 (`completed`, `failed`, `timeout`, or `disconnected`) and `failure_code` when
 known. HTTP 200 alone does not establish successful observation. Questions,
-event bodies, and raw exceptions are omitted from operational logs.
+event bodies, and raw exceptions are omitted from operational logs. JSON errors
+also retain their known public failure code. If terminal delivery fails, the
+record reports disconnection while retaining any already known failure code.
 
 The focused offline streaming tests include real loopback TCP connections with
 deterministically blocked mocked providers. They receive candidate progress
@@ -219,6 +229,15 @@ answers, and unchanged model-call counts:
 
 ```sh
 uv run --extra web --extra dev python -m pytest -q tests/test_web_stream.py
+```
+
+Additional deterministic ASGI transport checks cover slow/absent consumers at
+the exact 64-event queue boundary, failed delivery, cancellation, encoding
+failure, terminal/deadline ordering, late provider exceptions and usage,
+shared-slot recovery, and shutdown waiting for real work:
+
+```sh
+uv run --extra web --extra dev python -m pytest -q tests/test_web_lifecycle.py
 ```
 
 This is backend evidence only. Website proxy buffering, runtime timeouts, and

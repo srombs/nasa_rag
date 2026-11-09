@@ -180,6 +180,7 @@ class Question(BaseModel):
 def error_response(
     request: Request, status: int, code: str, message: str
 ) -> JSONResponse:
+    request.state.failure_code = code
     return JSONResponse(
         status_code=status,
         content={
