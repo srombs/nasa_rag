@@ -112,9 +112,6 @@ class CostRun:
 
     name: str
     id: str = field(default_factory=lambda: uuid4().hex)
-    calls: int = 0
-    unknown_calls: int = 0
-    total_usd: Decimal = Decimal(0)
     by_operation: dict[str, Decimal] = field(
         default_factory=lambda: defaultdict(Decimal)
     )
@@ -125,17 +122,26 @@ class CostRun:
     _stages: dict[str, _UsageTotals] = field(default_factory=dict, repr=False)
     _lock: Lock = field(default_factory=Lock, repr=False)
 
+    @property
+    def calls(self) -> int:
+        return self._totals.calls
+
+    @property
+    def unknown_calls(self) -> int:
+        return self._totals.unknown_calls
+
+    @property
+    def total_usd(self) -> Decimal:
+        return self._totals.known_cost
+
     def record(
         self, operation: str, model: str, counts: dict, cost: Decimal | None
     ) -> None:
         with self._lock:
-            self.calls += 1
             self.operation_counts[operation] += 1
             if cost is None:
-                self.unknown_calls += 1
                 self.unknown_by_operation[operation] += 1
             else:
-                self.total_usd += cost
                 self.by_operation[operation] += cost
             self._totals.record(model, counts, cost)
             stage = _CURRENT_STAGE.get()
