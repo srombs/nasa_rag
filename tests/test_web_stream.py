@@ -86,9 +86,10 @@ def provider(monkeypatch, tmp_path):
             output = GENERATED
         else:
             pytest.fail("Unexpected extra rewrite/model call")
-        return SimpleNamespace(
-            output_text=outputs.get(kind, output), private="provider-only-secret"
-        )
+        output = outputs.get(kind, output)
+        if callable(output):
+            output = output(arguments)
+        return SimpleNamespace(output_text=output, private="provider-only-secret")
 
     client = SimpleNamespace(
         embeddings=SimpleNamespace(create=embeddings_create),
@@ -144,6 +145,256 @@ def events(response):
         assert sequence == "id: " + str(payload["sequence"])
         result.append(payload)
     return result
+
+
+@pytest.fixture
+def small_corpus(provider):
+    from nasa_rag.ingestion.file_loader import save_document_cache
+    from nasa_rag.models import DocumentChunk
+
+    save_document_cache(
+        provider.cache / "embeds/document_cache_100_20.json",
+        {
+            "hubble.txt": [
+                DocumentChunk("hubble.txt", i, f"Hubble evidence {i}", [1.0, 0.5])
+                for i in range(4)
+            ],
+            "iss.txt": [
+                DocumentChunk("iss.txt", i, "Other station", [0.0, 1.0])
+                for i in range(30)
+            ],
+            "nasa_overview.txt": [],
+            "space_shuttle.txt": [],
+        },
+    )
+
+
+def test_reranking_progress_and_final_order_preserve_validated_candidate_data(
+    provider, small_corpus
+):
+    scores = iter([0.2, 0.9, 0.9, 0.1])
+    provider.outputs["rerank_result"] = lambda _: json.dumps(
+        {"score": next(scores), "reason": "  Evidence Ω  "}
+    )
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    details = completed_details(flow)
+    candidates = details["combine_rankings"]["results"]
+    progress = [e for e in flow if e["type"] == "stage.progress"]
+    assert len(progress) == 4
+    for i, event in enumerate(progress):
+        assert event["stage_id"] == "rerank_evidence"
+        assert event["data"] == {
+            "completed": i + 1,
+            "total": 4,
+            "result": {
+                **{k: v for k, v in candidates[i].items() if k != "rank"},
+                "rerank_score": [0.2, 0.9, 0.9, 0.1][i],
+                "reason": "Evidence Ω",
+            },
+        }
+    results = details["rerank_evidence"]["results"]
+    assert results == [
+        {**progress[index]["data"]["result"], "rank": rank}
+        for rank, index in enumerate([1, 2, 0, 3], 1)
+    ]
+    snapshot = flow[-1]["data"]["stages"][5]
+    assert snapshot["details"] == {"results": results}
+    assert snapshot["progress"] == progress[-1]["data"]
+    assert [kind for kind, _ in provider.operations] == [
+        "retrieval_plan",
+        "query_embedding",
+        *(["rerank_result"] * 4),
+        "answer",
+    ]
+    assert "provider-only-secret" not in response.text
+
+
+@pytest.mark.parametrize("later_failure", [False, True])
+def test_candidate_progress_arrives_before_later_evaluation_finishes(
+    provider, small_corpus, later_failure
+):
+    import httpx
+
+    entered = Event()
+    release = Event()
+
+    def block_third_candidate():
+        if sum(kind == "rerank_result" for kind, _ in provider.operations) == 3:
+            entered.set()
+            assert release.wait(10), "Test failed to release the provider"
+            if later_failure:
+                provider.outputs["rerank_result"] = (
+                    '{"score":7,"reason":"unvalidated-private-reason"}'
+                )
+
+    provider.hooks["rerank_result"] = block_third_candidate
+    with (
+        loopback(web.create_app()) as url,
+        httpx.Client(base_url=url, timeout=5) as client,
+    ):
+        try:
+            with client.stream(
+                "POST", "/ask/stream", json={"question": "Hubble?"}
+            ) as response:
+                received = []
+                progress = []
+                for line in response.iter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    event = json.loads(line[6:])
+                    received.append(event)
+                    if event["type"] == "stage.progress":
+                        progress.append(event["data"])
+                        if len(progress) == 2:
+                            assert entered.wait(2)
+                            assert not release.is_set()
+                            assert progress[-1]["completed"] == 2
+                            assert progress[-1]["total"] == 4
+                            assert all("answer" not in e["data"] for e in received)
+                            release.set()
+                assert release.is_set(), "No live candidate progress was delivered"
+                terminal = received[-1]
+                assert terminal["type"] == (
+                    "run.failed" if later_failure else "run.completed"
+                )
+                snapshot = terminal["data"]["stages"][5]
+                assert snapshot["progress"] == progress[-1]
+                if later_failure:
+                    assert len(progress) == 2
+                    assert snapshot["status"] == "failed"
+                    assert snapshot["details"] == {
+                        "evaluated_results": [p["result"] for p in progress]
+                    }
+                    assert terminal["data"]["http_equivalent_status"] == 502
+                    assert "answer" not in terminal["data"]
+                    assert [s["status"] for s in terminal["data"]["stages"][6:]] == [
+                        "skipped",
+                        "skipped",
+                    ]
+                    assert "unvalidated-private-reason" not in json.dumps(received)
+                else:
+                    assert len(progress) == 4
+                    assert terminal["data"]["answer"] == ANSWER
+                assert [kind for kind, _ in provider.operations] == [
+                    "retrieval_plan",
+                    "query_embedding",
+                    *(["rerank_result"] * (3 if later_failure else 4)),
+                    *([] if later_failure else ["answer"]),
+                ]
+        finally:
+            release.set()
+
+
+@pytest.mark.parametrize(
+    ("answer", "outcome", "checked", "invalid", "warning"),
+    [
+        (
+            "A claim. [hubble.txt, chunk 0][hubble.txt, chunk 0]",
+            "valid",
+            ["[hubble.txt, chunk 0]"],
+            [],
+            "",
+        ),
+        (
+            "A claim. [z.txt, chunk 9][hubble.txt, chunk 0][a.txt, chunk 8]",
+            "warning",
+            ["[a.txt, chunk 8]", "[hubble.txt, chunk 0]", "[z.txt, chunk 9]"],
+            ["[a.txt, chunk 8]", "[z.txt, chunk 9]"],
+            "\n\n[Validation warning: citations not in retrieved chunks: "
+            "[a.txt, chunk 8], [z.txt, chunk 9]]",
+        ),
+        (
+            "The provided documents do not contain enough information.",
+            "no_citations",
+            [],
+            [],
+            "",
+        ),
+    ],
+)
+def test_generation_context_and_citation_outcomes_preserve_the_exact_answer(
+    provider, small_corpus, answer, outcome, checked, invalid, warning
+):
+    from nasa_rag.generation.generator import GENERATION_INSTRUCTIONS
+
+    scores = [0.2, 0.9, 0.9, 0.1]
+    evaluation = iter(scores)
+    provider.outputs["rerank_result"] = lambda _: json.dumps(
+        {"score": next(evaluation), "reason": "Evidence"}
+    )
+    provider.outputs["answer"] = " \n" + answer + " \n"
+    with TestClient(web.create_app()) as client:
+        flow = events(
+            client.post("/ask/stream", json={"question": "Visitor question?"})
+        )
+        stream_calls = provider.operations.copy()
+        provider.operations.clear()
+        evaluation = iter(scores)
+        legacy = client.post("/ask", json={"question": "Visitor question?"})
+    details = completed_details(flow)
+    results = details["rerank_evidence"]["results"]
+    assert details["generate_answer"] == {
+        "context_references": [p["reference"] for p in results]
+    }
+    assert details["check_citations"] == {
+        "outcome": outcome,
+        "checked_references": checked,
+        "invalid_references": invalid,
+    }
+    for stage in flow[-1]["data"]["stages"][6:]:
+        assert stage["details"] == details[stage["stage_id"]]
+    generation = stream_calls[-1][1]
+    assert generation["input"] == (
+        "Context:\n"
+        + "\n\n---\n\n".join(p["reference"] + "\n" + p["text"] for p in results)
+        + "\n\nQuestion:\nVisitor question?"
+    )
+    assert generation["instructions"] == GENERATION_INSTRUCTIONS
+    assert flow[-1]["type"] == "run.completed"
+    assert flow[-1]["data"]["answer"] == legacy.json()["answer"] == answer + warning
+    assert all("answer" not in e["data"] for e in flow[:-1])
+    assert answer not in json.dumps(flow[:-1])
+    assert stream_calls == provider.operations
+    assert [kind for kind, _ in stream_calls] == [
+        "retrieval_plan",
+        "query_embedding",
+        *(["rerank_result"] * 4),
+        "answer",
+    ]
+
+
+def test_incomplete_reranking_snapshot_retains_results_when_observation_ends(
+    provider, small_corpus, monkeypatch
+):
+    from time import monotonic
+
+    from nasa_rag import web_stream
+
+    offset = [0.0]
+    monkeypatch.setenv("NASA_RAG_RESPONSE_TIMEOUT_SECONDS", "120")
+    monkeypatch.setattr(web_stream, "monotonic", lambda: monotonic() + offset[0])
+
+    def end_observation():
+        if sum(kind == "rerank_result" for kind, _ in provider.operations) == 3:
+            offset[0] = 121.0
+
+    provider.hooks["rerank_result"] = end_observation
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    progress = [e["data"] for e in flow if e["type"] == "stage.progress"]
+    assert len(progress) == 2
+    terminal = flow[-1]
+    assert terminal["type"] == "run.failed"
+    assert terminal["data"]["error"]["code"] == "response_timeout"
+    snapshot = terminal["data"]["stages"][5]
+    assert snapshot["status"] == "unknown"
+    assert snapshot["progress"] == progress[-1]
+    assert snapshot["details"] == {"evaluated_results": [p["result"] for p in progress]}
+    assert "answer" not in terminal["data"]
+    assert not any(e["type"] == "stage.failed" for e in flow)
 
 
 def completed_details(flow):
@@ -323,8 +574,11 @@ def test_published_retrieval_snapshots_survive_chunk_mutation_and_later_failure(
     assert details["combine_rankings"]["results"][0]["rrf_score"] == pytest.approx(
         0.02639344262295082
     )
-    assert "mutated-after-publication" not in response.text
-    assert "mutated-source.txt" not in response.text
+    # Later stages may expose the deliberately changed objects; the already
+    # published retrieval snapshots must continue to show the original data.
+    retrieval_details = json.dumps({stage: details[stage] for stage in STAGES[:5]})
+    assert "mutated-after-publication" not in retrieval_details
+    assert "mutated-source.txt" not in retrieval_details
     assert "private-later-failure" not in response.text
     assert "provider-only-secret" not in response.text
     if later_failure:
@@ -419,7 +673,11 @@ def test_stream_preserves_real_stage_order_answer_and_model_calls(provider):
         flow = events(response)
         assert flow[0]["type"] == "run.started"
         assert flow[0]["data"] == {"stage_ids": STAGES}
-        assert [(e["type"], e["stage_id"]) for e in flow[1:-1]] == [
+        assert [
+            (e["type"], e["stage_id"])
+            for e in flow[1:-1]
+            if e["type"] != "stage.progress"
+        ] == [
             (kind, stage)
             for stage in STAGES
             for kind in ("stage.started", "stage.completed")
@@ -502,7 +760,7 @@ def test_live_stage_and_heartbeat_arrive_while_provider_is_blocked(
                     if received and received[-1]["type"] == "run.completed":
                         break
                 assert received[-1]["data"]["answer"] == ANSWER
-                assert len(received) == 18
+                assert len(received) == 28
         finally:
             release.set()
 

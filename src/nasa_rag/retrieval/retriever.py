@@ -202,8 +202,10 @@ class Retriever:
             rewritten_query=rewritten_query,
             source_file_filter=source_file_filter,
         )
-        with search_stage("rerank_evidence"):
+        with search_stage("rerank_evidence") as completion:
             rerank_results = self.rerank_rrf_results(query, rrf_results)
+            if completion is not None:
+                completion.details = StageDetails.reranking(rerank_results)
         return (
             faiss_results,
             bm25_results,

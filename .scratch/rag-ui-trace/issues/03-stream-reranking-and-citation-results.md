@@ -54,3 +54,7 @@ failure snapshots in 05.
 ## Comments
 
 - 2026-11-08: Published from the approved backend-only ticket breakdown.
+- 2026-11-09: User confirmed ticket 03 and authorized implementation on
+  `implement/rag-ui-trace-ticket-03`, based on main `3620bf0`. Tests use the
+  approved HTTP boundary with mocked providers and temporary corpus/cache,
+  including real loopback delivery while a later candidate is blocked.

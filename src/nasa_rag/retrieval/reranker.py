@@ -7,6 +7,7 @@ from typing import Any
 
 from ..model_costs import call_model
 from ..models import DocumentChunk, RerankResult
+from ..search_flow import report_rerank_progress
 
 RERANK_MODEL = "gpt-5.6-luna"
 RERANK_INSTRUCTIONS = """You are evaluating whether a passage contains evidence
@@ -68,7 +69,11 @@ class Reranker:
         if not query.strip():
             raise ValueError("Query text cannot be empty.")
 
-        results = [self._rerank_chunk(query, chunk) for chunk in rrf_results]
+        results = []
+        for completed, chunk in enumerate(rrf_results, 1):
+            result = self._rerank_chunk(query, chunk)
+            results.append(result)
+            report_rerank_progress(result, completed, len(rrf_results))
         return sorted(
             results,
             key=lambda result: (
