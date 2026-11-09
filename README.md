@@ -19,8 +19,10 @@ the command stores caches in `~/.cache/nasa_rag` and cost logs in
 
 See the [search CLI and logging reference](docs/search-cli.md) for all arguments,
 pipeline output, and persistent model cost records.
-The [live search flow PRD/TRD](.scratch/rag-ui-trace/spec.md) defines planned
-visitor-facing stage updates and includes a separate frontend handoff.
+The [version-1 streaming API contract](docs/web-stream-contract.md) documents
+implemented live search stages, results, usage, and interruption behavior, with
+[server-checked fixtures](docs/fixtures/search-stream-v1/README.md) and a
+separate [frontend handoff](.scratch/rag-ui-trace/frontend-handoff.md).
 The [backend ticket index](.scratch/rag-ui-trace/README.md) lists implementation
 slices and their dependencies.
 
@@ -210,7 +212,7 @@ top_k | hit_at_k        | mean_recall_at_k
 
 ## FastAPI service and deployment
 
-The optional web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health` and `POST /ask`. The completed implementation follows the [original FastAPI service scope](docs/fastapi-service-plan.md).
+The optional web API is documented in [the API setup and usage guide](docs/web-api.md). It exposes the existing full hybrid pipeline through `GET /health`, legacy JSON `POST /ask`, and live `POST /ask/stream`. The completed implementation follows the [original FastAPI service scope](docs/fastapi-service-plan.md) plus the additive streaming contract.
 
 To package and run the API as a container, follow [the Docker guide](docs/docker.md).
 It covers building the image without credentials, runtime environment settings,

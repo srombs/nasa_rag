@@ -2,6 +2,16 @@
 
 import pytest
 
+pytest_plugins = ("stream_support",)
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--update-stream-fixtures",
+        action="store_true",
+        help="Rewrite public stream fixtures from mocked server responses.",
+    )
+
 
 @pytest.fixture(autouse=True)
 def isolate_model_cost_log(monkeypatch, tmp_path):

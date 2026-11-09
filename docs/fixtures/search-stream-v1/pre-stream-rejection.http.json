@@ -1,0 +1,14 @@
+{
+  "status": 422,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "00000000-0000-4000-8000-000000000001"
+  },
+  "body": {
+    "request_id": "00000000-0000-4000-8000-000000000001",
+    "error": {
+      "code": "invalid_request",
+      "message": "Provide only a nonblank question of at most 1,000 characters."
+    }
+  }
+}

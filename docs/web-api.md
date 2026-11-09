@@ -76,12 +76,15 @@ is canceled, the client disconnects, or its response deadline expires. No questi
 queue is maintained. Normal shutdown waits for that work to finish; process
 termination does not recover it on restart.
 
-## Live search stages (development slice)
+## Live search flow stream
 
-`POST /ask/stream` accepts the same strict question body as `/ask`. This is an
-incremental backend implementation of the [live search flow](../.scratch/rag-ui-trace/spec.md),
-for development only until ticket 06 verifies the complete frontend contract.
-It currently delivers stage lifecycles, all stage details, per-candidate
+`POST /ask/stream` accepts the same strict question body as `/ask`. The
+[implemented version-1 contract](web-stream-contract.md) and
+[server-checked protocol fixtures](fixtures/search-stream-v1/README.md) are ready
+for the separate frontend integration. See the
+[backend verification record](web-stream-verification.md) for reproducible
+evidence and outstanding deployed-proxy/browser acceptance work.
+The stream delivers stage lifecycles, all stage details, per-candidate
 reranking progress, stage/request timing and recorded model usage/cost estimates,
 and the final answer. Interruption handling preserves completed results and
 observed usage while retaining ownership of actual work through completion.
