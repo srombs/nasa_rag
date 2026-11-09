@@ -22,6 +22,7 @@ from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+from .model_costs import CostRun, track_costs
 from .search_details import StageDetails
 from .search_flow import observe_search, search_stage
 from .web_stream import SearchStream, SearchStreamResponse
@@ -363,24 +364,30 @@ def create_app(
                 request, 503, "busy", "The service is processing a question."
             )
         admitted = monotonic()
+        usage = CostRun(
+            "ask", id=request.state.request_id, request_id=request.state.request_id
+        )
         stream = (
-            SearchStream(request.state.request_id, admitted, deadline, public_failure)
+            SearchStream(
+                request.state.request_id, admitted, deadline, public_failure, usage
+            )
             if request.url.path == "/ask/stream"
             else None
         )
         active_pipeline = pipeline
 
         def work() -> str:
-            if stream is None:
-                return active_pipeline(body.question)
-            with observe_search(stream.stage):
-                try:
-                    answer = active_pipeline(body.question)
-                except Exception as error:
-                    stream.fail(error)
-                    raise
-                stream.complete(answer)
-                return answer
+            with track_costs(usage):
+                if stream is None:
+                    return active_pipeline(body.question)
+                with observe_search(stream.stage):
+                    try:
+                        answer = active_pipeline(body.question)
+                    except Exception as error:
+                        stream.fail(error)
+                        raise
+                    stream.complete(answer)
+                    return answer
 
         task = asyncio.create_task(asyncio.to_thread(work))
         running = task

@@ -4,6 +4,7 @@ import json
 import socket
 from contextlib import contextmanager
 from datetime import datetime
+from decimal import Decimal
 from threading import Event, Thread
 from types import SimpleNamespace
 from uuid import UUID
@@ -55,6 +56,7 @@ def provider(monkeypatch, tmp_path):
     operations = []
     hooks = {}
     outputs = {}
+    usage = {}
     vector = [1.0, 0.5]
 
     def record(kind, arguments):
@@ -67,6 +69,7 @@ def provider(monkeypatch, tmp_path):
         record("query_embedding", arguments)
         return SimpleNamespace(
             model="provider-alias",
+            usage=usage.get("query_embedding"),
             private="provider-only-secret",
             data=[
                 SimpleNamespace(embedding=vector.copy(), private="provider-only-secret")
@@ -89,7 +92,11 @@ def provider(monkeypatch, tmp_path):
         output = outputs.get(kind, output)
         if callable(output):
             output = output(arguments)
-        return SimpleNamespace(output_text=output, private="provider-only-secret")
+        return SimpleNamespace(
+            output_text=output,
+            usage=usage.get(kind),
+            private="provider-only-secret",
+        )
 
     client = SimpleNamespace(
         embeddings=SimpleNamespace(create=embeddings_create),
@@ -99,8 +106,476 @@ def provider(monkeypatch, tmp_path):
     monkeypatch.setenv("OPENAI_API_KEY", "mock-key")
     monkeypatch.setenv("NASA_RAG_CACHE_DIR", str(cache))
     return SimpleNamespace(
-        operations=operations, hooks=hooks, outputs=outputs, vector=vector, cache=cache
+        operations=operations,
+        hooks=hooks,
+        outputs=outputs,
+        vector=vector,
+        cache=cache,
+        usage=usage,
     )
+
+
+@pytest.fixture
+def metered_provider(provider):
+    provider.usage["query_embedding"] = SimpleNamespace(prompt_tokens=1000)
+    for kind in ("retrieval_plan", "rerank_result", "answer"):
+        provider.usage[kind] = SimpleNamespace(
+            input_tokens=1200,
+            output_tokens=100,
+            input_tokens_details=SimpleNamespace(
+                cached_tokens=500, cache_write_tokens=200
+            ),
+            output_tokens_details=SimpleNamespace(reasoning_tokens=25),
+        )
+    return provider
+
+
+def test_stage_and_request_metrics_match_recorded_usage_and_request_ledger(
+    metered_provider, tmp_path
+):
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+        legacy = client.post("/ask", json={"question": "Hubble?"})
+        second = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    total = flow[-1]["data"]["metrics"]
+    assert total["model_calls"] == 13
+    assert total["models"] == ["gpt-5.6-luna", "text-embedding-3-small"]
+    assert total["tokens"] == {
+        "input_tokens": 15400,
+        "cached_input_tokens": 6000,
+        "cache_write_tokens": 2400,
+        "output_tokens": 1200,
+        "reasoning_tokens": 300,
+    }
+    assert Decimal(total["known_cost_usd"]) == Decimal("0.00338")
+    assert total["unknown_cost_calls"] == 0
+    assert total["cost_complete"] is True
+    assert total["price_dates"] == ["2026-09-29"]
+    assert total["duration_ms"] >= 0
+    assert events(second)[-1]["data"]["metrics"]["model_calls"] == 13
+    assert set(legacy.json()) == {"request_id", "answer"}
+
+    stages = {
+        e["stage_id"]: e["data"]["metrics"]
+        for e in flow
+        if e["type"] == "stage.completed"
+    }
+    for snapshot in flow[-1]["data"]["stages"]:
+        assert snapshot["metrics"] == stages[snapshot["stage_id"]]
+    for stage in (
+        "semantic_search",
+        "keyword_search",
+        "combine_rankings",
+        "check_citations",
+    ):
+        assert stages[stage]["model_calls"] == 0
+        assert set(stages[stage]["tokens"].values()) == {0}
+        assert Decimal(stages[stage]["known_cost_usd"]) == 0
+        assert stages[stage]["unknown_cost_calls"] == 0
+        assert stages[stage]["cost_complete"] is True
+        assert stages[stage]["models"] == stages[stage]["price_dates"] == []
+    assert stages["plan_query"]["model_calls"] == 1
+    assert stages["embed_query"]["model_calls"] == 1
+    assert stages["embed_query"]["tokens"] == {
+        "input_tokens": 1000,
+        "cached_input_tokens": 0,
+        "cache_write_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+    }
+    assert stages["rerank_evidence"]["model_calls"] == 10
+    assert Decimal(stages["rerank_evidence"]["known_cost_usd"]) == Decimal("0.0028")
+    assert stages["generate_answer"]["model_calls"] == 1
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 39
+    ids = {r.headers["x-request-id"] for r in (response, legacy, second)}
+    assert len(ids) == 3
+    for request_id in ids:
+        request_records = [r for r in records if r["request_id"] == request_id]
+        assert len(request_records) == 13
+        assert all(
+            r["run_id"] == request_id and r["run_name"] == "ask"
+            for r in request_records
+        )
+    assert all(
+        "question" not in r and "answer" not in r and "prompt" not in r for r in records
+    )
+
+
+@pytest.mark.parametrize("missing", ["all_usage", "cache_write", "reasoning"])
+def test_missing_usage_stays_unknown_while_preserving_known_categories(
+    metered_provider, missing
+):
+    if missing == "all_usage":
+        metered_provider.usage["answer"] = None
+    elif missing == "cache_write":
+        metered_provider.usage["answer"].input_tokens_details.cache_write_tokens = None
+    else:
+        metered_provider.usage["answer"].output_tokens_details.reasoning_tokens = None
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    assert flow[-1]["type"] == "run.completed"
+    total = flow[-1]["data"]["metrics"]
+    stage = flow[-1]["data"]["stages"][6]["metrics"]
+    assert total["model_calls"] == 13
+    assert stage["model_calls"] == 1
+    if missing == "all_usage":
+        assert set(total["tokens"].values()) == {None}
+        assert set(stage["tokens"].values()) == {None}
+    else:
+        assert total["tokens"] == {
+            "input_tokens": 15400,
+            "cached_input_tokens": 6000,
+            "cache_write_tokens": None if missing == "cache_write" else 2400,
+            "output_tokens": 1200,
+            "reasoning_tokens": None if missing == "reasoning" else 300,
+        }
+    # Existing pricing does not require reasoning breakdown: it is part of output.
+    assert total["cost_complete"] is (missing == "reasoning")
+    assert total["unknown_cost_calls"] == (0 if missing == "reasoning" else 1)
+    assert Decimal(total["known_cost_usd"]) == Decimal(
+        "0.00338" if missing == "reasoning" else "0.00310"
+    )
+
+
+def test_unknown_rates_preserve_tokens_and_only_the_known_embedding_subtotal(
+    metered_provider, monkeypatch
+):
+    from nasa_rag import model_costs
+
+    monkeypatch.delitem(model_costs.PRICES, "gpt-5.6-luna")
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    total = events(response)[-1]["data"]["metrics"]
+    assert total["model_calls"] == 13
+    assert total["tokens"]["input_tokens"] == 15400
+    assert total["tokens"]["output_tokens"] == 1200
+    assert total["unknown_cost_calls"] == 12
+    assert total["cost_complete"] is False
+    assert Decimal(total["known_cost_usd"]) == Decimal("0.00002")
+    assert total["price_dates"] == ["2026-09-29"]
+
+
+@pytest.mark.parametrize("validation_failure", [False, True])
+def test_failed_stage_reports_only_usage_actually_recorded(
+    metered_provider, validation_failure, tmp_path
+):
+    if validation_failure:
+        metered_provider.outputs["answer"] = "  "
+    else:
+
+        def fail():
+            raise RuntimeError("private provider failure")
+
+        metered_provider.hooks["answer"] = fail
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    assert flow[-2]["type"] == "stage.failed"
+    assert flow[-2]["stage_id"] == "generate_answer"
+    failed = flow[-2]["data"]["metrics"]
+    total = flow[-1]["data"]["metrics"]
+    assert failed["model_calls"] == 1
+    assert total["model_calls"] == 13
+    assert total["cost_complete"] is validation_failure
+    assert failed["cost_complete"] is validation_failure
+    assert failed["unknown_cost_calls"] == (0 if validation_failure else 1)
+    assert total["unknown_cost_calls"] == (0 if validation_failure else 1)
+    if validation_failure:
+        assert failed["tokens"]["input_tokens"] == 1200
+        assert failed["tokens"]["output_tokens"] == 100
+        assert Decimal(failed["known_cost_usd"]) == Decimal("0.00028")
+        assert Decimal(total["known_cost_usd"]) == Decimal("0.00338")
+    else:
+        assert set(failed["tokens"].values()) == {None}
+        assert set(total["tokens"].values()) == {None}
+        assert Decimal(failed["known_cost_usd"]) == 0
+        assert Decimal(total["known_cost_usd"]) == Decimal("0.00310")
+    assert flow[-1]["data"]["stages"][6]["metrics"] == failed
+    assert flow[-1]["data"]["stages"][7]["metrics"] is None
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 13
+    assert records[-1]["status"] == ("response" if validation_failure else "error")
+    assert records[-1]["request_id"] == response.headers["x-request-id"]
+
+
+def test_ledger_write_failure_keeps_in_memory_usage_and_success(
+    metered_provider, monkeypatch, tmp_path
+):
+    # A directory cannot be opened as an append-only ledger file.
+    monkeypatch.setenv("NASA_RAG_COST_LOG_PATH", str(tmp_path))
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    terminal = events(response)[-1]
+    assert terminal["type"] == "run.completed"
+    assert terminal["data"]["answer"] == ANSWER
+    assert terminal["data"]["metrics"]["model_calls"] == 13
+    assert Decimal(terminal["data"]["metrics"]["known_cost_usd"]) == Decimal("0.00338")
+    assert terminal["data"]["metrics"]["cost_complete"] is True
+
+
+def test_no_usage_is_an_incomplete_zero_subtotal_not_free_model_work(provider):
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    terminal = events(response)[-1]["data"]
+    metrics = terminal["metrics"]
+    assert metrics["model_calls"] == metrics["unknown_cost_calls"] == 13
+    assert metrics["cost_complete"] is False
+    assert Decimal(metrics["known_cost_usd"]) == 0
+    assert metrics["price_dates"] == []
+    assert set(metrics["tokens"].values()) == {None}
+    assert terminal["stages"][1]["metrics"]["tokens"] == {
+        "input_tokens": None,
+        "cached_input_tokens": 0,
+        "cache_write_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+    }
+
+
+def test_startup_usage_is_excluded_from_http_request_accounting(
+    metered_provider, tmp_path
+):
+    from nasa_rag.model_costs import call_model
+
+    def factory():
+        call_model(
+            "document_embedding",
+            "embeddings",
+            "text-embedding-3-small",
+            lambda **_: SimpleNamespace(usage=SimpleNamespace(prompt_tokens=9999)),
+        )
+        return web.load_pipeline()
+
+    with TestClient(web.create_app(factory)) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    metrics = events(response)[-1]["data"]["metrics"]
+    assert metrics["model_calls"] == 13
+    assert metrics["tokens"]["input_tokens"] == 15400
+    assert Decimal(metrics["known_cost_usd"]) == Decimal("0.00338")
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 14
+    assert records[0]["operation"] == "document_embedding"
+    assert "request_id" not in records[0]
+    assert records[0]["run_id"] != response.headers["x-request-id"]
+    assert all(r["request_id"] == response.headers["x-request-id"] for r in records[1:])
+
+
+@pytest.mark.parametrize("route", ["/ask", "/ask/stream"])
+def test_worker_keeps_request_accounting_after_http_timeout(
+    metered_provider, monkeypatch, tmp_path, route
+):
+    monkeypatch.setenv("NASA_RAG_RESPONSE_TIMEOUT_SECONDS", "0.2")
+    entered = Event()
+    release = Event()
+
+    def block():
+        entered.set()
+        assert release.wait(10), "Test failed to release provider"
+
+    metered_provider.hooks["answer"] = block
+    with TestClient(web.create_app()) as client:
+        try:
+            response = client.post(route, json={"question": "Hubble?"})
+            assert entered.is_set()
+            request_id = response.headers["x-request-id"]
+            original_body = response.content
+            records_so_far = [
+                json.loads(line)
+                for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+            ]
+            assert len(records_so_far) == 12
+            if route == "/ask/stream":
+                terminal = events(response)[-1]
+                assert terminal["type"] == "run.failed"
+                assert terminal["data"]["processing_may_continue"] is True
+                assert terminal["data"]["metrics"]["model_calls"] == 12
+                assert terminal["data"]["metrics"]["tokens"]["input_tokens"] == 14200
+                assert Decimal(
+                    terminal["data"]["metrics"]["known_cost_usd"]
+                ) == Decimal("0.00310")
+                active = terminal["data"]["stages"][6]
+                assert active["status"] == "unknown"
+                assert active["metrics"]["model_calls"] == 0
+                assert active["metrics"]["duration_ms"] > 0
+                assert active["metrics"]["cost_complete"] is True
+                assert terminal["data"]["stages"][7]["metrics"] is None
+            else:
+                assert response.status_code == 504
+                assert response.json()["error"]["code"] == "response_timeout"
+            assert client.post("/ask", json={"question": "Busy?"}).status_code == 503
+        finally:
+            release.set()
+    # Lifespan shutdown waits for the actual worker, including its late call.
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 13
+    assert all(r["request_id"] == r["run_id"] == request_id for r in records)
+    assert all(r["run_name"] == "ask" for r in records)
+    assert records[-1]["operation"] == "answer_generation"
+    assert Decimal(records[-1]["estimated_cost_usd"]) == Decimal("0.00028")
+    assert response.content == original_body
+    if route == "/ask/stream":
+        assert events(response)[-1] == terminal
+
+
+def test_worker_keeps_request_accounting_after_stream_disconnect(
+    metered_provider, tmp_path
+):
+    import httpx
+
+    entered = Event()
+    release = Event()
+
+    def block():
+        entered.set()
+        assert release.wait(10), "Test failed to release provider"
+
+    metered_provider.hooks["answer"] = block
+    with (
+        loopback(web.create_app()) as url,
+        httpx.Client(base_url=url, timeout=5) as client,
+    ):
+        try:
+            with client.stream(
+                "POST", "/ask/stream", json={"question": "Hubble?"}
+            ) as response:
+                request_id = response.headers["x-request-id"]
+                for line in response.iter_lines():
+                    if line.startswith("data: "):
+                        event = json.loads(line[6:])
+                        if (
+                            event["type"] == "stage.started"
+                            and event["stage_id"] == "generate_answer"
+                        ):
+                            assert entered.wait(2)
+                            break
+            assert not release.is_set()
+            records_so_far = (tmp_path / "model_costs.jsonl").read_text().splitlines()
+            assert len(records_so_far) == 12
+        finally:
+            release.set()
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 13
+    assert all(r["request_id"] == r["run_id"] == request_id for r in records)
+    assert records[-1]["operation"] == "answer_generation"
+
+
+def test_partial_reranking_timeout_counts_only_recorded_calls(
+    metered_provider, small_corpus, monkeypatch, tmp_path
+):
+    monkeypatch.setenv("NASA_RAG_RESPONSE_TIMEOUT_SECONDS", "0.2")
+    release = Event()
+    entered = Event()
+    calls = [0]
+
+    def block_second():
+        calls[0] += 1
+        if calls[0] == 2:
+            entered.set()
+            assert release.wait(10), "Test failed to release provider"
+
+    metered_provider.hooks["rerank_result"] = block_second
+    with TestClient(web.create_app()) as client:
+        try:
+            response = client.post("/ask/stream", json={"question": "Hubble?"})
+            assert entered.is_set()
+            terminal = events(response)[-1]["data"]
+            assert terminal["processing_may_continue"] is True
+            assert terminal["metrics"]["model_calls"] == 3
+            assert Decimal(terminal["metrics"]["known_cost_usd"]) == Decimal("0.00058")
+            active = terminal["stages"][5]
+            assert active["status"] == "unknown"
+            assert len(active["details"]["evaluated_results"]) == 1
+            assert active["metrics"]["model_calls"] == 1
+            assert active["metrics"]["tokens"]["input_tokens"] == 1200
+            assert active["metrics"]["tokens"]["output_tokens"] == 100
+            assert active["metrics"]["unknown_cost_calls"] == 0
+            assert Decimal(active["metrics"]["known_cost_usd"]) == Decimal("0.00028")
+        finally:
+            release.set()
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "model_costs.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 7
+    assert all(r["request_id"] == response.headers["x-request-id"] for r in records)
+    assert events(response)[-1]["data"] == terminal
+
+
+def test_recorded_usage_is_frozen_before_a_provider_object_is_reused(metered_provider):
+    def reuse_usage():
+        old_usage = metered_provider.usage["retrieval_plan"]
+        old_usage.input_tokens = 999999
+        old_usage.input_tokens_details.cached_tokens = 999999
+
+    metered_provider.hooks["answer"] = reuse_usage
+    with TestClient(web.create_app()) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    flow = events(response)
+    terminal = flow[-1]["data"]
+    completed_plan = next(e for e in flow if e["type"] == "stage.completed")
+    assert completed_plan["data"]["metrics"] == terminal["stages"][0]["metrics"]
+    assert terminal["stages"][0]["metrics"]["tokens"]["input_tokens"] == 1200
+    assert terminal["metrics"]["tokens"]["input_tokens"] == 15400
+    assert terminal["metrics"]["tokens"]["cached_input_tokens"] == 6000
+    assert Decimal(terminal["metrics"]["known_cost_usd"]) == Decimal("0.00338")
+
+
+def test_monotonic_timings_cover_provider_retries_and_independent_run_duration(
+    monkeypatch,
+):
+    from nasa_rag import search_flow, web_stream
+    from nasa_rag.model_costs import call_model
+
+    now = [100.0]
+    for module in (web, search_flow, web_stream):
+        monkeypatch.setattr(module, "monotonic", lambda: now[0])
+
+    def provider_with_retries(**_):
+        # One application call containing two attempts, with backoff between.
+        now[0] += 1
+        now[0] += 2
+        now[0] += 2
+        return SimpleNamespace(usage=SimpleNamespace(prompt_tokens=1000))
+
+    def pipeline(question):
+        with search_flow.search_stage("embed_query"):
+            call_model(
+                "query_embedding",
+                "embeddings",
+                "text-embedding-3-small",
+                provider_with_retries,
+            )
+        now[0] += 2  # Observed work between stages is part of overall duration.
+        with search_flow.search_stage("generate_answer"):
+            now[0] += 4
+        return "Answer"
+
+    with TestClient(web.create_app(lambda: pipeline)) as client:
+        response = client.post("/ask/stream", json={"question": "Hubble?"})
+    terminal = events(response)[-1]["data"]
+    metrics = terminal["metrics"]
+    assert metrics["duration_ms"] == 11000
+    assert metrics["model_calls"] == 1
+    assert terminal["stages"][1]["metrics"]["duration_ms"] == 5000
+    assert terminal["stages"][6]["metrics"]["duration_ms"] == 4000
 
 
 @pytest.fixture

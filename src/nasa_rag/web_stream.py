@@ -1,8 +1,7 @@
 """Bounded, detachable SSE observation of one synchronous search worker.
 
-Publishes lifecycle events, stage details, reranking progress, and durations.
-Usage metrics and complete interruption behavior arrive in later slices;
-absent data is never fabricated.
+Publishes lifecycle events, stage details, reranking progress, and recorded
+usage estimates. Accounting belongs to the worker and survives detachment.
 """
 
 import asyncio
@@ -19,6 +18,7 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 from starlette.types import Receive, Scope, Send
 
+from .model_costs import CostRun, UsageSnapshot
 from .search_details import StageDetails
 from .search_flow import STAGE_IDS, StageEvent, StageId, StageProgress
 
@@ -36,6 +36,8 @@ class StageSnapshot:
         "pending", "running", "completed", "failed", "skipped", "unknown"
     ] = "pending"
     duration_ms: float | None = None
+    started_at: float | None = None
+    usage: UsageSnapshot | None = None
     error: dict[str, str] | None = None
     details: StageDetails | None = None
     progress: StageProgress | None = None
@@ -47,9 +49,7 @@ class StageSnapshot:
             "details": self.details.public() if self.details is not None else None,
             "progress": self.progress.public() if self.progress is not None else None,
             "metrics": (
-                {"duration_ms": self.duration_ms}
-                if self.duration_ms is not None
-                else None
+                self.usage.public(self.duration_ms) if self.usage is not None else None
             ),
             "error": self.error,
         }
@@ -59,12 +59,18 @@ class SearchStream:
     """Serialize at publication and bound both frames and worker notifications."""
 
     def __init__(
-        self, request_id: str, admitted: float, deadline: float, failure: FailureMapper
+        self,
+        request_id: str,
+        admitted: float,
+        deadline: float,
+        failure: FailureMapper,
+        usage: CostRun,
     ):
         self.request_id = request_id
         self.admitted = admitted
         self.expires_at = admitted + deadline
         self.failure = failure
+        self.usage = usage
         self._loop = asyncio.get_running_loop()
         self._ready = asyncio.Event()
         self._lock = Lock()
@@ -113,6 +119,7 @@ class SearchStream:
             data: dict = {}
             if event.type == "stage.started":
                 snapshot.status = "running"
+                snapshot.started_at = monotonic()
             elif event.progress is not None:
                 snapshot.progress = event.progress
                 snapshot.details = (
@@ -121,7 +128,8 @@ class SearchStream:
                 data = event.progress.public()
             else:
                 snapshot.duration_ms = event.duration_ms
-                data["metrics"] = {"duration_ms": event.duration_ms}
+                snapshot.usage = self.usage.stage_snapshot(event.stage_id)
+                data["metrics"] = snapshot.usage.public(event.duration_ms)
                 if event.error is None:
                     snapshot.status = "completed"
                     snapshot.details = event.details
@@ -188,7 +196,13 @@ class SearchStream:
 
     def _finish(self, kind: str, data: dict, outcome: str) -> None:
         # Encode the terminal snapshot while locked, then freeze the event sink.
-        data["metrics"] = {"duration_ms": (monotonic() - self.admitted) * 1000}
+        now = monotonic()
+        usage, stages = self.usage.snapshots()
+        for stage in self._stages.values():
+            if stage.started_at is not None and stage.usage is None:
+                stage.duration_ms = (now - stage.started_at) * 1000
+                stage.usage = stages.get(stage.stage_id, UsageSnapshot())
+        data["metrics"] = usage.public((now - self.admitted) * 1000)
         data["stages"] = [stage.public() for stage in self._stages.values()]
         self._outcome = outcome
         self._failure_code = data.get("error", {}).get("code")

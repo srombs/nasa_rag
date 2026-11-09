@@ -82,10 +82,50 @@ termination does not recover it on restart.
 incremental backend implementation of the [live search flow](../.scratch/rag-ui-trace/spec.md),
 for development only until ticket 06 verifies the complete frontend contract.
 It currently delivers stage lifecycles, all stage details, per-candidate
-reranking progress, and the final answer. `metrics` contains only measured
-`duration_ms`. Usage/cost fields and complete interruption handling arrive in
-tickets 04–05.
-Missing fields are not fabricated values or claims of zero model usage.
+reranking progress, stage/request timing and recorded model usage/cost estimates,
+and the final answer. Complete interruption handling is verified in ticket 05.
+
+`stage.completed`, `stage.failed`, and terminal run events expose `data.metrics`.
+Terminal `data.stages` retains the same completed/failed metrics and includes
+observed metrics for an interrupted active stage. Stages that have not started
+have null metrics.
+
+| Metric | Meaning |
+| --- | --- |
+| `duration_ms` | Nonnegative monotonic elapsed milliseconds, including provider retries. Overall duration is measured from admission independently of stage durations. |
+| `model_calls` | Recorded application-level calls that returned a response or raised an exception. Provider-internal retries are part of one call; in-flight calls are not yet recorded. |
+| `models` | Sorted unique requested model names from recorded calls. |
+| `tokens` | `input_tokens`, `cached_input_tokens`, `cache_write_tokens`, `output_tokens`, and `reasoning_tokens`: each an integer or null. |
+| `known_cost_usd` | Exact decimal string of the known estimated USD subtotal under the existing configured rates. This is an estimate, not a billing assertion. |
+| `unknown_cost_calls` | Recorded calls whose usage or rates do not allow an estimate. |
+| `cost_complete` | True exactly when all recorded calls can be priced. This does not assert that every token breakdown is available or that an interrupted worker has finished. |
+| `price_dates` | Sorted unique rate dates used for priceable recorded calls; empty when no calls could be priced. |
+
+Missing applicable token counts are null. An aggregate token category is null
+if any applicable recorded call lacks it. Inapplicable categories are zero
+(for example output tokens for embeddings). Cached/cache-write input is already
+part of input, and reasoning output is already part of output; do not add them
+again. Pure non-model stages report zero calls/tokens/cost, complete cost, and
+empty model/rate-date lists. Missing usage or unknown rates retain the known
+subtotal alongside unknown calls; a zero known subtotal with incomplete cost
+does not mean the model work was free.
+
+Usage is recorded before model-output validation. A later validation failure
+still includes that response's recorded usage and estimate. A provider exception
+without usage contributes an unknown-cost call. A ledger write failure does not
+prevent in-memory metrics or search completion. No tokens are inferred from text.
+
+Every admitted question on either route has its own worker-scoped accounting.
+Ledger records add `request_id`, use the same HTTP UUID as `run_id`, and use run
+name `ask`. Startup document embeddings and other questions are excluded. The
+legacy `/ask` response remains `{request_id, answer}`; its ledger records gain
+the same correlation without adding metrics to its JSON response.
+
+Timeout metrics cover only calls recorded at observation time. Always consider
+`processing_may_continue`: even `cost_complete: true` cannot establish a final
+bill while work continues. Late calls keep updating that worker's accounting and
+ledger under its original request ID after timeout or disconnect. Metrics already
+sent to a consumer are frozen and do not change when the worker proceeds.
 
 `stage.completed` events include these `data.details` fields:
 
