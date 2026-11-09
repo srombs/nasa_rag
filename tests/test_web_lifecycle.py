@@ -131,9 +131,8 @@ def test_late_provider_exception_keeps_slot_accounting_and_shutdown_wait(
                 "answer_generation", "responses", "gpt-5.6-luna", provider
             )
 
-    app = web.create_app(lambda: pipeline)
-
     async def exercise():
+        app = web.create_app(lambda: pipeline)
         loop = asyncio.get_running_loop()
         previous_handler = loop.get_exception_handler()
         unhandled = []
@@ -216,6 +215,9 @@ def test_late_provider_exception_keeps_slot_accounting_and_shutdown_wait(
             assert records[0]["run_name"] == "ask"
             assert records[0]["status"] == "error"
             assert records[0]["estimated_cost_usd"] is None
+            # Drop transports and the app's reference to the completed worker
+            # so an unobserved exception would reach the loop's handler now.
+            del app, task, client
             gc.collect()
             await asyncio.sleep(0)
             assert not unhandled
@@ -457,10 +459,16 @@ def test_slow_or_absent_consumer_detaches_only_after_exhausting_64_event_queue(
         finally:
             release.set()
         assert client.portal.call(asyncio.to_thread, finished.wait, 2)
-        # Let the worker's thread completion reach the ASGI loop.
-        client.portal.call(asyncio.sleep, 0)
-        for route in ("/ask", "/ask/stream"):
-            recovered = client.post(route, json={"question": "Next"})
-            assert recovered.status_code == 200
+        # Pipeline return precedes worker cleanup. Observe eventual admission
+        # rather than assuming thread completion arrives in a single loop turn.
+        for attempt in range(5):
+            recovered = client.post("/ask", json={"question": "Next"})
+            if recovered.status_code != 503:
+                break
+            assert recovered.json()["error"]["code"] == "busy"
+            client.portal.call(asyncio.sleep, 0.05 * 2**attempt)
+        assert recovered.status_code == 200
+        recovered_stream = client.post("/ask/stream", json={"question": "Next"})
+        assert recovered_stream.status_code == 200
         assert questions == ["private question", "Next", "Next"]
     assert "private" not in caplog.text

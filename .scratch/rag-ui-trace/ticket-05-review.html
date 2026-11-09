@@ -72,13 +72,13 @@
 <body>
 <main>
   <header>
-    <div class="topline"><span class="eyebrow">NASA RAG / Ticket 05</span><a href="feature-overview.html">See the whole feature →</a><span class="pill">Proposed scope · Awaiting confirmation</span></div>
+    <div class="topline"><span class="eyebrow">NASA RAG / Ticket 05</span><a href="feature-overview.html">See the whole feature →</a><span class="pill">Scope confirmed · Implementation verified</span></div>
     <h1>Keep useful work when a search is interrupted.</h1>
     <p class="lead">If a search fails or the connection ends, completed results should stay useful. The backend should report what it observed, preserve recorded usage, and keep its work slot occupied until the actual search ends.</p>
     <div class="facts">
       <div><strong>Backend reliability</strong><span>Failure, deadline, and connection handling</span></div>
       <div><strong>Dependencies complete</strong><span>03: search results · 04: timing and cost</span></div>
-      <div><strong>55 stream tests passing</strong><span>Baseline reviewed on main at 464f62b</span></div>
+      <div><strong>222 tests passing</strong><span>Full offline suite, including 18 new lifecycle cases</span></div>
     </div>
   </header>
 
@@ -122,8 +122,8 @@
   </section>
 
   <section aria-labelledby="work-heading">
-    <h2 id="work-heading">The implementation focus</h2>
-    <p>Much of the core behavior is already present. The remaining work is to prove the full lifecycle contract and correct any gaps those checks expose.</p>
+    <h2 id="work-heading">What implementation verified</h2>
+    <p>The earlier tickets supplied much of the foundation. Ticket 05 adds lifecycle evidence and fixes failure/deadline ordering, known error-code logging, and observation encoding faults.</p>
     <ul class="checklist">
       <li><span><strong>Slow or absent consumers.</strong> Exercise queue exhaustion and transport failures without blocking or cancelling the search.</span></li>
       <li><span><strong>Competing terminal outcomes.</strong> Test completion near the deadline and verify that a healthy connected run gets exactly one terminal event with no later application events.</span></li>
@@ -138,10 +138,10 @@
   </section>
 
   <section class="decision" aria-labelledby="decision-heading">
-    <h2 id="decision-heading">Confirm or adjust the scope</h2>
-    <p>Edit the message below if needed, then copy it and send it in chat.</p>
-    <label for="confirmation" class="eyebrow">Your confirmation message</label>
-    <textarea id="confirmation">Please implement ticket 05 with the scope shown here: preserve partial results, distinguish failures from interruptions, keep worker ownership and accounting correct, and verify the lifecycle edge cases. Keep frontend work separate.</textarea>
+    <h2 id="decision-heading">Keep the agreed scope handy</h2>
+    <p>The user confirmed this scope before implementation. Copy or edit the summary below when discussing the feature. Ticket 06 is the next backend step.</p>
+    <label for="confirmation" class="eyebrow">Scope summary</label>
+    <textarea id="confirmation">Ticket 05 preserves partial results, distinguishes failures from interruptions, keeps worker ownership and accounting correct, and verifies lifecycle edge cases. Frontend work remains separate. Ticket 06 verifies and packages the complete backend contract.</textarea>
     <div class="actions"><button type="button" class="primary" id="copy">Copy message</button><span id="copy-status" class="hint" role="status"></span></div>
   </section>
 

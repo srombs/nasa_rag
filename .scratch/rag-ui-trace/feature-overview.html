@@ -74,12 +74,12 @@
     <h1>See how a NASA answer comes together.</h1>
     <p class="lead">The live search flow lets visitors inspect the stages behind an answer: how their question was interpreted, which passages were retrieved, how candidates were ranked, and what model work was recorded.</p>
     <div class="facts">
-      <div><strong>Built: tickets 01–04</strong><span>Live backend events, search details, and metrics</span></div>
-      <div><strong>Next: ticket 05</strong><span>Complete and verify interruption handling</span></div>
-      <div><strong>Then: ticket 06 + frontend</strong><span>Verify the contract, integrate the visitor experience</span></div>
+      <div><strong>Built: tickets 01–05</strong><span>Live events, search details, metrics, and interruption handling</span></div>
+      <div><strong>Next: ticket 06</strong><span>Verify and package the complete backend contract</span></div>
+      <div><strong>Then: frontend integration</strong><span>Deliver and verify the visitor experience</span></div>
     </div>
     <p class="notice"><strong>Current checkpoint:</strong> the backend is partly delivered. The complete version-1 stream contract remains development-only until ticket 06 passes. Website integration and deployed browser delivery remain separate acceptance work.</p>
-    <p class="hint">Snapshot of the local tracker reviewed at main <code>464f62b</code>. This is a static review document; it does not update ticket statuses automatically.</p>
+    <p class="hint">Implementation snapshot after ticket 05, based on main <code>464f62b</code>: 222 offline tests passed. This static document does not update ticket statuses automatically.</p>
   </header>
 
   <section aria-labelledby="experience-heading">
@@ -109,7 +109,7 @@
 
   <section aria-labelledby="delivery-heading">
     <h2 id="delivery-heading">What’s built, what’s next, what remains</h2>
-    <p>The backend tickets are incremental. Completing four tickets does not establish that the whole feature is ready for visitors.</p>
+    <p>The backend tickets are incremental. Completing five tickets does not establish that the whole feature is ready for visitors.</p>
     <div class="filters" role="group" aria-label="Filter delivery work">
       <button type="button" data-filter="all" aria-pressed="true">All work</button>
       <button type="button" data-filter="built" aria-pressed="false">Built</button>
@@ -122,15 +122,15 @@
       <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 02</span><span class="tag built">Resolved</span></div><h3>Expose planning and retrieval results</h3><p>Publish the query plan, embedding summary, retrieved passages, native scores and ranks, and combined rankings. Completed detail snapshots stay consistent with the search.</p><p><a href="issues/02-expose-planning-and-retrieval-results.md">Read ticket 02 →</a></p></article>
       <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 03</span><span class="tag built">Resolved</span></div><h3>Explain reranking and citation references</h3><p>Emit validated candidate progress, final reranking results, generation context references, and citation-reference outcomes. Retain evaluated candidates if a later one fails.</p><p><a href="issues/03-stream-reranking-and-citation-results.md">Read ticket 03 →</a></p></article>
       <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 04</span><span class="tag built">Resolved</span></div><h3>Report timing and model costs</h3><p>Attach stage and request durations, model names, recorded call counts, available token usage, and estimated costs. Worker accounting retains request correlation after observation ends.</p><p><a href="issues/04-report-request-timing-and-model-costs.md">Read ticket 04 →</a></p></article>
-      <article class="ticket" data-phase="next"><div class="meta"><span class="eyebrow">Ticket 05</span><span class="tag next">Next · awaiting confirmation</span></div><h3>Preserve results through interruptions</h3><p>Complete and verify partial failures, deadlines, disconnects, bounded delivery, terminal snapshots, and worker ownership. Much of the foundation exists; edge-case evidence and any resulting fixes remain.</p><p><strong>Depends on:</strong> resolved tickets 03 and 04.</p><p><a href="ticket-05-review.html">Explore the five outcome examples →</a></p></article>
-      <article class="ticket" data-phase="later"><div class="meta"><span class="eyebrow">Ticket 06</span><span class="tag later">Pending · depends on 05</span></div><h3>Verify and package the full contract</h3><p>Prove the combined contract over real incremental HTTP with mocked providers. Deliver serialization-checked protocol fixtures, current API documentation, regression evidence, and the frontend handoff.</p><p><a href="issues/06-verify-and-document-stream-contract.md">Read ticket 06 →</a></p></article>
+      <article class="ticket" data-phase="built"><div class="meta"><span class="eyebrow">Ticket 05</span><span class="tag built">Implemented · verified</span></div><h3>Preserve results through interruptions</h3><p>Verified partial failures, deadlines, disconnects, bounded delivery, terminal snapshots, and worker ownership. Fixed observed-failure ordering, known error-code logs, and encoding faults that could abort search work.</p><p><strong>Evidence:</strong> 18 new lifecycle cases; 222 tests passing overall.</p><p><a href="ticket-05-review.html">Explore the five outcome examples →</a></p></article>
+      <article class="ticket" data-phase="next"><div class="meta"><span class="eyebrow">Ticket 06</span><span class="tag next">Next · depends on 05</span></div><h3>Verify and package the full contract</h3><p>Prove the combined contract over real incremental HTTP with mocked providers. Deliver serialization-checked protocol fixtures, current API documentation, regression evidence, and the frontend handoff.</p><p><a href="issues/06-verify-and-document-stream-contract.md">Read ticket 06 →</a></p></article>
       <article class="ticket" data-phase="later"><div class="meta"><span class="eyebrow">Frontend repository</span><span class="tag later">Separate acceptance work</span></div><h3>Bring the flow to the website</h3><p>Implement the proxy, stream reader, expandable timeline, safe answer rendering, retained partial results, and manual retry experience. Verify accessibility and live delivery through the deployed proxy.</p><p>The frontend implementation and hosting path have not been verified in this backend review.</p><p><a href="frontend-handoff.md">Read the frontend handoff →</a></p></article>
     </div>
   </section>
 
   <section aria-labelledby="difference-heading">
     <h2 id="difference-heading">What ticket 05 adds to the foundation</h2>
-    <div class="table-wrap"><table><thead><tr><th scope="col">Already delivered in 01–04</th><th scope="col">Completion target for 05</th></tr></thead><tbody>
+    <div class="table-wrap"><table><thead><tr><th scope="col">Already delivered in 01–04</th><th scope="col">What 05 verifies</th></tr></thead><tbody>
       <tr><td>Stage details and validated rerank updates</td><td>Prove retained partial results across failures and observation ending.</td></tr>
       <tr><td>Worker-scoped usage and frozen metric snapshots</td><td>Verify late usage, immutable terminal totals, and eventual worker exceptions across lifecycle edges.</td></tr>
       <tr><td>Shared admission and basic detachable stream handling</td><td>Prove slot ownership and recovery through disconnects, queue exhaustion, and transport faults.</td></tr>
@@ -141,7 +141,7 @@
   <section aria-labelledby="handoff-heading">
     <h2 id="handoff-heading">How the backend reaches a visitor</h2>
     <div class="path">
-      <div class="card"><span class="eyebrow">01 / Backend</span><h3>Produce the search flow</h3><p>Run the shared search, publish versioned events, preserve usage and worker ownership.</p><span class="tag next">Finish 05, then 06</span></div>
+      <div class="card"><span class="eyebrow">01 / Backend</span><h3>Produce the search flow</h3><p>Run the shared search, publish versioned events, preserve usage and worker ownership.</p><span class="tag next">Finish ticket 06</span></div>
       <div class="card"><span class="eyebrow">02 / Website proxy</span><h3>Forward events promptly</h3><p>Preserve errors and request IDs; verify buffering, runtime lifetime, and disconnect handling.</p><span class="tag later">Frontend integration</span></div>
       <div class="card"><span class="eyebrow">03 / Browser</span><h3>Render what was received</h3><p>Parse incremental events, show accessible details, retain partial results, and offer manual retry.</p><span class="tag later">Frontend acceptance</span></div>
     </div>
@@ -163,7 +163,7 @@
     </ul></div>
   </section>
 
-  <section class="decision" aria-labelledby="decision-heading"><h2 id="decision-heading">The next decision is ticket 05</h2><p>This overview shows the whole feature. Ticket 05 is the immediate implementation checkpoint; its review page contains the concrete interruption examples and an editable confirmation message.</p><a class="primary" href="ticket-05-review.html">Review ticket 05 and confirm its scope →</a></section>
+  <section class="decision" aria-labelledby="decision-heading"><h2 id="decision-heading">Next: verify the complete contract</h2><p>Ticket 05 is implemented and verified. Ticket 06 combines the backend evidence, checks reusable protocol fixtures, and packages the contract for the separate frontend integration.</p><a class="primary" href="issues/06-verify-and-document-stream-contract.md">Read ticket 06 →</a><p style="margin-top:16px"><a href="ticket-05-review.html">Revisit ticket 05’s outcome examples →</a></p></section>
   <footer>Source: <a href="README.md">Backend ticket map</a> · <a href="spec.md">PRD/TRD</a> · <a href="frontend-handoff.md">Frontend handoff</a> · <a href="../../docs/web-api.md">Current API documentation</a><br>Local overview for review. Markdown tickets and the specification remain the acceptance sources.</footer>
 </main>
 <script>
